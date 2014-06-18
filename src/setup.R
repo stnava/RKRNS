@@ -9,6 +9,7 @@ library(psych)
 library(visreg)
 library(randomForest)
 library(e1071)
+data("aal",package="ANTsR")
 mygamma <- function(x, a1 = 6.,   a2 = 12., b1 = 0.9, b2 = 0.9, cc = 0.35) {
     d1 <- a1 * b1
     d2 <- a2 * b2

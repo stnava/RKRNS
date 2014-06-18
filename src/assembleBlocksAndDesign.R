@@ -1,10 +1,10 @@
 #######################assemble#######################
-aal<-antsImageRead( "aal/111157_aal.nii.gz" , 3 )
+aalimg<-antsImageRead( "aal/111157_aal.nii.gz" , 3 )
 labs<-as.numeric( c(13,79,89) )
 labs<-as.numeric(1:90)
-subaal<-antsImageClone( aal )
-subaal[ aal > 0 ]<-0
-for ( lab in labs ) subaal[ aal == lab ]<-lab
+subaal<-antsImageClone( aalimg )
+subaal[ aalimg > 0 ]<-0
+for ( lab in labs ) subaal[ aalimg == lab ]<-lab
 whichblocks<-Sys.glob("design/*csv")
 whichblocks2<-unlist( strsplit( whichblocks, "/" ) )[c(1:length(whichblocks))*2]
 whichblocks<-gsub("_design.csv","",whichblocks2)
@@ -30,7 +30,7 @@ dmat<-data.frame( read.csv( dsplits[1] ) )
 for ( i in 2:length(isplits) ) {
 #  imat2<-as.matrix(antsImageRead(isplits[i],2))
   img<-antsImageRead(isplits[i],4)
-  if ( dim(img)[1] == dim(aal)[1] &  dim(img)[2] == dim(aal)[2] &  dim(img)[3] == dim(aal)[3] )
+  if ( dim(img)[1] == dim(aalimg)[1] &  dim(img)[2] == dim(aalimg)[2] &  dim(img)[3] == dim(aalimg)[3] )
     {
     imat2<-timeseries2matrix( img, subaal )
     for( j in 1:throwaway ) imat2[j,]<-apply( imat2[(throwaway+1):nrow(imat2),], FUN=mean, MARGIN=2 )
@@ -41,12 +41,13 @@ for ( i in 2:length(isplits) ) {
     }
   print(paste(i/length(isplits)*100,"%"))
   }
-  data("aal",package="ANTsR")
   imat<-data.frame(imat)
   colnames(imat)<-aal$label_name[labs]
   write.csv(imat,afn,row.names=F)
   write.csv(dmat,dfn,row.names=F)
 }
+imat<-data.frame(imat)
+colnames(imat)<-aal$label_name[labs]
 if ( nrow(dmat) != nrow(imat) ) print("CHECK DIMENSIONS MATCH!")
 print("assembly done")
 
