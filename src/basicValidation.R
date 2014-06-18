@@ -1,3 +1,4 @@
+print("########basic validation########")
 nl<-nrow(  featspace )
 # featspace<-scale(featspace,center=FALSE)
 print(paste("NL rows:",nl))
@@ -13,9 +14,8 @@ ch1<-apply(featspace[ (lablspace$The.window.was.dusty.==1)[inds1]  , ], FUN=mean
 ch2<-apply(featspace[ (lablspace$The.window.was.dusty.==1)[inds2]  , ], FUN=mean,MARGIN=2)
 dd1<-apply(featspace[ (lablspace$The.coffee.was.hot.==1)[inds1]  , ], FUN=mean,MARGIN=2)
 dd2<-apply(featspace[ (lablspace$The.coffee.was.hot.==1)[inds2]  , ], FUN=mean,MARGIN=2)
-
-
 meantfeat1<-meanfeat2<-1
+
 sum(abs(ch2-ww1))
 sum(abs(an2-ww1))
 sum(abs(ww2-ww1))
@@ -32,22 +32,37 @@ sum(abs(ww2-dd1))
 sum(abs(dd2-dd1))
 
 
-l1<-inds1[221:2000]
-l2<-inds2[221:1000]
-ccamats1<-list( featspace[ (lablspace$The.window.was.dusty.==1)[ l1 ]  , ], featspace[ (lablspace$The.window.was.dusty.==1)[ l2 ]  , ] )
-fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=2, sparseness=c( -0.2, -0.2 ), its=33, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=1, ell1= 1 , perms=500, robust=1 )  # subaal
-l1<-inds1[1000:2000]
-l2<-inds2[221:1000]
-ccamats2<-list( featspace[ (lablspace$The.coffee.was.hot.==1)[ l1 ]  , ], featspace[ (lablspace$The.coffee.was.hot.==1)[ l2 ]  , ] )
-fcca2<-sparseDecom2( inmatrix=ccamats2, nvecs=2, sparseness=c( -0.2, -0.2 ), its=33, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=1, ell1= 1 , perms=500, robust=1 )  # subaal
+docca<-FALSE 
+if ( docca == TRUE ) {
+  nperm<-20
+  mysparse<-rep( 0.1, 2 )
+  myrob<-0
+  l1<-inds1[221:2000]
+  l2<-inds2[221:1000]
+  ccamats1<-list( featspace[ (lablspace$The.window.was.dusty.==1)[ l1 ]  , ], featspace[ (lablspace$The.window.was.dusty.==1)[ l2 ]  , ] )
+  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=2, sparseness=mysparse, its=33, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=1, ell1= 1 , perms=nperm, robust=myrob )  # subaal
+  mm<-matrix(fcca1$eig1[,1],nrow=30)
+#  for ( i in 1:90 ) { print(i); plot(mm[,i],type='l'); if ( mean(abs(mm[,i])>0)) Sys.sleep(4) ; }
+  l1<-inds1[1000:2000]
+  l2<-inds2[221:1000]
+  ccamats2<-list( featspace[ (lablspace$The.coffee.was.hot.==1)[ l1 ]  , ], featspace[ (lablspace$The.coffee.was.hot.==1)[ l2 ]  , ] )
+  fcca2<-sparseDecom2( inmatrix=ccamats2, nvecs=2, sparseness=mysparse, its=33, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=1, ell1= 1 , perms=nperm, robust=myrob)  # subaal
 
-print( summary(glm( lablspace$The.window.was.dusty ~ featspace, family="binomial" ) ) )
-library(randomForest)
-library(e1071)
-botr<-( scale( featspace[inds1,] )  )
-bote<-( scale( featspace[inds2,] )  )
-trdf<-data.frame( ch=factor(lablspace[inds1,colnames(lablspace)=="The.small.boy.feared.the.storm."]), bold=botr )
-tedf<-data.frame( ch=factor(lablspace[inds2,colnames(lablspace)=="The.small.boy.feared.the.storm."]), bold=bote )
-myrf<-randomForest( ch ~ . , data=trdf )
-pred<-predict( myrf , tedf )
-cor.test(pred,tedf$ch)
+  ccamats3<-list( ccamats1[[1]] , ccamats2[[2]] )
+  fcca3<-sparseDecom2( inmatrix=ccamats3, nvecs=2, sparseness=mysparse, its=33, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=1, ell1= 1 , perms=nperm, robust=myrob )  # subaal
+
+}
+
+# print( summary(glm( lablspace$The.window.was.dusty ~ featspace, family="binomial" ) ) )
+
+
+decode<-FALSE
+if ( decode == TRUE ) {
+  botr<-( scale( featspace[inds1,] )  )
+  bote<-( scale( featspace[inds2,] )  )
+  trdf<-data.frame( ch=factor(lablspace[inds1,colnames(lablspace)=="The.small.boy.feared.the.storm."]), bold=botr )
+  tedf<-data.frame( ch=factor(lablspace[inds2,colnames(lablspace)=="The.small.boy.feared.the.storm."]), bold=bote )
+  myrf<-randomForest( ch ~ . , data=trdf )
+  pred<-predict( myrf , tedf )
+  cor.test(pred,tedf$ch)
+}

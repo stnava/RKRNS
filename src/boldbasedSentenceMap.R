@@ -1,4 +1,4 @@
-#################correlation of sentences based on bold#################
+print("#################correlation of sentences based on bold#################")
 # 0. create a vector denoting times of events w/ child vs not child at sentence level
 eventtimes<-which( eventss > 0 )
 sentnames<-colnames( dmats )

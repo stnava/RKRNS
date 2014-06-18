@@ -1,6 +1,6 @@
-################## filter the fmri ##################
-fl<-0.01
-fh<-0.2
+print("################## filter the fmri ##################")
+fl<-0.05
+fh<-1
 globsig<-rowMeans( imat )
 mycompcor<-compcor( data.matrix(imat), 2 )
 imatf<-data.frame(residuals( lm(  data.matrix(imat) ~ eventss + nchar  ) ) ) #+ mycompcor)
