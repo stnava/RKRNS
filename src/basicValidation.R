@@ -75,12 +75,13 @@ if ( decode == TRUE ) {
 
 ccadecode<-FALSE
 if ( ccadecode ) {
-  nperm<-5
-  mysparse<-rep( -0.1, 2 )
+  nperm<-2
+  nvecs<-2
+  mysparse<-rep( 0.05, nvecs )
   myrob<-0
-  matvec<-matrix(  lablspace$The.window.was.dusty.[ inds1 ] , ncol=1 ) 
-  ccamats1<-list(  matvec , featspace[inds1, ]  )
-  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=2, sparseness=mysparse, its=33, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=0, ell1= 1 , perms=nperm, robust=myrob )  # subaal
+  matvec<-matrix(  lablspace$The.window.was.dusty.[  ] , ncol=1 ) 
+  ccamats1<-list(  matvec , featspace[, ]  )
+  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nvecs, sparseness=mysparse, its=15, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=0, ell1= 1 , perms=nperm, robust=myrob, z=0.1 )  # subaal
   mm<-matrix(fcca1$eig2[,1],nrow=30)
   for ( i in 1:90 ) { print(paste(colnames(imat)[i],mean(abs(mm[,i])))); plot(mm[,i],type='l'); if ( mean(abs(mm[,i])>0)) Sys.sleep(4) ; }
 }

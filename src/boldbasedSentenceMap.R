@@ -1,6 +1,6 @@
 print("#################correlation of sentences based on bold#################")
 # 0. create a vector denoting times of events w/ child vs not child at sentence level
-eventtimes<-which( eventss > 0 )
+eventtimes<-which( events1 > 0 )
 sentnames<-colnames( dmats )
 sentnames<-colnames(dmatw)
 # 1. for each event, extract submatrix of bold, then vectorize that matrix
@@ -8,6 +8,7 @@ responselength<-25/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 eventinds<-matrix(rep(NA,length(eventtimes)*responselength),nrow=length(eventtimes))
 eventinds[,1]<-eventtimes
 for (  i in 2:ncol(eventinds) ) eventinds[,i]<-eventinds[,i-1]+1
+eventinds[ eventinds > nrow(imatf) ]<-nrow(imatf)
 featspace<-matrix(rep(NA, ncol(imatf)*length(eventtimes)*(responselength) ),nrow=length(eventtimes))
 fspacenames<-rownames(featspace)
 lablspace<-data.frame( dmats[eventtimes,] ) #JHU
@@ -28,7 +29,7 @@ for ( i in 1:nrow( eventinds ) ) {
 # colnames(featspace)<-colnames(imat)
 rownames(featspace)<-(fspacenames)
 agg<-aggregate( featspace , list(Sent=fspacenames), mean )
-aggcor<-cor(t(data.matrix(agg)[,2:ncol(agg)]))
+aggcor<-cor(t(data.matrix(agg[,2:ncol(agg)])))
 colnames(aggcor)<-rownames(aggcor)<-dmatsnames
 pdf("fspace_corr.pdf",width=256,height=256)
 pheatmap(aggcor,fontsize = 80)
