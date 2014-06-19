@@ -1,5 +1,5 @@
 print("#####organize design#####")
-wordinds<-14:280
+wordinds<-39:280
 sentinds<-281:ncol(dmat)
 dmatw<-dmat[,wordinds]
 dmats<-dmat[,sentinds]

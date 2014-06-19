@@ -1,7 +1,9 @@
 #######################assemble#######################
-aalimg<-antsImageRead( "aal/111157_aal.nii.gz" , 3 )
+aalimg<-antsImageRead( "aal/111157_aal2.nii.gz" , 3 )
 labs<-as.numeric( c(13,79,89) )
 labs<-as.numeric(1:90)
+aalmask<-antsImageClone( aalimg )
+aalmask[ aalmask > 1 ]<-1
 subaal<-antsImageClone( aalimg )
 subaal[ aalimg > 0 ]<-0
 for ( lab in labs ) subaal[ aalimg == lab ]<-lab
@@ -13,8 +15,8 @@ isplits<-paste("nii/",whichblocks,".nii.gz",sep='')
 isplits<-paste("moco/",whichblocks,"_moco.nii.gz",sep='')
 dsplits<-paste("design/",whichblocks,"_design.csv",sep='')
 # imat<-as.matrix(antsImageRead(isplits[1],2))
-afn<-paste("assembly/assembled_aal_",labs[1],"_",labs[length(labs)],".csv",sep='')
-dfn<-paste("assembly/assembled_design_",labs[1],"_",labs[length(labs)],".csv",sep='')
+afn<-paste("assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"cc.csv",sep='')
+dfn<-paste("assembly/assembled_design_",labs[1],"_",labs[length(labs)],"cc.csv",sep='')
 print(paste("assemble",afn))
 if ( file.exists( afn ) & ! exists("imat")  ) {
   print(paste("read",afn))
@@ -25,6 +27,11 @@ throwaway<-8
 if ( ! exists("imat") |  ! file.exists(afn)) {
 imat<-timeseries2matrix( antsImageRead(isplits[1],4), subaal )
 for( j in 1:throwaway ) imat[j,]<-apply( imat[(throwaway+1):nrow(imat),], FUN=mean, MARGIN=2 )
+if ( docompcor ) {
+  imatfull<-timeseries2matrix( antsImageRead(isplits[1],4), aalmask )
+  mycompcor<-compcor( imatfull, 4 )
+  imat<-residuals(lm(imat~mycompcor))
+  }
 imat<-imat/mean(imat)
 dmat<-data.frame( read.csv( dsplits[1] ) )
 for ( i in 2:length(isplits) ) {
@@ -34,6 +41,11 @@ for ( i in 2:length(isplits) ) {
     {
     imat2<-timeseries2matrix( img, subaal )
     for( j in 1:throwaway ) imat2[j,]<-apply( imat2[(throwaway+1):nrow(imat2),], FUN=mean, MARGIN=2 )
+    if ( docompcor ) {
+      imatfull<-timeseries2matrix( antsImageRead(isplits[1],4), aalmask )
+      mycompcor<-compcor( imatfull, 4 )
+      imat2<-residuals(lm(imat2~mycompcor))
+    }
     imat2<-imat2/mean(imat2)
     imat<-rbind( imat, imat2)
     dmat2<-data.frame( read.csv( dsplits[i] ) )

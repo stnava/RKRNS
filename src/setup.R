@@ -1,3 +1,4 @@
+docompcor<-FALSE
 library(ANTsR)
 library(fpc)
 library(waveslim)
