@@ -32,24 +32,33 @@ sum(abs(ww2-dd1))
 sum(abs(dd2-dd1))
 
 
-docca<-F 
+docca<-T 
 if ( docca == TRUE ) {
-  nperm<-50
-  mysparse<-rep( -0.1, 2 )
-  myrob<-0
-  l1<-inds1[221:2000]
-  l2<-inds2[221:1000]
-  ccamats1<-list( featspace[ (lablspace$The.window.was.dusty.==1)[ l1 ]  , ], featspace[ (lablspace$The.window.was.dusty.==1)[ l2 ]  , ] )
-  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=2, sparseness=mysparse, its=33, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=1, ell1= 1 , perms=nperm, robust=myrob )  # subaal
-  mm<-matrix(fcca1$eig1[,1],nrow=30)
-  for ( i in 1:90 ) { print(i); plot(mm[,i],type='l'); if ( mean(abs(mm[,i])>0)) Sys.sleep(4) ; }
-  l1<-inds1[1000:2000]
-  l2<-inds2[221:1000]
-  ccamats2<-list( featspace[ (lablspace$The.coffee.was.hot.==1)[ l1 ]  , ], featspace[ (lablspace$The.coffee.was.hot.==1)[ l2 ]  , ] )
-  fcca2<-sparseDecom2( inmatrix=ccamats2, nvecs=2, sparseness=mysparse, its=33, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=1, ell1= 1 , perms=nperm, robust=myrob)  # subaal
+  longc<-1
+  nperm<-0
+  nv<-1; its<-25
+  mysparse<-c( 0.1, 0.1 )
+  myrob<-1
+  redlist<-grep("red", fspacenames )
+  l1<-1:(length(redlist)/2)
+  l2<-((max(l1)+1):length(redlist))
+  ccamats1<-list( featspace[ redlist[l1]  , ], featspace[ redlist[l2]  , ] )
+#  ccamats1<-list( featspace[ redlist  , ], sentspace[ redlist , ] )
+  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=longc, ell1= 1 , perms=nperm, robust=myrob )  # subaal
+  mm<-matrix(fcca1$eig1[,1],nrow=responselength)
+#  for ( i in 1:90 ) { print(i); plot(mm[,i],type='l'); if ( mean(abs(mm[,i])>0)) Sys.sleep(4) ; }
 
+  grnlist<-( grep("artist", fspacenames ) )
+  l1<-(1:(length(grnlist)/2))
+  l2<-((max(l1)+1):(length(grnlist)))
+  ccamats2<-list( featspace[ grnlist[l1]  , ], featspace[ grnlist[l2]  , ] )
+  fcca2<-sparseDecom2( inmatrix=ccamats2, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=longc, ell1= 1 , perms=nperm, robust=myrob )  # subaal
+#  mm<-matrix(fcca1$eig1[,1],nrow=responselength)
+#  for ( i in 1:90 ) { print(i); plot(mm[,i],type='l'); if ( mean(abs(mm[,i])>0)) Sys.sleep(4) ; }
+
+  
   ccamats3<-list( ccamats1[[1]] , ccamats2[[2]] )
-  fcca3<-sparseDecom2( inmatrix=ccamats3, nvecs=2, sparseness=mysparse, its=33, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=1, ell1= 1 , perms=nperm, robust=myrob )  # subaal
+  fcca3<-sparseDecom2( inmatrix=ccamats3, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=longc, ell1= 1 , perms=nperm, robust=myrob )  # subaal
 
 
   print( fcca1$ccasummary[1,] ) 

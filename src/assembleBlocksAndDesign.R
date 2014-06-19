@@ -1,5 +1,6 @@
 #######################assemble#######################
 aalimg<-antsImageRead( "aal/111157_aal2.nii.gz" , 3 )
+bmask<-antsImageRead( "aal/111157_mask.nii.gz" , 3 )
 labs<-as.numeric( c(13,79,89) )
 labs<-as.numeric(1:90)
 aalmask<-antsImageClone( aalimg )
@@ -28,9 +29,11 @@ if ( ! exists("imat") |  ! file.exists(afn)) {
 imat<-timeseries2matrix( antsImageRead(isplits[1],4), subaal )
 for( j in 1:throwaway ) imat[j,]<-apply( imat[(throwaway+1):nrow(imat),], FUN=mean, MARGIN=2 )
 if ( docompcor ) {
-  imatfull<-timeseries2matrix( antsImageRead(isplits[1],4), aalmask )
-  mycompcor<-compcor( imatfull, 4 )
-  imat<-residuals(lm(imat~mycompcor))
+  imatfull<-timeseries2matrix( antsImageRead(isplits[1],4), bmask )
+  mycompcorv<-compcor( imatfull, 4, returnv=TRUE )
+  highvarmat<-compcor( imatfull, 4, returnhighvarmat=TRUE )
+  mycompcor<- scale(highvarmat %*% mycompcorv)
+  imat<-residuals(lm(imat~0+mycompcor))
   }
 imat<-imat/mean(imat)
 dmat<-data.frame( read.csv( dsplits[1] ) )
@@ -42,9 +45,10 @@ for ( i in 2:length(isplits) ) {
     imat2<-timeseries2matrix( img, subaal )
     for( j in 1:throwaway ) imat2[j,]<-apply( imat2[(throwaway+1):nrow(imat2),], FUN=mean, MARGIN=2 )
     if ( docompcor ) {
-      imatfull<-timeseries2matrix( antsImageRead(isplits[1],4), aalmask )
-      mycompcor<-compcor( imatfull, 4 )
-      imat2<-residuals(lm(imat2~mycompcor))
+      imatfull<-timeseries2matrix( img, bmask )
+      highvarmat<-compcor( imatfull, 4, returnhighvarmat=TRUE )
+      mycompcor<- scale(highvarmat %*% mycompcorv)
+      imat2<-residuals(lm(imat2~0+mycompcor))
     }
     imat2<-imat2/mean(imat2)
     imat<-rbind( imat, imat2)

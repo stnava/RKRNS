@@ -2,7 +2,7 @@ print("######## build the average eigenword for each sentence #########")
 wordembedw<-read.csv(paste(srcdir,"../data/reuters_words.csv",sep=''))
 wordembedw<-read.csv(paste(srcdir,"../data/wiki_words.csv",sep=''))
 wordembed<-wordembedw
-nwv<-20
+nwv<-30
 words<-colnames(dmatw)
 nwords<-length(words)
 sentences<-colnames(dmats)
@@ -24,10 +24,11 @@ for ( i in 1:nsentences ) {
       }
     }
 }
-colnames(eigsent)<-rownames(eigsent)<-sentences
+rownames(eigsent)<-sentences
 pdf("eigsentcor.pdf",width=32,height=32)
 pheatmap(cor(t(eigsent)))
 dev.off()
 if ( sentct != nsentences ) stop("nsent")
 sentsimilarity<-cor(t(eigsent))
 diag(sentsimilarity)<-mean(sentsimilarity)
+colnames(sentsimilarity)<-rownames(sentsimilarity)<-sentences
