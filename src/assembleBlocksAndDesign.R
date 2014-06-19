@@ -1,6 +1,6 @@
 #######################assemble#######################
 aalimg<-antsImageRead( "aal/111157_aal2.nii.gz" , 3 )
-bmask<-antsImageRead( "aal/111157_mask.nii.gz" , 3 )
+bmask<-antsImageRead( "ref/111157_mask.nii.gz" , 3 )
 labs<-as.numeric( c(13,79,89) )
 labs<-as.numeric(1:90)
 aalmask<-antsImageClone( aalimg )

@@ -34,7 +34,7 @@ sum(abs(dd2-dd1))
 
 docca<-T 
 if ( docca == TRUE ) {
-  longc<-1
+  longc<-0
   nperm<-0
   nv<-1; its<-25
   mysparse<-c( 0.1, 0.1 )
@@ -43,7 +43,7 @@ if ( docca == TRUE ) {
   l1<-1:(length(redlist)/2)
   l2<-((max(l1)+1):length(redlist))
   ccamats1<-list( featspace[ redlist[l1]  , ], featspace[ redlist[l2]  , ] )
-#  ccamats1<-list( featspace[ redlist  , ], sentspace[ redlist , ] )
+  ccamats1<-list( featspace[ redlist  , ], sentspace[ redlist , ] )
   fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=longc, ell1= 1 , perms=nperm, robust=myrob )  # subaal
   mm<-matrix(fcca1$eig1[,1],nrow=responselength)
 #  for ( i in 1:90 ) { print(i); plot(mm[,i],type='l'); if ( mean(abs(mm[,i])>0)) Sys.sleep(4) ; }
@@ -56,7 +56,7 @@ if ( docca == TRUE ) {
 #  mm<-matrix(fcca1$eig1[,1],nrow=responselength)
 #  for ( i in 1:90 ) { print(i); plot(mm[,i],type='l'); if ( mean(abs(mm[,i])>0)) Sys.sleep(4) ; }
 
-  
+  stop()
   ccamats3<-list( ccamats1[[1]] , ccamats2[[2]] )
   fcca3<-sparseDecom2( inmatrix=ccamats3, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=longc, ell1= 1 , perms=nperm, robust=myrob )  # subaal
 
