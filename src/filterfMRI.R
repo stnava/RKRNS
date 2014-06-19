@@ -10,6 +10,7 @@ colnames(imatf)<-colnames(imat)
 for ( i in 1:ncol(imatf) ) {
   imatf[,i]<-data.frame(stl( ts( winsor(imatb[,i],0.01),frequency=2) , "per" )$time.series)$trend
 }
+globsig<-rowMeans( imat )
 globsigb<-rowMeans( imatb )
 globsigf<-rowMeans( imatf )
 par(mfrow=c(2,1))
