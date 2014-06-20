@@ -5,48 +5,31 @@ print(paste("NL rows:",nl))
 inds1<-1:(nl/2)+5
 inds2<-(max(inds1)+1):nl
 meanfeat1<-apply(featspace[ inds1  , ], FUN=mean,MARGIN=2)
-meanfeat2<-apply(featspace[ inds1  , ], FUN=mean,MARGIN=2)
-ww1<-apply(featspace[ (lablspace$The.small.boy.feared.the.storm==1)[inds1]  , ], FUN=mean,MARGIN=2)
-ww2<-apply(featspace[ (lablspace$The.small.boy.feared.the.storm==1)[inds2]  , ], FUN=mean,MARGIN=2)
-an1<-apply(featspace[ (lablspace$The.red.plane.flew.through.the.cloud.==1)[inds1]  , ], FUN=mean,MARGIN=2)
-an2<-apply(featspace[ (lablspace$The.red.plane.flew.through.the.cloud.==1)[inds2]  , ], FUN=mean,MARGIN=2)
-ch1<-apply(featspace[ (lablspace$The.window.was.dusty.==1)[inds1]  , ], FUN=mean,MARGIN=2)
-ch2<-apply(featspace[ (lablspace$The.window.was.dusty.==1)[inds2]  , ], FUN=mean,MARGIN=2)
-dd1<-apply(featspace[ (lablspace$The.coffee.was.hot.==1)[inds1]  , ], FUN=mean,MARGIN=2)
-dd2<-apply(featspace[ (lablspace$The.coffee.was.hot.==1)[inds2]  , ], FUN=mean,MARGIN=2)
-meantfeat1<-meanfeat2<-1
-
-sum(abs(ch2-ww1))
-sum(abs(an2-ww1))
-sum(abs(ww2-ww1))
-sum(abs(dd2-ww1))
-print("an1")
-sum(abs(ch2-an1))
-sum(abs(an2-an1))
-sum(abs(ww2-an1))
-sum(abs(dd2-an1))
-print("dd1")
-sum(abs(ch2-dd1))
-sum(abs(an2-dd1))
-sum(abs(ww2-dd1))
-sum(abs(dd2-dd1))
-
-
+meanfeat2<-apply(featspace[ inds2  , ], FUN=mean,MARGIN=2)
 docca<-T 
 if ( docca == TRUE ) {
   longc<-0
   nperm<-0
-  nv<-1; its<-25
-  mysparse<-c( 0.1, 0.1 )
-  myrob<-1
-  redlist<-grep("red", fspacenames )
+  nv<-2; its<-40
+  mysparse<-c( 0.1, -1 )
+  mysparse<-c( -0.25, -0.5 )
+  myrob<-0
+  redlist<-grep("child", fspacenames )
   l1<-1:(length(redlist)/2)
   l2<-((max(l1)+1):length(redlist))
+  sentspace2<-cbind( sentspace,sentspace^2)
   ccamats1<-list( featspace[ redlist[l1]  , ], featspace[ redlist[l2]  , ] )
-  ccamats1<-list( featspace[ redlist  , ], sentspace[ redlist , ] )
-  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=longc, ell1= 1 , perms=nperm, robust=myrob )  # subaal
-  mm<-matrix(fcca1$eig1[,1],nrow=responselength)
-#  for ( i in 1:90 ) { print(i); plot(mm[,i],type='l'); if ( mean(abs(mm[,i])>0)) Sys.sleep(4) ; }
+  ccamats1<-list( featspace[ redlist[l1]  , ], sentspace2[redlist[l1], ] )
+  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=longc, ell1= 1 , perms=nperm, robust=myrob) #, nboot=50 )  # subaal
+  k<-1;plot( fcca1$projections[,k], fcca1$projections2[,k] )
+  print(fcca1$ccasummary)
+  pj1<- featspace[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig1)
+  pj2<- sentspace2[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig2)
+  k<-1;plot( pj2[,k], pj1[,k] )
+  print( cor.test(  pj2[,k], pj1[,k] ) ) 
+  stop()
+  mm<-matrix(fcca1$eig1[,k],nrow=responselength)
+  for ( i in 1:90 ) { print(i); plot(mm[,i],type='l'); if ( mean(abs(mm[,i])>0)) Sys.sleep(.4) ; }
 
   grnlist<-( grep("artist", fspacenames ) )
   l1<-(1:(length(grnlist)/2))

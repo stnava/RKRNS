@@ -2,7 +2,7 @@ print("######## build the average eigenword for each sentence #########")
 wordembedw<-read.csv(paste(srcdir,"../data/reuters_words.csv",sep=''))
 wordembedw<-read.csv(paste(srcdir,"../data/wiki_words.csv",sep=''))
 wordembed<-wordembedw
-nwv<-30
+nwv<-10
 words<-colnames(dmatw)
 nwords<-length(words)
 sentences<-colnames(dmats)

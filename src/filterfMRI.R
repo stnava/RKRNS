@@ -15,10 +15,10 @@ globsigb<-rowMeans( imatb )
 globsigf<-rowMeans( imatf )
 par(mfrow=c(2,1))
 plotinds<-2000:2100
-plot( scale(globsig[plotinds]), type='l')
-points( scale(globsigb[plotinds]), type='l', col='red')
-points( scale(globsigf[plotinds]), type='l', col='green')
-plotinds<-2000:4000
-plot( scale(globsig[plotinds]), type='l')
-points( scale(globsigb[plotinds]), type='l', col='red')
-points( scale(globsigf[plotinds]), type='l', col='green')
+#plot( scale(globsig[plotinds]), type='l')
+#points( scale(globsigb[plotinds]), type='l', col='red')
+#points( scale(globsigf[plotinds]), type='l', col='green')
+#plotinds<-2000:4000
+#plot( scale(globsig[plotinds]), type='l')
+#points( scale(globsigb[plotinds]), type='l', col='red')
+#points( scale(globsigf[plotinds]), type='l', col='green')
