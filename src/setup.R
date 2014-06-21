@@ -11,7 +11,7 @@ bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
 imagedir<-"moco/"
 imagepostfix<-"_moco.nii.gz"
 data("aal",package="ANTsR")
-tr<-0.5
+tr<-as.numeric(0.5)
 responselength<-12/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 ########################## that's the important stuff, above ##########################
 mygamma <- function(x, a1 = 6.,   a2 = 12., b1 = 0.9, b2 = 0.9, cc = 0.35) {
