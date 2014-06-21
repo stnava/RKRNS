@@ -1,6 +1,7 @@
 print("#########assemble image blocks, potentially event-specifically#########")
 aalimg<-antsImageRead( paste("aal/",subject,"_aal2.nii.gz",sep='') , 3 )
 bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
+maskdim<-dim( bmask )
 aalmask<-antsImageClone( aalimg )
 aalmask[ aalmask > 1 ]<-1
 subaal<-antsImageClone( aalimg )
@@ -20,11 +21,13 @@ for ( session in mysessions ) {
     # reconstruct imagefn from dmat
     blocknum<-sprintf("%03d", block )
     imagefn<-paste(imagedir,subject,"_",session,"_",blocknum,imagepostfix,sep='')
-    if ( file.exists(imagefn) ) {
-    locmat<-timeseries2matrix( antsImageRead( imagefn ,4), subaal )
+    if ( file.exists(imagefn) ) img<-antsImageRead( imagefn ,4)
+    if ( isTRUE( all.equal( maskdim, dim(img)[1:3] ) ) ) # or identical(...)
+    {
+    locmat<-timeseries2matrix( img , subaal )
     for( j in 1:throwaway ) locmat[j,]<-apply( locmat[(throwaway+1):nrow(locmat),], FUN=mean, MARGIN=2 )
     if ( docompcor ) {
-        locmatfull<-timeseries2matrix( imagefn , bmask )
+        locmatfull<-timeseries2matrix( img , bmask )
         mycompcorv<-compcor( locmatfull, ncompcor, variance_extreme = 0.95, returnv=TRUE )
         highvarmat<-compcor( locmatfull, ncompcor, variance_extreme = 0.95, returnhighvarmat=TRUE )
         mycompcor<- scale(highvarmat %*% mycompcorv)
