@@ -4,7 +4,6 @@ eventtimes<-which( events1 > 0 )
 sentnames<-colnames( dmats )
 sentnames<-colnames(dmatw)
 # 1. for each event, extract submatrix of bold, then vectorize that matrix
-responselength<-12/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 eventinds<-matrix(rep(NA,length(eventtimes)*responselength),nrow=length(eventtimes))
 eventinds[,1]<-eventtimes
 for (  i in 2:ncol(eventinds) ) eventinds[,i]<-eventinds[,i-1]+1
