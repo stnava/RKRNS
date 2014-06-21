@@ -1,5 +1,13 @@
-docompcor<-FALSE
-eigsentbasislength<-25
+subject<-"111157"
+labs<-as.numeric( c(13,79,89) )
+labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
+throwaway<-8
+ncompcor<-8
+eigsentbasislength<-10
+aalimg<-antsImageRead( paste("aal/",subject,"_aal2.nii.gz",sep='') , 3 )
+bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
+imagedir<-"moco/"
+imagepostfix<-"_moco.nii.gz"
 library(ANTsR)
 library(fpc)
 library(waveslim)

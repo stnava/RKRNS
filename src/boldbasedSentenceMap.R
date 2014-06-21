@@ -42,7 +42,7 @@ dev.off()
 #pheatmap(cor(featspace))
 #dev.off()
 
-stop()
+if ( FALSE ) {
 # dictionaries of all bold responses 
 eanat1<-sparseDecom( featspace[ grep("red",rownames(featspace)),]    , sparseness=-0.9, nvecs=10, its=5, mycoption=1 )
 eanat2<-sparseDecom( featspace[ grep("artist",rownames(featspace)),] , sparseness=-0.99, nvecs=10, its=5, mycoption=1 )
@@ -60,7 +60,6 @@ myrob<-0
 simccamats<-list( eanatmat, sentmat )
 simspacecca<-sparseDecom2( inmatrix=simccamats, nvecs=10, sparseness=mysparse, its=50, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), ell1=-11 , perms=nperm, robust=0 )  # subaal
 
-stop()
 par(mfrow=c(1,1))
 for ( i in 1:10 ) 
     for ( j in 4:4 ) {
@@ -76,11 +75,10 @@ for ( i in 1:10 )
 
 # dictionaries of sentence specific bold responses 
 # these go into cca?
-stop()
 ##### quick cca on fspace sentspace
 nperm<-0
 mysparse<-c( 0.2 , 0.5 )
 myrob<-0
 simccamats<-list( featspace, sentspace )
 simspacecca<-sparseDecom2( inmatrix=simccamats, nvecs=4, sparseness=mysparse, its=5, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), ell1= 1 , perms=nperm, robust=myrob )  # subaal
-stop()
+}

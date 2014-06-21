@@ -12,9 +12,10 @@ if ( docca == TRUE ) {
   nperm<-0
   nv<-2; its<-40
   mysparse<-c( 0.1, -1 )
-  mysparse<-c( -0.25, -0.5 )
+  mysparse<-c( -0.25, 0.9 )
   myrob<-0
-  redlist<-grep("child", fspacenames )
+  redlist<-grep("red", fspacenames )
+  redlist<-sort(c(redlist,grep("green", fspacenames )))
   l1<-1:(length(redlist)/2)
   l2<-((max(l1)+1):length(redlist))
   sentspace2<-cbind( sentspace,sentspace^2)
