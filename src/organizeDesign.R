@@ -9,7 +9,7 @@ eventss<-apply( dmats, FUN=sum, MARGIN=1 )
 nchar<-as.numeric( dmat$nchar )
 eventssr<-apply( dmats, FUN=sum, MARGIN=2 )
 dmatsblock<-dmats
-blocksize<-20
+blocksize<-responselength
 nchar<-as.numeric( dmat$nchar )
 for ( i in 1:blocksize ) {
     dmatsblock<-dmatsblock+ashift(dmats,c(i,0))

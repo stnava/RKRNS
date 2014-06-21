@@ -1,6 +1,6 @@
 print("#########setup#########")
 library(ANTsR)
-istest<-TRUE
+istest<-FALSE
 subject<-"111157"
 tr<-as.numeric(0.5)
 responselength<-12/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
@@ -9,7 +9,11 @@ labs<-as.numeric(1:90) # label numbers to use ... need to know which label set i
 throwaway<-8
 ncompcor<-5
 compcorvarval<-0.9
-eigsentbasislength<-10
+filterlowfrequency<-0.02
+filterhighfrequency<-0.2 # because of expected bold response < 25secs, > 5 seconds
+trendfrequency<-4
+winsorval<-0.01
+eigsentbasislength<-20
 aalimg<-antsImageRead( paste("aal/",subject,"_aal2.nii.gz",sep='') , 3 )
 bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
 imagedir<-"moco/"
