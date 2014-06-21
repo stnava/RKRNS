@@ -15,7 +15,7 @@ if ( docca == TRUE ) {
   myrob<-0
   redlist<-c()
 #  for ( w in c("child","woman","artist") ) redlist<-sort(c(redlist,grep(w, fspacenames )))
-  for ( w in sentences[c(25)] ) redlist<-sort(c(redlist,grep(w, fspacenames )))
+  for ( w in sentences[c(25:55)] ) redlist<-sort(c(redlist,grep(w, fspacenames )))
   # c("child","woman") c('doctor','terrorist')
   #  for ( w in c('child') ) redlist<-sort(c(redlist,grep(w, fspacenames )))
   redlist2<-c()
