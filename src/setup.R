@@ -1,4 +1,5 @@
 docompcor<-FALSE
+eigsentbasislength<-25
 library(ANTsR)
 library(fpc)
 library(waveslim)

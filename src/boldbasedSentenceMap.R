@@ -49,7 +49,7 @@ eanat2<-sparseDecom( featspace[ grep("artist",rownames(featspace)),] , sparsenes
 max(abs(cor(sentspace[grep("red",rownames(featspace)),],eanat1$projections[,])))
 max(abs(cor(sentspace[grep("artist",rownames(featspace)),],eanat2$projections[,])))
 artcor<-cor(sentspace[grep("artist",rownames(featspace)),],eanat2$projections[,])
-rownames(artcor)<-paste("ESent",1:nwv,sep='')
+rownames(artcor)<-paste("ESent",1:eigsentbasislength,sep='')
 pheatmap(artcor)
 eanatmat<- featspace[grep("artist",rownames(featspace)),] %*% as.matrix(eanat2$eig)
 sentmat<-sentspace[grep("artist",rownames(featspace)),]

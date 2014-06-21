@@ -2,12 +2,11 @@ print("######## build the average eigenword for each sentence #########")
 wordembedw<-read.csv(paste(srcdir,"../data/reuters_words.csv",sep=''))
 wordembedw<-read.csv(paste(srcdir,"../data/wiki_words.csv",sep=''))
 wordembed<-wordembedw
-nwv<-10
 words<-colnames(dmatw)
 nwords<-length(words)
 sentences<-colnames(dmats)
 nsentences<-length(sentences)
-eigsent<-matrix( rep( 0, (nsentences) * nwv ) ,  nrow=nsentences )
+eigsent<-matrix( rep( 0, (nsentences) * eigsentbasislength ) ,  nrow=nsentences )
 rownames( eigsent )<-paste("sent",1:nsentences)
 sentct<-0 # should = nsentences
 for ( i in 1:nsentences ) {
@@ -18,7 +17,7 @@ for ( i in 1:nsentences ) {
       sentct<-sentct+1
       for ( j in 1:length(locwords) ) {    
         whichword2<-wordembed$WhichWord == locwords[j]
-        wordvec <- wordembed[whichword2,2:(2+nwv-1)]
+        wordvec <- wordembed[whichword2,2:(2+eigsentbasislength-1)]
         wvec<-as.numeric( wordvec )
         eigsent[sentct,]<-eigsent[sentct,]+wvec/length(locwords)
       }
