@@ -19,15 +19,19 @@ for ( session in mysessions ) {
     if ( isTRUE( all.equal( maskdim, dim(img)[1:3] ) ) ) # or identical(...)
     {
     locmat<-timeseries2matrix( img , subaal )
-    for( j in 1:throwaway ) locmat[j,]<-apply( locmat[(throwaway+1):nrow(locmat),], FUN=mean, MARGIN=2 )
+    locmatmean<-apply( locmat[(throwaway+1):nrow(locmat),], FUN=mean, MARGIN=2 )
+    for( j in 1:throwaway ) locmat[j,]<-locmatmean
     if ( ncompcor > 0 ) {
         locmatfull<-timeseries2matrix( img , bmask )
+        locmatfullmean<-apply( locmatfull[(throwaway+1):nrow(locmat),], FUN=mean, MARGIN=2 )
+        for( j in 1:throwaway ) locmatfull[j,]<-locmatfullmean
         if ( ! exists("mycompcorv") ) {
-            mycompcorv<-compcor( locmatfull, ncompcor=ncompcor, variance_extreme = 0.97, returnv=TRUE )
-            highvarmatinds<-compcor( locmatfull, ncompcor=ncompcor, variance_extreme = 0.97, returnhighvarmatinds=TRUE )
+          mycompcorv<-compcor( locmatfull, ncompcor=ncompcor, variance_extreme = compcorvarval, returnv=TRUE )
+          highvarmatinds<-compcor( locmatfull, ncompcor=ncompcor,
+                                  variance_extreme = compcorvarval, returnhighvarmatinds=TRUE )
         }
-        mycompcor<- scale( locmatfull[,highvarmatinds]  %*% t(mycompcorv) )
-#        mycompcor<-compcor( locmatfull, ncompcor, variance_extreme = 0.97 )
+        mycompcor<-scale( locmatfull[,highvarmatinds]  %*% mycompcorv )
+#        mycompcor<-compcor( locmatfull, ncompcor, variance_extreme = compcorvarval )
         locmat<-residuals(lm(locmat~0+mycompcor))
     }
     locmat<-locmat/mean(locmat)
@@ -57,3 +61,11 @@ write.csv(dmat,dfn,row.names=F)
 imat<-data.frame(imat)
 colnames(imat)<-aal$label_name[labs]
 print("assembly done")
+if ( istest ) {
+  plot(rowMeans(imat),type='l')
+  bmask2<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
+  bbn<-bmask[ bmask == 1 ]
+  bbn[highvarmatinds]<-2
+  bmask2[ bmask == 1 ]<-bbn
+  antsImageWrite(bmask2,'highvarmask.nii.gz')
+}

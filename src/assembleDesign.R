@@ -3,6 +3,7 @@ whichblocks<-Sys.glob("design/*csv")
 whichblocks2<-unlist( strsplit( whichblocks, "/" ) )[c(1:length(whichblocks))*2]
 whichblocks<-gsub("_design.csv","",whichblocks2)
 dsplits<-paste("design/",whichblocks,"_design.csv",sep='')
+if ( istest ) dsplits<-dsplits[1:10] # for testing 
 dfn<-paste("assembly/assembled_design_",labs[1],"_",labs[length(labs)],"test.csv",sep='')
 afn<-paste("assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.csv",sep='')
 print(paste("assemble",dfn))

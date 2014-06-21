@@ -15,7 +15,7 @@ if ( docca == TRUE ) {
   mysparse<-c( 0.25, -0.85 )*(1)
   myrob<-0
   redlist<-c()
-  for ( w in c('red','green') ) redlist<-sort(c(redlist,grep(w, fspacenames )))
+  for ( w in c('read') ) redlist<-sort(c(redlist,grep(w, fspacenames )))
   l1<-1:(length(redlist)/2)
   l2<-((max(l1)+1):length(redlist))
   sentspace2<-cbind( sentspace )#,sentspace^2)

@@ -1,5 +1,6 @@
 print("#########setup#########")
 library(ANTsR)
+istest<-TRUE
 subject<-"111157"
 tr<-as.numeric(0.5)
 responselength<-12/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
@@ -7,6 +8,7 @@ labs<-as.numeric( c(13,79,89) )
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
 throwaway<-8
 ncompcor<-5
+compcorvarval<-0.9
 eigsentbasislength<-10
 aalimg<-antsImageRead( paste("aal/",subject,"_aal2.nii.gz",sep='') , 3 )
 bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
