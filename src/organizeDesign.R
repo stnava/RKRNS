@@ -1,4 +1,5 @@
 print("#####organize design#####")
+if ( ! exists("wordinds" ) ) {
 wordinds<-39:280
 sentinds<-281:ncol(dmat)
 dmatw<-dmat[,wordinds]
@@ -19,3 +20,4 @@ events1<-apply( dmats     , FUN=sum, MARGIN=1 )
 eventss<-apply( dmatsblock, FUN=sum, MARGIN=1 )
 sentences<-colnames(dmats)
 words<-colnames(dmatw)
+}
