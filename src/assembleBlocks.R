@@ -23,7 +23,7 @@ for ( session in mysessions ) {
     if ( ncompcor > 0 ) {
         locmatfull<-timeseries2matrix( img , bmask )
         if ( ! exists("mycompcorv") ) mycompcorv<-compcor( locmatfull, ncompcor=ncompcor, variance_extreme = 0.97, returnv=TRUE )
-        highvarmat<-compcor( locmatfull, ncompcor, variance_extreme = 0.97, returnhighvarmat=TRUE )
+        highvarmat<-compcor( locmatfull, ncompcor=ncompcor, variance_extreme = 0.97, returnhighvarmat=TRUE )
         mycompcor<- scale(highvarmat %*% t(mycompcorv) )
 #        mycompcor<-compcor( locmatfull, ncompcor, variance_extreme = 0.97 )
         locmat<-residuals(lm(locmat~0+mycompcor))
