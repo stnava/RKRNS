@@ -1,6 +1,8 @@
 print("#########setup#########")
 library(ANTsR)
 subject<-"111157"
+tr<-as.numeric(0.5)
+responselength<-12/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 labs<-as.numeric( c(13,79,89) )
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
 throwaway<-8
@@ -11,8 +13,6 @@ bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
 imagedir<-"moco/"
 imagepostfix<-"_moco.nii.gz"
 data("aal",package="ANTsR")
-tr<-as.numeric(0.5)
-responselength<-12/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 ########################## that's the important stuff, above ##########################
 mygamma <- function(x, a1 = 6.,   a2 = 12., b1 = 0.9, b2 = 0.9, cc = 0.35) {
     d1 <- a1 * b1
