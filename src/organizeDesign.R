@@ -18,5 +18,3 @@ for ( i in 1:blocksize ) {
 }
 events1<-apply( dmats     , FUN=sum, MARGIN=1 )
 eventss<-apply( dmatsblock, FUN=sum, MARGIN=1 )
-
-

@@ -24,7 +24,9 @@ if ( ! file.exists( afn ) | ! exists("imat")  ) {
     imat<-residuals(lm(imat~0+mycompcor))
     }
   imat<-imat/mean(imat)
-  for ( i in 2:length(isplits) ) {
+  usedesignrow[1:nrow(imat)]<-TRUE
+  nisplits<-length(isplits)
+  for ( i in 2:nisplits ) {
     img<-antsImageRead(isplits[i],4)
     if ( dim(img)[1] == dim(aalimg)[1] &  dim(img)[2] == dim(aalimg)[2] &  dim(img)[3] == dim(aalimg)[3] )
       {
@@ -38,8 +40,11 @@ if ( ! file.exists( afn ) | ! exists("imat")  ) {
          imat2<-residuals(lm(imat2~0+mycompcor))
        }
       imat2<-imat2/mean(imat2)
+      oldrow<-nrow(imat)
       imat<-rbind( imat, imat2)
-      } else usedesignrow[i]<-FALSE
+      newrow<-nrow(imat)
+      usedesignrow[(oldrow+1):newrow]<-TRUE
+      } 
   print(paste(i/length(isplits)*100,"%"))
   }
   imat<-data.frame(imat)
