@@ -11,12 +11,12 @@ if ( docca == TRUE ) {
   nperm<-0
   nv<-4; its<-20
   mysparse<-c( 0, 0 )
-  mysparse<-c( -0.9, -0.1 )
+  mysparse<-c( -0.9, -0.5 )
   myrob<-0
   redlist<-c()
-#  for ( w in c("child","woman","artist") ) redlist<-sort(c(redlist,grep(w, fspacenames )))
-  for ( w in sentences[c(25:55)] ) redlist<-sort(c(redlist,grep(w, fspacenames )))
-  # c("child","woman") c('doctor','terrorist')
+  for ( w in c('terrorist','artist') ) redlist<-sort(c(redlist,grep(w, fspacenames )))
+#  for ( w in sentences[c(25:55)] ) redlist<-sort(c(redlist,grep(w, fspacenames )))
+  # c("child","woman") c('doctor','terrorist','artist')
   #  for ( w in c('child') ) redlist<-sort(c(redlist,grep(w, fspacenames )))
   redlist2<-c()
   for ( w in c('doctor','terrorist') ) redlist2<-sort(c(redlist2,grep(w, fspacenames )))
@@ -37,6 +37,8 @@ if ( docca == TRUE ) {
     mm<-matrix(fcca1$eig1[,k],nrow=responselength)
     myestimatedhrf<-rowMeans(mm)
     plot(myestimatedhrf,type='l')
+    myestimatedbrainregions<-colMeans(mm)
     Sys.sleep(1)
+#    for ( i in 1:24 ) { plot(mm[i,],type='l'); Sys.sleep(0.5) }
   }
 }
