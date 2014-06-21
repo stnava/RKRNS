@@ -1,4 +1,4 @@
-print("#########setup#########")
+print("#########setup#########TODO: need to incorporate motion parameters!")
 library(ANTsR)
 istest<-FALSE
 subject<-"111157"
