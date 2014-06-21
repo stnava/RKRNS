@@ -1,3 +1,4 @@
+library(ANTsR)
 subject<-"111157"
 labs<-as.numeric( c(13,79,89) )
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
@@ -8,18 +9,8 @@ aalimg<-antsImageRead( paste("aal/",subject,"_aal2.nii.gz",sep='') , 3 )
 bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
 imagedir<-"moco/"
 imagepostfix<-"_moco.nii.gz"
-library(ANTsR)
-library(fpc)
-library(waveslim)
-library(FitARMA)
-library(forecast)
-require(multitaper)
-library(pheatmap)
-library(psych)
-library(visreg)
-library(randomForest)
-library(e1071)
 data("aal",package="ANTsR")
+########################## that's the important stuff, above ##########################
 mygamma <- function(x, a1 = 6.,   a2 = 12., b1 = 0.9, b2 = 0.9, cc = 0.35) {
     d1 <- a1 * b1
     d2 <- a2 * b2
@@ -38,3 +29,13 @@ b5<-mygamma(c(1:basislength), 20, 25 ,0.9,0.9,0.05)
 b6<-mygamma(c(1:basislength), 25, 30 ,0.9,0.9,0.05)
 basismat<-cbind( b1, b2, b3, b4, b5, b6 )
 ##########################################
+library(fpc)
+library(waveslim)
+library(FitARMA)
+library(forecast)
+require(multitaper)
+library(pheatmap)
+library(psych)
+library(visreg)
+library(randomForest)
+library(e1071)
