@@ -22,10 +22,10 @@ for ( session in mysessions ) {
     for( j in 1:throwaway ) locmat[j,]<-apply( locmat[(throwaway+1):nrow(locmat),], FUN=mean, MARGIN=2 )
     if ( ncompcor > 0 ) {
         locmatfull<-timeseries2matrix( img , bmask )
-#        mycompcorv<-compcor( locmatfull, ncompcor, variance_extreme = 0.95, returnv=TRUE )
-#        highvarmat<-compcor( locmatfull, ncompcor, variance_extreme = 0.95, returnhighvarmat=TRUE )
-#        mycompcor<- scale(highvarmat %*% mycompcorv)
-        mycompcor<-compcor( locmatfull, ncompcor, variance_extreme = 0.95 )
+        if ( ! exists("mycompcorv") ) mycompcorv<-compcor( locmatfull, ncompcor=ncompcor, variance_extreme = 0.97, returnv=TRUE )
+        highvarmat<-compcor( locmatfull, ncompcor, variance_extreme = 0.97, returnhighvarmat=TRUE )
+        mycompcor<- scale(highvarmat %*% t(mycompcorv) )
+#        mycompcor<-compcor( locmatfull, ncompcor, variance_extreme = 0.97 )
         locmat<-residuals(lm(locmat~0+mycompcor))
     }
     locmat<-locmat/mean(locmat)

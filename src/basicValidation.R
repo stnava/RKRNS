@@ -12,13 +12,13 @@ if ( docca == TRUE ) {
   nperm<-0
   nv<-2; its<-40
   mysparse<-c( 0.1, -1 )
-  mysparse<-c( -0.25, 0.9 )
+  mysparse<-c( 0.25, -0.85 )*(1)
   myrob<-0
-  redlist<-grep("red", fspacenames )
-  redlist<-sort(c(redlist,grep("green", fspacenames )))
+  redlist<-c()
+  for ( w in c('red','green') ) redlist<-sort(c(redlist,grep(w, fspacenames )))
   l1<-1:(length(redlist)/2)
   l2<-((max(l1)+1):length(redlist))
-  sentspace2<-cbind( sentspace,sentspace^2)
+  sentspace2<-cbind( sentspace )#,sentspace^2)
   ccamats1<-list( featspace[ redlist[l1]  , ], featspace[ redlist[l2]  , ] )
   ccamats1<-list( featspace[ redlist[l1]  , ], sentspace2[redlist[l1], ] )
   fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, inmask=c(NA,NA ), cthresh=c(0,10), uselong=longc, ell1= 1 , perms=nperm, robust=myrob) #, nboot=50 )  # subaal
