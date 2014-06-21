@@ -8,12 +8,14 @@ labs<-as.numeric( c(13,79,89) )
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
 throwaway<-8
 ncompcor<-5
-compcorvarval<-0.9
-filterlowfrequency<-0.02
-filterhighfrequency<-0.2 # because of expected bold response < 25secs, > 5 seconds
-trendfrequency<-4
+compcorvarval<-0.95
+filterlowfrequency<-0.1
+filterhighfrequency<-1 # because of expected bold response < 25secs, > 5 seconds
+trendfrequency<-3
 winsorval<-0.01
-eigsentbasislength<-20
+removeSentLengthEffects<-TRUE
+removeEventOverlap<-FALSE
+eigsentbasislength<-100
 aalimg<-antsImageRead( paste("aal/",subject,"_aal2.nii.gz",sep='') , 3 )
 bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
 imagedir<-"moco/"

@@ -1,7 +1,9 @@
 print("################## filter the fmri ##################")
 imatf<-imat
 # mycompcor<-compcor( data.matrix(imat), 2 )
-imatf<-data.frame(residuals( lm(  data.matrix(imat) ~ eventss + nchar  ) ) )
+if ( removeSentLengthEffects & !removeEventOverlap ) imatf<-data.frame(residuals( lm(  data.matrix(imat) ~ 0+nchar   ) ) )
+if (!removeSentLengthEffects &  removeEventOverlap ) imatf<-data.frame(residuals( lm(  data.matrix(imat) ~ 0+eventss ) ) )
+if ( removeSentLengthEffects &  removeEventOverlap ) imatf<-data.frame(residuals( lm(  data.matrix(imat) ~ 0+eventss + nchar ) ) )
 colnames(imatf)<-colnames(imat)
 fh<-filterhighfrequency
 fl<-filterlowfrequency
@@ -22,3 +24,4 @@ plotinds<-1:2000
 plot( scale(globsig[plotinds]), type='l')
 points( scale(globsigb[plotinds]), type='l', col='red')
 points( scale(globsigf[plotinds]), type='l', col='green')
+# imatf<-imatb
