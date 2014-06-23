@@ -40,6 +40,7 @@ b5<-mygamma(c(1:basislength), 20, 25 ,0.9,0.9,0.05)
 b6<-mygamma(c(1:basislength), 25, 30 ,0.9,0.9,0.05)
 basismat<-cbind( b1, b2, b3, b4, b5, b6 )
 ##########################################
+library(ggplot2)
 library(fpc)
 library(waveslim)
 library(FitARMA)

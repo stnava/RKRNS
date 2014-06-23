@@ -1,5 +1,4 @@
 print("########sccan HRF estimation########")
-ccafeatspace<-residuals(lm(featspace~ as.numeric( nchar[ eventsw > 0 ] ) ))
 nl<-nrow(  featspace )
 print(paste("NL rows:",nl))
 inds1<-1:(nl/2)+5
