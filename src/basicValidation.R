@@ -12,8 +12,8 @@ docca<-T
 if ( docca == TRUE ) {
   longc<-0
   nperm<-0
-  nv<-5; its<-100
-  mysparse<-c( -0.25, -0.25 )
+  nv<-10; its<-100
+  mysparse<-c( -0.005, -0.25 )
   myrob<-0
   # c('cross','lake')  ) 
   # c('lake','mountain','stone','beach','river')  ) c('politician')  ) 
@@ -22,13 +22,13 @@ if ( docca == TRUE ) {
   locwordlist<-c('bird','duck')
   locwordlist<-c('child','woman')   #
   locwordlist<-'.red.'
-  locwordlist<-c('politician','scientist')
   locwordlist<-c('tree','bird','green','red') #
   locwordlist<-'coffee'
   locwordlist<-c('lake','mountain','stone','beach','river')
   locwordlist<-c('dime') # ,'green','red') #
   locwordlist<-'criminal'
-  locwordlist<-c(  'doctor' ) # ,'red')
+  locwordlist<-c(  '.coffee.' )
+  locwordlist<-c('politician','scientist')
   for ( w in locwordlist ) redlist<-sort(c(redlist,grep(w, fspacenames )))
   wct<-1
   wclasses<-rep(0,length(redlist))
@@ -86,8 +86,8 @@ if ( decode ) {
   eigSz<-apply(sentspace2[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
   chart_title<-locwordlist
   myqplot <- qplot(  x=Real, y=Pred, size=eigSz, colour=factor(group), data=mydata) +
-                     scale_size(range=c(5, 10))+labs(title = chart_title)+
-                     theme(text = element_text(size=10))
+                     scale_size(range=c(2, 5))+labs(title = chart_title)+
+                     theme(text = element_text(size=5))
   ggsave("myqplot.pdf")
   # cbind(myudf$dx,pred) )
 # print( sum( myudf$dx == pred )/length(pred) )

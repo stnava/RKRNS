@@ -19,7 +19,8 @@ for ( i in 1:nsentences ) {
         whichword2<-wordembed$WhichWord == locwords[j]
         wordvec <- wordembed[whichword2,2:(2+eigsentbasislength-1)]
         wvec<-as.numeric( wordvec )
-        if ( j == 1 ) eigsent[sentct,]<-eigsent[sentct,]+wvec else eigsent[sentct,]<-eigsent[sentct,]*wvec*(1/j)# /length(locwords)
+#        if ( j == 1 )
+            eigsent[sentct,]<-eigsent[sentct,]+wvec # else eigsent[sentct,]<-eigsent[sentct,]*wvec*(1/j)# /length(locwords)
       }
     }
 }

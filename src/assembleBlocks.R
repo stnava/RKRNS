@@ -4,7 +4,7 @@ aalmask<-antsImageClone( aalimg )
 aalmask[ aalmask > 1 ]<-1
 subaal<-antsImageClone( aalimg )
 subaal[ aalimg > 0 ]<-0
-for ( lab in labs ) subaal[ aalimg == lab ]<-lab
+for ( lab in labs ) subaal[ aalimg == lab ]<-1
 print(paste("assemble blocks for",afn))
 if ( ! exists("imat") ) { # assembly begin ......
 mysessions<-sort( unique( dmat$session) )

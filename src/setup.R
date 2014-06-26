@@ -4,8 +4,8 @@ istest<-FALSE
 subject<-"111157"
 tr<-as.numeric(0.5)
 responselength<-12/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
-labs<-as.numeric( c(13,79,89) )
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
+labs<-as.numeric( c(13,79,89) ) # lang network
 throwaway<-8
 ncompcor<-5
 compcorvarval<-0.95
