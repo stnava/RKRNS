@@ -19,10 +19,12 @@ for ( i in 1:nsentences ) {
         whichword2<-wordembed$WhichWord == locwords[j]
         wordvec <- wordembed[whichword2,2:(2+eigsentbasislength-1)]
         wvec<-as.numeric( wordvec )
-        eigsent[sentct,]<-eigsent[sentct,]+wvec/length(locwords)
+        if ( j == 1 ) eigsent[sentct,]<-eigsent[sentct,]+wvec else eigsent[sentct,]<-eigsent[sentct,]*wvec*(1/j)# /length(locwords)
       }
     }
 }
+eigsentmag<-sqrt( rowSums(eigsent * eigsent) )
+eigsent<-eigsent/eigsentmag
 rownames(eigsent)<-sentences
 pdf("eigsentcor.pdf",width=32,height=32)
 pheatmap(cor(t(eigsent)))
