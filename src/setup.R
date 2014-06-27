@@ -9,8 +9,8 @@ labs<-as.numeric( c(13,79,89) ) # lang network
 throwaway<-8
 ncompcor<-5
 compcorvarval<-0.95
-filterlowfrequency<-0.1
-filterhighfrequency<-1 # because of expected bold response < 25secs, > 5 seconds
+filterlowfrequency<-0.1 # 0.05
+filterhighfrequency<-1.0 # 0.4 # because of expected bold response < 25secs, > 5 seconds
 trendfrequency<-3
 winsorval<-0.01
 removeSentLengthEffects<-TRUE

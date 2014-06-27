@@ -17,11 +17,9 @@ featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes,
 featspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d
 sentspace<-matrix(rep(NA, length(eventtimes)*(nsentences) ),nrow=length(eventtimes))
-for ( i in 1:nrow( eventinds ) )   sentspace[i,]<-sentsimilarity[  which(colnames(sentsimilarity) == fspacenames[i]  ), ]    
+for ( i in 1:length( eventtimes ) )   sentspace[i,]<-sentsimilarity[  which(colnames(sentsimilarity) == fspacenames[i]  ), ]    
 sentspace<-matrix(rep(NA, length(eventtimes)*ncol(eigsent) ),nrow=length(eventtimes))
-for ( i in 1:nrow( eventinds ) )   sentspace[i,]<-eigsent[  which(colnames(sentsimilarity) == fspacenames[i]  ), ]    
-# for ( i in 1:ncol(featspace) ) featspace[,i]<-rank(featspace[,i])
-# colnames(featspace)<-colnames(imat)
+for ( i in 1:length( eventtimes ) )   sentspace[i,]<-eigsent[  which(colnames(sentsimilarity) == fspacenames[i]  ), ]    
 rownames(featspace)<-(fspacenames)
 agg<-aggregate( featspace , list(Sent=fspacenames), mean )
 aggcor<-cor(t(data.matrix(agg[,2:ncol(agg)])))
