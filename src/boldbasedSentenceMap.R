@@ -1,6 +1,5 @@
 print("#################correlation of sentences based on bold#################")
 # 0. create a vector denoting times of events w/ child vs not child at sentence level
-eventtimes<-which( events1 > 0 )
 sentnames<-colnames( dmats )
 sentnames<-colnames(dmatw)
 # 1. for each event, extract submatrix of bold, then vectorize that matrix

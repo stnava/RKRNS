@@ -17,6 +17,7 @@ for ( i in 1:blocksize ) {
     nchar<-nchar+shift(nchar,1)
 }
 events1<-apply( dmats     , FUN=sum, MARGIN=1 )
+eventtimes<-which( events1 > 0 )
 eventss<-apply( dmatsblock, FUN=sum, MARGIN=1 )
 sentences<-colnames(dmats)
 words<-colnames(dmatw)
