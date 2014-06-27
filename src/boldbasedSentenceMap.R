@@ -6,13 +6,11 @@ sentnames<-colnames(dmatw)
 # 1. for each event, extract submatrix of bold, then vectorize that matrix
 fspacenames<-rep("", length(eventtimes) )
 dmatsnames<-colnames(dmats)
-for ( i in 1:nrow( eventinds ) ) {
+for ( i in 1:length( eventtimes ) ) {
 #  resSpec <- spec.mtm(imatf[eventinds[i,],10], k=10, nw=5.0, nFFT = "default",
 #                    centreWithSlepians = TRUE, Ftest = TRUE,
 #                    jackknife = FALSE, maxAdaptiveIterations = 100,
 #                    plot = TRUE, na.action = na.fail) 
-#  featspace[i,]<-c( apply(kk,FUN=median,MARGIN=2) )# /c( apply(kk,FUN=sd,MARGIN=2) ) # , apply(kk,FUN=sd,MARGIN=2) )
-  featspace[i,]<-unlist(kk)
   fspacenames[i]<-dmatsnames[ which( dmats[eventtimes[i],  ] == 1  ) ]
 }
 featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes, responselength, 3, c(1,1,1,0.25) )
