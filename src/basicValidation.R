@@ -1,7 +1,8 @@
-
+#########################################
 print("########basic validation########")
-ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ] ))
-# ccafeatspace<-featspace
+#########################################
+# ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ] ))
+ccafeatspace<-featspace
 nl<-nrow(  ccafeatspace )
 print(paste("NL rows:",nl))
 inds1<-1:(nl/2)+5
@@ -12,14 +13,13 @@ docca<-T
 if ( docca == TRUE ) {
   longc<-0
   nperm<-0
-  nv<-10; its<-100
-  mysparse<-c( -0.005, -0.25 )
+  nv<-50; its<-100
+  mysparse<-c( -0.02, -0.25 )
   myrob<-0
   # c('cross','lake')  ) 
   # c('lake','mountain','stone','beach','river')  ) c('politician')  ) 
   # c("child","woman") c('doctor','terrorist','artist')c('lake','mountain','woman') 
   redlist<-c()
-  locwordlist<-c('bird','duck')
   locwordlist<-c('child','woman')   #
   locwordlist<-'.red.'
   locwordlist<-c('tree','bird','green','red') #
@@ -27,17 +27,19 @@ if ( docca == TRUE ) {
   locwordlist<-c('lake','mountain','stone','beach','river')
   locwordlist<-c('dime') # ,'green','red') #
   locwordlist<-'criminal'
-  locwordlist<-c(  '.coffee.' )
+  locwordlist<-c('hotel')
   locwordlist<-c('politician','scientist')
+  locwordlist<-c(  '.coffee.' )
+  locwordlist<-c('lake','mountain','stone','beach','river')
+  locwordlist<-c('bird','duck')
   for ( w in locwordlist ) redlist<-sort(c(redlist,grep(w, fspacenames )))
   wct<-1
   wclasses<-rep(0,length(redlist))
+  wclasslevs<-(unique(fspacenames[redlist]))
   mywf <- function( x ) return(length(grep(w,x)))
-  for ( w in locwordlist ) {
-   nz<-wclasses==0
-   wclass<-wct*as.numeric(unlist(lapply(fspacenames[redlist],FUN=mywf)))
-   wclasses[nz]<-wclasses[nz]+wclass[nz]
-   wct<-wct+1
+  for ( w in fspacenames[redlist] ) {
+      wclasses[wct]<-which( w == wclasslevs )
+      wct<-wct+1
   }
   l1<-1:(length(redlist)*1/2)
   l2<-((max(l1)+1):length(redlist))
@@ -67,20 +69,23 @@ if ( docca == TRUE ) {
 #    for ( i in 1:24 ) { plot(mm[i,],type='l'); Sys.sleep(0.5) }
   }
 }
+wclasses<-as.factor(wclasses)
 decode<-T
 if ( decode ) {
 #  eanat1<-sparseDecom( (ccafeatspace[ redlist, ])   , sparseness=-0.9, nvecs=50, its=2, mycoption=1 )
 #  decodemat<-as.matrix( eanat1$eig )
   decodemat<-as.matrix(fcca1$eig1)
   decodemat2<-as.matrix(fcca1$eig2)
-  mydf <-data.frame( dx=sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
+  mydf <-data.frame( dx=wclasses[l1],  # sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
                     fsp= ccafeatspace[ redlist[l1], ]   %*% decodemat  )
-  myudf<-data.frame( dx=sentspace2[ redlist[l2]  , ] %*% decodemat2[,1],
+  myudf<-data.frame( dx=wclasses[l2], # sentspace2[ redlist[l2]  , ] %*% decodemat2[,1],
                     fsp= ccafeatspace[ redlist[l2], ]   %*% decodemat )
-#  myrf<-RRF( dx ~ . , data=mydf )
-  myrf<-svm( dx ~ . ,  mydf )
+  myrf<-randomForest( dx ~ . , data=mydf )
+  myrf<-RRF( dx ~ . , data=mydf ,  ntree=5000 ) # , ntry=2000 , mtry=5 )
+#  myrf<-svm( dx ~ . ,  mydf )
+#  myrf<-bgp(sX=mydf[,2:ncol(mydf)],Z=mydf[,1],XX=myudf[,2:ncol(myudf)])
   pred<-predict( myrf, newdata=myudf )
-#  myrf<-bgp(X=mydf[,2:ncol(mydf)],Z=mydf[,1],XX=myudf[,2:ncol(myudf)])
+  print(paste("PredErr:",sum(wclasses[l2]==pred)/length(pred),1.0/length(wclasslevs)))
   
   mydata <- data.frame(Real=myudf$dx,Pred=pred,group=fspacenames[redlist[l2]])
   eigSz<-apply(sentspace2[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
@@ -91,7 +96,7 @@ if ( decode ) {
   ggsave("myqplot.pdf")
   # cbind(myudf$dx,pred) )
 # print( sum( myudf$dx == pred )/length(pred) )
-print( cor.test(myudf$dx,pred) )
+if ( typeof(pred) != "integer" ) print( cor.test(myudf$dx,pred) )
 }
 # print(brainregionlist)
 print("Final result of this script: we can predict the low-dimensional representation of the eigenwords as seen by bold.")
