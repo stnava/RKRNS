@@ -15,6 +15,8 @@ for ( i in 1:length( eventtimes ) ) {
 featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes, responselength, 3, c(1,1,1,0.25) )
 featspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d
+#source(paste(srcdir,"timeserieswindow2freqamp.R",sep=''))
+#feat2<-timeserieswindow2freqamp(  data.matrix( imatf ) , eventlist=eventtimes, timewindow=40, f=2, wl=32 )
 sentspace<-matrix(rep(NA, length(eventtimes)*(nsentences) ),nrow=length(eventtimes))
 for ( i in 1:length( eventtimes ) )   sentspace[i,]<-sentsimilarity[  which(colnames(sentsimilarity) == fspacenames[i]  ), ]    
 sentspace<-matrix(rep(NA, length(eventtimes)*ncol(eigsent) ),nrow=length(eventtimes))

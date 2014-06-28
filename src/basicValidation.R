@@ -1,7 +1,8 @@
 #########################################
 print("########basic validation########")
 #########################################
-ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ] ))
+fglobsig<-apply(featspace,FUN=mean,MARGIN=1)
+ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
 # ccafeatspace<-featspace
 nl<-nrow(  ccafeatspace )
 inds1<-1:(nl/2)+5
@@ -12,25 +13,29 @@ docca<-T
 if ( docca == TRUE ) {
   longc<-0
   nperm<-0
-  nv<-10; its<-100
-  mysparse<-c( -0.25, -0.95 )
+  nv<-5; its<-100
+  mysparse<-c( -0.075, -0.9 )
+  mysparse<-c( -0.1, -0.25 )
   myrob<-0
   # c('cross','lake')  ) 
   # c('lake','mountain','stone','beach','river')  ) c('politician')  ) 
   # c("child","woman") c('doctor','terrorist','artist')c('lake','mountain','woman') 
   redlist<-c()
-  locwordlist<-c('child','woman')   #
   locwordlist<-'.red.'
   locwordlist<-c('tree','bird','green','red') #
-  locwordlist<-c('lake','mountain','stone','beach','river')
   locwordlist<-c('dime') # ,'green','red') #
   locwordlist<-c('politician','scientist')
   locwordlist<-c('lake','mountain','stone','beach','river')
-  locwordlist<-c(  '.coffee.' )
   locwordlist<-c('bird','duck')
-  locwordlist<-'criminal'
+  locwordlist<-c('dime')
+  locwordlist<-c('lake','mountain','stone','beach','river','tree','bird','green','red')
+  locwordlist<-c('child','woman')   #
+  locwordlist<-c('child')   #
   locwordlist<-'coffee'
-  locwordlist<-c('hotel')
+  locwordlist<-c('criminal','terrorist','doctor','artist')
+  locwordlist<-c('politician','scientist','judge','doctor','artist')
+  locwordlist<-c('judge','criminal')
+  locwordlist<-words
   for ( w in locwordlist ) redlist<-sort(unique(c(redlist,grep(w, fspacenames ))))
   wct<-1
   wclasses<-rep(0,length(redlist))
@@ -53,13 +58,18 @@ if ( docca == TRUE ) {
   pj2<- sentspace2[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig2)
   par(mfrow=c(2,1))
   brainregionlist<-list()
-  for ( k in 1:nv ) {
+  for ( k in 1:1 ) {
     plot( pj2[,k], pj1[,k] )
     mm<-matrix(fcca1$eig1[,k],nrow=responselength)
     myestimatedhrf<-rowMeans(mm)
+    whtimes<-which( abs(myestimatedhrf) > 0 )
     plot(myestimatedhrf,type='l')
     mmmag<-sqrt( mm^2 )
-    myestimatedbrainregionsval<-apply(mmmag,FUN=sum,MARGIN=2)
+    myestimatedbrainregionsval<-apply(mmmag[whtimes,],FUN=sum,MARGIN=2)
+    myestimatedbrainregionsval<-myestimatedbrainregionsval/sum(myestimatedbrainregionsval)
+    myccavec<-antsImageClone( subaal )
+    myccavec[ subaal > 0 ]<-myestimatedbrainregionsval
+    antsImageWrite(myccavec,'temp.nii.gz')
     selector<-myestimatedbrainregionsval >  mean(myestimatedbrainregionsval[myestimatedbrainregionsval>0])
     brainregionlist<-lappend(brainregionlist,colnames(imat)[ selector ])
 #    for ( i in 1:24 ) { plot(mm[i,],type='l'); Sys.sleep(0.5) }
@@ -81,16 +91,18 @@ if ( decode ) {
   mydata <- data.frame(Real=myudfc$dx,Pred=pred,group=fspacenames[redlist[l2]])
   eigSz<-apply(sentspace2[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
   chart_title<-locwordlist
-  myqplot <- qplot(  x=Real, y=Pred, size=eigSz, colour=factor(group), data=mydata) +
-                     scale_size(range=c(2, 5))+labs(title = chart_title)+
-                     theme(text = element_text(size=5))
+  pltsz<-25
+  gpic <-  ggplot(mydata,aes(Real,Pred,size=eigSz,color=group,fill=group))+geom_point()+
+      guides(colour = guide_legend(override.aes = list(size = pltsz)))+
+                         theme(text = element_text(size=pltsz*2)) +
+                     scale_size(range=c(pltsz/2, pltsz))
   ggsave("myqplot.pdf")
 
   
   mydf <-data.frame( dx=wclasses[l1],  # sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
-                    fsp= ccafeatspace[ redlist[l1], ]   %*% decodemat  )
+                    fsp= (ccafeatspace[ redlist[l1], ]   %*% decodemat  ) )
   myudf<-data.frame( dx=wclasses[l2], # sentspace2[ redlist[l2]  , ] %*% decodemat2[,1],
-                    fsp= ccafeatspace[ redlist[l2], ]   %*% decodemat )
+                    fsp= ( ccafeatspace[ redlist[l2], ]   %*% decodemat ) )
   myrf<-RRF( dx ~ . ,  mydf  ,  ntree=5000 )
   pred<-predict( myrf, newdata=myudf )
   print(paste("PredErr:",sum(wclasses[l2]==pred)/length(pred),1.0/length(wclasslevs)))
@@ -110,7 +122,8 @@ if ( decode2 ) {
   svdred<-svd( featspace[ redlist[l1], ] , nv=nv, nu=0 )
   mydf <-data.frame( dx=wclasses[l1],  fsp=featspace[ redlist[l1], ]  %*% svdred$v )
   myudf <-data.frame( dx=wclasses[l2], fsp=featspace[ redlist[l2], ]  %*% svdred$v )
-  myrf<-svm( dx ~ . ,  mydf )
+  myrf<-svm(dx ~ . ,mydf, kernel='linear',type='C-classification',probability=TRUE)
+  myrf<-RRF( dx ~ . ,  mydf ,  ntree=5000 )
   pred2<-predict( myrf, newdata=myudf )
   print(paste("SVDPredErr:",sum(wclasses[l2]==pred2)/length(pred2),1.0/length(wclasslevs)))
 }

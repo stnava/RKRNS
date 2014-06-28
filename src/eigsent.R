@@ -25,7 +25,7 @@ for ( i in 1:nsentences ) {
     }
 }
 eigsentmag<-sqrt( rowSums(eigsent * eigsent) )
-eigsent<-eigsent/eigsentmag
+# eigsent<-eigsent/eigsentmag
 rownames(eigsent)<-sentences
 pdf("eigsentcor.pdf",width=32,height=32)
 pheatmap(cor(t(eigsent)))
