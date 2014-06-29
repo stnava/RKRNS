@@ -35,6 +35,13 @@ timeserieswindow2freqamp <- function( timeseriesmatrix , eventlist, timewindow, 
     results<-c(s1$freq[ which.max(s1$spec) ], max(s1$spec) )
     return( results )
     }
+  refsignal<-b5[4:(4+timewindow-1)]
+  refsignal<-refsignal/sqrt(sum(refsignal*refsignal))
+  locB <- function( xin )
+    {
+    xin2<-xin/sqrt(sum(xin*xin))
+    return( sum( abs( xin2 * refsignal ) ) )
+    }
   ct<-1
   progress <- txtProgressBar(min = 0, max = length(eventlist), style = 3)
   for ( i in eventlist ) {
@@ -42,9 +49,9 @@ timeserieswindow2freqamp <- function( timeseriesmatrix , eventlist, timewindow, 
     if ( maxrow > nrow(timeseriesmatrix) ) maxrow<-nrow(timeseriesmatrix)
     locmat<-( timeseriesmatrix[ i:maxrow, ] )
 #    fff<-apply( locmat, FUN=locmatTransform, MARGIN=2 )
-    fff<-apply( locmat, FUN=locSpec, MARGIN=2 )
-    outmatf[ct,]<-fff[1,]
-    outmata[ct,]<-fff[2,]
+    fff<-apply( locmat, FUN=locB, MARGIN=2 )
+    outmatf[ct,]<-fff # [1,]
+#    outmata[ct,]<-fff[2,]
 #    outmath[ct,]<-fff[3,]
     ct<-ct+1
     setTxtProgressBar( progress, ct )

@@ -12,7 +12,7 @@ for ( i in 1:length( eventtimes ) ) {
 #                    plot = TRUE, na.action = na.fail) 
   fspacenames[i]<-dmatsnames[ which( dmats[eventtimes[i],  ] == 1  ) ]
 }
-featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes, responselength, 3, c(1,1,1,0.25) )
+featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes+8, responselength, 3, c(1,1,1,0.25) )
 featspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d
 #source(paste(srcdir,"timeserieswindow2freqamp.R",sep=''))
