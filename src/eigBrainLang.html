@@ -83,26 +83,26 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <p>The full experiment employs randomized sentence presentation in an event-related design with TR=0.5 BOLD data. In total, we acquired 8 hours of scan time over X sessions. Within a session, the subject is scanned over multiple blocks of fMRI of length 225 seconds. We expunge the first 8 volumes.</p>
 <p>The sentence stimuli are presented randomly and with varying delays. Example sentences, with the total number of presentations, include:</p>
 <pre><code>## fspacenames
-##            The.wealthy.politician.liked.coffee. 
-##                                              18 
-##              The.man.saw.the.fish.in.the.river. 
-##                                              18 
-##                    The.magazine.was.in.the.car. 
-##                                              16 
-##         The.politician.celebrated.at.the.hotel. 
-##                                              16 
-##                       The.artist.liked.chicken. 
-##                                              19 
-## The.editor.carried.the.magazine.to.the.meeting. 
-##                                              17 
-##                The.couple.planned.the.vacation. 
-##                                              17 
-##                      The.vacation.was.peaceful. 
-##                                              17 
-##         The.school.was.empty.during.the.summer. 
-##                                              16 
-##                             The.coffee.was.hot. 
-##                                              17</code></pre>
+##   The.boy.kicked.the.stone.along.the.street. 
+##                                           18 
+##        The.tourist.hiked.through.the.forest. 
+##                                           17 
+##        The.small.church.was.near.the.school. 
+##                                           16 
+## The.chicken.was.expensive.at.the.restaurant. 
+##                                           17 
+##                            The.bird.was.red. 
+##                                           18 
+##                         The.beach.was.empty. 
+##                                           17 
+##      The.diplomat.negotiated.at.the.embassy. 
+##                                           17 
+##     The.tourist.found.a.bird.in.the.theater. 
+##                                           16 
+##                       The.flower.was.yellow. 
+##                                           15 
+##      The.businessman.laughed.in.the.theater. 
+##                                           18</code></pre>
 </div>
 <div id="eigenwords-and-eigensentences" class="section level1">
 <h1>Eigenwords and eigensentences</h1>
@@ -159,7 +159,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <div id="results" class="section level1">
 <h1>Results</h1>
 <p>We decode sentences containing the words judge, criminal. These include sentences: The.journalist.interviewed.the.judge., The.judge.met.the.mayor., The.victim.feared.the.criminal., The.criminal.wanted.cash., The.dangerous.criminal.stole.the.television., The.judge.lost.the.dime., The.criminal.put.the.book.on.the.desk., The.judge.stayed.at.the.hotel.during.the.vacation., The.old.judge.saw.the.dark.cloud.. Preliminarily, we find SVD-SVM SVM-PredErr: 45.5696202531646 %, vs random 11.1111111111111 % and CCA-SVM results CCA-PredErr: 60.7594936708861 %, vs random 11.1111111111111 %. The SVD-SVM uses the SVD of the matrix <span class="math">\(X\)</span> as predictors.</p>
-<p>A simple example <a href="http://htmlpreview.github.io/?https://github.com/stnava/RKRNS/blob/master/results.html">link</a></p>
+<p>A simple example <a href="http://htmlpreview.github.io/?https://github.com/stnava/RKRNS/blob/doc/src/eigBrainLang.html">link</a></p>
 <!DOCTYPE html> <meta charset="utf-8">
 <body> 
  <style>
