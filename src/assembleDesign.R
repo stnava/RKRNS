@@ -6,11 +6,12 @@ dsplits<-paste("design/",whichblocks,"_design.csv",sep='')
 if ( istest ) dsplits<-dsplits[1:10] # for testing 
 dfn<-paste("assembly/assembled_design_",labs[1],"_",labs[length(labs)],"test.csv",sep='')
 afn<-paste("assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.csv",sep='')
+afn<-paste("assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.mha",sep='')
 print(paste("assemble",dfn))
 if ( ! exists("dmat") | ! exists("imat") ) {
   if ( file.exists( afn ) & file.exists( dfn ) ) {
     print(paste("read",afn))
-    imat<-data.frame( read.csv( afn ) )
+    imat<-as.matrix( antsImageRead(afn,2) )
     dmat<-data.frame( read.csv( dfn ) )
   } else {
     dmat<-data.frame( read.csv( dsplits[1] ) )

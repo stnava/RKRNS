@@ -52,7 +52,8 @@ for ( session in mysessions ) {
 } # session 
 imat<-data.frame(imat)
 colnames(imat)<-aal$label_name[labs]
-write.csv(imat,afn,row.names=F)
+# write.csv(imat,afn,row.names=F)
+antsImageWrite( as.antsImage( data.matrix( imat ) ) , afn )
 if ( sum( usedesignrow ) != nrow(imat) ) stop("  sum( usedesignrow ) != nrow(imat) ")
 dmat<-dmat[usedesignrow,]
 if ( nrow(dmat) != nrow(imat) ) print("CHECK DIMENSIONS MATCH!")
