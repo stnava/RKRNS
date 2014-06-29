@@ -19,9 +19,9 @@ worddf<-data.frame( words=words, wordids=wordids )
 if ( docca == TRUE ) {
   longc<-0
   nperm<-0
-  nv<-20; its<-25
+  nv<-11; its<-11
   nvsvm<-10
-  mysparse<-c(  -0.01,  -0.25 )
+  mysparse<-c(  -0.01,  -0.9 )
   myrob<-0
   # c('lake','mountain','stone','beach','river')  ) c('politician')  ) 
   # c("child","woman") c('doctor','terrorist','artist')c('lake','mountain','woman') 
@@ -34,15 +34,15 @@ if ( docca == TRUE ) {
   locwordlist<-c('child')   #
   locwordlist<-c('green','red') #
   locwordlist<-c('cross','lake') 
-  locwordlist<-c('child','woman')   #
   locwordlist<-c('lake','mountain','stone','beach','river','tree','bird','green','red')
   locwordlist<-c("young","yellow")
   locwordlist<-c('dime')
   locwordlist<-c('dime' ,'green','red') #
   locwordlist<-c('politician','scientist','judge','doctor','artist')
+  locwordlist<-c('bird','duck')
+  locwordlist<-c('child','woman','man','boy','girl')   #
   locwordlist<-'coffee'
   locwordlist<-c('judge','criminal')
-  locwordlist<-c('bird','duck')
   wordcounts<-rep(0,length(words))
   wct<-1 ; l1<-length(fspacenames)/2
   for ( w in words ) {
@@ -75,7 +75,10 @@ if ( docca == TRUE ) {
     myrf<-svm(dx ~ . ,mydf, kernel='linear',type='C-classification',probability=TRUE)
                                         #  myrf<-RRF( dx ~ . ,  mydf ,  ntree=5000 )
     pred2<-predict( myrf, newdata=myudf )
-    print(paste("SVDPredErr:",sum(wclasses[l2]==pred2)/length(pred2),1.0/length(wclasslevs)))
+    svmerr<-sum(wclassesf[l2]==pred2)/length(pred2)
+    randerr<-1.0/length(wclasslevs)
+    svmresult<-paste("SVM-PredErr:",svmerr*100,"%, vs random",randerr*100,"%")
+    print(svmresult)
     mydata <- data.frame(group=fspacenames[redlist[l2]], Real=wclasses[l2]+rnorm(length(l2))*0.1,Pred=pred2)
     gpic <-  ggplot(mydata,aes(Real,Pred,color=group,fill=group))+geom_point()+
         guides(colour = guide_legend(override.aes = list(size = pltsz)))+
@@ -158,7 +161,10 @@ if ( decode ) {
   myrf<-svm(dx ~ . ,mydf , kernel='linear',type='C-classification',probability=TRUE)
 #  myrf<-randomForest( dx ~ . ,  mydf  ,  ntree=5000 )
   pred<-predict( myrf, newdata=myudf )
-  print(paste("CCA-PredErr:",sum(wclassesf[l2]==pred)/length(pred),1.0/length(wclasslevs)))
+  ccaerr<-sum(wclassesf[l2]==pred)/length(pred)
+  randerr<-1.0/length(wclasslevs)
+  ccaresult<-paste("CCA-PredErr:",ccaerr*100,"%, vs random",randerr*100,"%")
+  print(ccaresult)
   source(paste(srcdir,"setup.R",sep=''))
   sentencesubset<- sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
   nodedf<-data.frame( nodename=sentencedf[sentencesubset,1], nodeid=sentencedf[sentencesubset,2] )

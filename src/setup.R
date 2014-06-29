@@ -9,7 +9,7 @@ labs<-as.numeric( c(13,79,89) ) # lang network
 throwaway<-8
 ncompcor<-5
 compcorvarval<-0.95
-filterlowfrequency<-0.1 # 0.05
+filterlowfrequency<-0.1 # 0.05 if you multiply by TR
 filterhighfrequency<-1.0 # 0.4 # because of expected bold response < 25secs, > 5 seconds
 trendfrequency<-3
 winsorval<-0.01
@@ -112,9 +112,11 @@ misclassnetwork <- function( nodesIn, realClass, predClass ,  whichviz="force", 
       d3SimpleNetwork( edgedata,  fontsize = 12, linkDistance = 200, opacity = opac,
                       file = outfile , width = 1200, height = 1200, charge = mycharge)
   } else {
-  d3ForceNetwork(Links = edgedata, Nodes = nodedata, Source = "from2", Target = "to2",
+  if (!is.na(outfile) ) d3ForceNetwork(Links = edgedata, Nodes = nodedata, Source = "from2", Target = "to2",
 Value = "weight", NodeID = "nodename", Group = "nodeid", width = 1200, height = 1200, opacity = opac,
    file = outfile, linkDistance = 200, fontsize = 12, charge = mycharge )
+  else  d3ForceNetwork(Links = edgedata, Nodes = nodedata, Source = "from2", Target = "to2",
+Value = "weight", NodeID = "nodename", Group = "nodeid", width = 1200, height = 1200, opacity = opac, linkDistance = 200, fontsize = 12, charge = mycharge )
   }
   return( list( nodes=nodedata,  edges=edgedata, weightmatrix=weightmatrix ) )
 }
@@ -136,5 +138,6 @@ library(vbmp)
 library(tgp)
 library(seewave)
 library(rCharts)
+library(rmarkdown)
 #library(rpud)
 

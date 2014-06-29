@@ -1,0 +1,210 @@
+---
+title: "Spectral representations of language are reflected in brain function"
+bibliography: rkrns.bib
+output:
+  html_document:
+    toc: true
+    theme: united
+  pdf_document:
+    toc: true
+    highlight: zenburn
+---
+
+Comprehension from reading, like hearing (@French1947), is fast and contextual.
+
+Does reading different sentences produce specific patterns of brain
+activity over time?  Are these patterns repeatable and does their
+variability relate to semantic similarity?  How do these sentence level patterns differ from word-level patterns?
+
+We show that functional activation of the left hemisphere language
+network reliably decodes an individual's reading experience.  We use a
+framework based on dimensionality reduction ( _eigenanatomy_ and
+_eigenwords_ ) to identify brain sub-regions that differentiate
+related content during an extended session of sentence reading.  A
+distinguishing feature of this framework is that it makes relatively
+few assumptions about the BOLD response beyond its slow (6 - 20+
+second ) time-scale.  Our statistical design focuses on the event
+occurrence (reading) and its quantitative representation.  The BOLD
+response is encoded directly as event-matched spatiotemporal
+predictors from which we derive sparse dynamic, anatomical dictionary
+descriptors.  Our approach seeks to address two of the fundamental
+issues at hand: (1) the need for a quantitative description of
+sentences that is related to sentence comprehension from reading and
+(2) a general formulation for relating the high-dimensional
+spatiotemporal BOLD space to spectral sentence representations.
+
+Below, we first describe the proposed sentence representation.  We
+then describe BOLD preprocessing.  Finally, we detail our approach to
+integrating these in a predictive model. We implement the analysis in
+`R` with `ANTsR` for imaging-specific tasks and SCCAN dimensionality
+reduction.
+
+
+# The basic design
+
+```{r define variables,echo=FALSE}
+TR<-0.5 
+blocklength<-450*TR
+throwaway<-8
+if ( exists("imat") ) nvol<-nrow(imat) else nvol<-57600
+boldhours<-nvol*TR/3600
+```
+
+The full experiment employs randomized sentence presentation in an event-related design with 
+TR=`r TR` BOLD data.  In total, we acquired `r boldhours` hours of scan time over X sessions.  Within a session, 
+the subject is scanned over multiple blocks of fMRI of length `r blocklength` seconds.  We expunge the first `r throwaway` volumes.
+
+The sentence stimuli are presented randomly and with varying delays.  Example sentences, with the total number of presentations, include: 
+
+```{r sentences,echo=FALSE}
+if ( ! exists("fspacenames") ) fspacenames<-sample(rep(c(1:20),50))
+tbl<-table(fspacenames)
+print( tbl[ sample(dim(tbl))[1:10]] )	
+```
+
+# Eigenwords and eigensentences
+
+The eigenword representation is a a quantitative, contextual semantic similarity space recently contributed by Dhillon and Ungar [link](http://www.cis.upenn.edu/~ungar/CVs/spectral_NLP.html) in @dhillon_icml12_tscca .  Eigenwords are based on the canonical correlation analysis of the adjacency matrix (FIXME word choice) of words within a large corpus (Wikipedia).  That is, eigenword representations are driven by the sentence-level context(s) within which a word appears.
+
+In this work, we use _products or sums of eigenwords_ as an eigensentence descriptor.
+
+$$ e_s = \Pi_i e_i \text{   ... or ...   } e_s = \frac{1}{n} \sum_{i=1}^{i=n} e_i $$.
+
+We have not yet carefully explored how these representations impact performance.  Currently, we simply "choose one" and proceed.
+
+# BOLD processing and priors
+```{r boldpro,echo=FALSE}
+afilterlowfrequency<-filterlowfrequency*TR
+afilterhighfrequency<-filterhighfrequency*TR
+```
+BOLD signal is information rich but noisy.  We employ three
+fundamental aspects of BOLD to guide our preprocessing choices:
+
+- Physiological noise contaminates the BOLD signal ( see compcor @Behzadi2007 )
+- The BOLD response is slow ( > 5 seconds ) after a stimulus
+- The response has limited temporal extent ( < 25 seconds )
+
+Our processing therefore uses the following steps:
+
+1. Assemble the BOLD blocks to match the overall event-related design file 
+    - optionally use anatomical labeling to select subregions for assembly
+    - preliminary studies use language network regions: `r aal$label_name[labs]`.
+1. Learn physiological noise parameters from 1 block and apply them to the rest
+1. Filter the fMRI with a Butterworth band-pass filter, extracting select mid-range frequencies
+    - low frequency is `r afilterlowfrequency`
+    - high frequency is `r afilterhighfrequency`
+1. model sentence length effects (& motion---TODO) by linear regression
+
+Once these steps are complete we choose a training
+and testing split and perform statistical modeling.
+
+# Multivariate statistical modeling and prediction
+
+## Formulation
+
+Convert the BOLD to a spatiotemporal representation.  This model is of the form:
+
+$$ Z_k = w + w_{00} x_{00} + w_{01} x_{01} + \cdots + 
+ w_{0p} x_{0p} + w_{10} x_{10} + \cdots + w_{tp} x_{tp} + \epsilon$$
+
+where $w$ represents a weighting term, $Z_k$ represents a multivariate outcome (an
+_eigensentence_) at time k, $x_{lm}$ represents a point at time $l$
+and space $m$ and $t$ represents the maximum temporal index within a
+short window near event $Z_k$. So, if $t=0$, then the global time
+index is $k$; if $t=1$, the global time index is $k+1$, etcetera.
+This formulation allows us to simultaneously model and/or select
+variables in space-time.  From here, we denote the right side of the 
+above equation (for all $k$) as $XW^T$ where $X$ 
+has dimensions $n \times p$ and $W$ has dimensions $k \times p$. 
+Similarly, $Z$ is a matrix of
+_eigensentence_ representations with dimension $n \times q$. 
+
+## Sparse canonical correlation between space-time BOLD and eigenwords
+
+CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$ where $X, W$ are as above and $Z$
+and $Y$ are similarly defined.  CCA optimizes the matrices $W, Y$
+operating on $X, Z$ to find a low-dimensional representation of the
+data pair $( X , Z )$ in which correlation is maximal.  Following
+ideas outlined in @Dhillon2014 and @Avants2014, this method can be
+extended with sparse methods that find rows of $W, Y$ with a
+controllable number of non-zero entries.
+
+## Predictive model
+
+Given CCA solution matrix $W$, one may employ the low-dimensional
+representation, $XW^T$, in multi-label classification.  Currently, we
+employ SVM or random forests as multi-label learners for the problem:
+
+$$L_i = f( XW^T ),$$
+
+that is, learning a (sentence) label function from the BOLD data.
+
+# Results
+
+We decode sentences containing the words `r locwordlist`.  These
+include sentences: `r wclasslevs`.  Preliminarily, we find SVD-SVM `r svmresult` and
+CCA-SVM results `r ccaresult`.  The SVD-SVM uses the SVD of the matrix
+$X$ as predictors.
+
+A simple example [link](http://htmlpreview.github.io/?https://github.com/stnava/RKRNS/blob/master/results.html)
+
+```{r d3,results='asis',iframe = TRUE,fig.cap='A (mis)-classification network',echo=FALSE}
+ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=F) 
+```
+
+## Temporal dynamics 
+
+A "HRF" is estimated by CCA.
+```{r hrf,fig.cap='SCCAN-Estimated HRF'}
+mydata <- data.frame(time=c(1:length(myestimatedhrf))*TR+eventshift*TR,BOLD=myestimatedhrf)
+ggplot(mydata,aes(time,BOLD))+geom_line()
+```
+
+This function sometimes has an appearance that is similar to what's
+expected from the literature. It is estimated by converting a row of
+$W$ back to matrix representation and inspecting the variability in
+weights over time.  Something similar may be done to find the
+corresponding anatomical function.
+
+## Anatomical locality  
+
+Sparse CCA selects voxels from within the language network to maximize
+predictive accuracy.  Where are these voxels?  This work is yet to be
+done carefully.  Preliminary investigations (and our use of
+spatiotemporally regularized SCCAN @Avants2014) show that the voxels
+are locally clustered and distributed across inferior temporal lobe,
+superior temporal (Heschl's?) gyrus and inferior frontal gyrus.
+
+# Discussion
+
+There are several problems and shortcomings to this analysis.
+
+- Eigenwords are somewhat arbitrary and may not reflect neural organization of semantic meaning
+- Optimization of parameters was performed on one subject's dataset though we strived to make minimal assumptions
+- Interpretability is not optimal 
+- Visualization needs improvement, especially of brain activity over time
+- No explicit modeling of the residual BOLD signal due to prior events
+
+Some strengths include relatively few assumptions, a flexible
+implementation and open-science approach. Furthermore, for the three
+sentences that contain the word "coffee", we can achieve excellent
+classification levels (80-100%) in a split-half cross-validation.
+Several other classification problems show performance well-above
+chance with current ceilings around a factor of M times chance.
+
+# References
+
+<!---
+# And some pictures
+
+```{r lm-vis, fig.cap='Regression diagnostics'}
+par(mfrow = c(2, 2), pch = 20, mar = c(4, 4, 2, .1), bg = 'white')
+plot(fit)
+```
+# A little bit math
+
+Our regression equation is $Y=`r b[1]`+`r b[2]`x$, and the model is:
+
+$$ Y = \beta_0 + \beta_1 x + \epsilon$$
+-->
+
