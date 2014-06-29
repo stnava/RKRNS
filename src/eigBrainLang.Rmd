@@ -146,7 +146,7 @@ include sentences: `r wclasslevs`.  Preliminarily, we find SVD-SVM `r svmresult`
 CCA-SVM results `r ccaresult`.  The SVD-SVM uses the SVD of the matrix
 $X$ as predictors.
 
-A simple example [link](http://htmlpreview.github.io/?https://github.com/stnava/RKRNS/blob/master/results.html)
+A simple example [link](http://htmlpreview.github.io/?https://github.com/stnava/RKRNS/blob/doc/src/eigBrainLang.html)
 
 ```{r d3,results='asis',iframe = TRUE,fig.cap='A (mis)-classification network',echo=FALSE}
 ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=F) 
