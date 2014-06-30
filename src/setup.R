@@ -109,13 +109,13 @@ misclassnetwork <- function( nodesIn, realClass, predClass ,  whichviz="force", 
            Target = "to2", Value = "weight", NodeID = "nodeid",
            fontsize = 12, nodeWidth = 30, width = 700,file=outfile)
   } else if ( whichviz == "Simple" ) {
-      d3SimpleNetwork( edgedata,  fontsize = 12, linkDistance = 200, opacity = opac,
+      d3SimpleNetwork( edgedata,  fontsize = 12, linkDistance = 200, opacity = opac,zoom=zoom ,
                       file = outfile , width = 1200, height = 1200, charge = mycharge)
   } else {
   if (!is.na(outfile) ) d3ForceNetwork(Links = edgedata, Nodes = nodedata, Source = "from2", Target = "to2",
-Value = "weight", NodeID = "nodename", Group = "nodeid", width = 1200, height = 1200, opacity = opac,
+Value = "weight", NodeID = "nodename", Group = "nodeid", width = 1200, height = 1200, opacity = opac,zoom=zoom ,
    file = outfile, linkDistance = 200, fontsize = 12, charge = mycharge )
-  else  d3ForceNetwork(Links = edgedata, Nodes = nodedata, Source = "from2", Target = "to2",
+  else  d3ForceNetwork(Links = edgedata, Nodes = nodedata, Source = "from2", Target = "to2",zoom=zoom ,
 Value = "weight", NodeID = "nodename", Group = "nodeid", width = 1200, height = 1200, opacity = opac, linkDistance = 200, fontsize = 12, charge = mycharge )
   }
   return( list( nodes=nodedata,  edges=edgedata, weightmatrix=weightmatrix ) )
