@@ -59,7 +59,7 @@ boldhours<-nvol*TR/3600
 ```
 
 The full experiment employs randomized sentence presentation in an event-related design with 
-TR=`r TR` BOLD data.  In total, we acquired `r boldhours` hours of scan time over X sessions.  Within a session, 
+TR=`r TR` second BOLD data.  In total, we acquired `r boldhours` hours of scan time over X sessions.  Within a session, 
 the subject is scanned over multiple blocks of fMRI of length `r blocklength` seconds.  We expunge the first `r throwaway` volumes.
 
 The sentence stimuli are presented randomly and with varying delays.  Example sentences, with the total number of presentations, include: 
@@ -116,7 +116,7 @@ $$ Z_k = w + w_{00} x_{00} + w_{01} x_{01} + \cdots +
  w_{0p} x_{0p} + w_{10} x_{10} + \cdots + w_{tp} x_{tp} + \epsilon$$
 
 where $w$ represents a weighting term, $Z_k$ represents a multivariate outcome (an
-_eigensentence_) at time k, $x_{lm}$ represents a point at time $l$
+_eigensentence_) at time k, $x_{lm}$ represents a BOLD measurement at time $l$
 and space $m$ and $t$ represents the maximum temporal index within a
 short window near event $Z_k$. So, if $t=0$, then the global time
 index is $k$; if $t=1$, the global time index is $k+1$, etcetera.
