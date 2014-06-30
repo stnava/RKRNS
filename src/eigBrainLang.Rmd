@@ -9,6 +9,14 @@ output:
     toc: true
     highlight: zenburn
 ---
+<!---
+  revealjs_presentation:
+    theme: sky
+    transition: fade
+    highlight: pygments
+    center: true
+    incremental: true
+-->
 
 Comprehension from reading, like hearing (@French1947), is fast and contextual.
 
