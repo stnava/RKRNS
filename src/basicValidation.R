@@ -19,9 +19,9 @@ worddf<-data.frame( words=words, wordids=wordids )
 if ( docca == TRUE ) {
   longc<-0
   nperm<-0
-  nv<-11; its<-11
-  nvsvm<-10
-  mysparse<-c(  -0.01,  -0.9 )
+  nv<-50; its<-25
+  nvsvm<-8
+  mysparse<-c(  -1/(nv-1),  1/(nv-1) )
   myrob<-0
   # c('lake','mountain','stone','beach','river')  ) c('politician')  ) 
   # c("child","woman") c('doctor','terrorist','artist')c('lake','mountain','woman') 
@@ -34,15 +34,19 @@ if ( docca == TRUE ) {
   locwordlist<-c('child')   #
   locwordlist<-c('green','red') #
   locwordlist<-c('cross','lake') 
-  locwordlist<-c('lake','mountain','stone','beach','river','tree','bird','green','red')
   locwordlist<-c("young","yellow")
-  locwordlist<-c('dime')
   locwordlist<-c('dime' ,'green','red') #
-  locwordlist<-c('politician','scientist','judge','doctor','artist')
   locwordlist<-c('bird','duck')
   locwordlist<-c('child','woman','man','boy','girl')   #
+  locwordlist<-c('summer','winter')
+  locwordlist<-c('eat','drink')
+  locwordlist<-c('fish','bird','dog')
   locwordlist<-'coffee'
+  locwordlist<-c('politician','scientist','judge','doctor','artist')
+  locwordlist<-c('yellow','white','blue','black','green','red') #
+  locwordlist<-c('lake','mountain','stone','beach','river','tree')
   locwordlist<-c('judge','criminal')
+####################################  
   wordcounts<-rep(0,length(words))
   wct<-1 ; l1<-length(fspacenames)/2
   for ( w in words ) {
@@ -65,6 +69,7 @@ if ( docca == TRUE ) {
       wclasses[wct]<-sentencedf$sentenceids[  sentencedf$sentences == w ]
       wct<-wct+1
   }
+  wclassesf<-as.factor(wclasses)
   decode2<-T # just a comparison to CCA 
   pltsz<-8
   if ( decode2 )
@@ -84,7 +89,7 @@ if ( docca == TRUE ) {
         guides(colour = guide_legend(override.aes = list(size = pltsz)))+
                          theme(text = element_text(size=pltsz*2)) +
                      scale_size(range=c(pltsz/2, pltsz))
-    ggsave("myqplot_svm.pdf")
+    ggsave("myqplot_svm.pdf",height=8,width=12)
     }
 ###########################################################
   sentspace2<-cbind(  log( sentspace - min(sentspace) + 1 ) ) #  sentspace2<-sentspace 
@@ -97,9 +102,10 @@ if ( docca == TRUE ) {
 #  for ( myw in locwordlist ) {
 #    blulist<-sort(unique(c(grep(myw, fspacenames[l1] ))))
     blulist<-redlist[l1]
-    ccamats1<-list( whiten( ccafeatspace[ blulist, ] ) , whiten(sentspace2[ blulist, ] ) )
+    ccamats1<-list( whiten( ccafeatspace[ blulist, ] ) , whiten( sentspace2[ blulist, ] ) )
+#    ccamats1<-list(       ( ccafeatspace[ blulist, ] ) ,       ( sentspace2[ blulist, ] ) )
     antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
-    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, ell1=10 , perms=nperm, inmask = c(mask4d, NA), robust=0, smooth=0., cthresh = c(50, 0) ) #, nboot=50 )  # subaal
+    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, ell1=10 , perms=nperm, inmask = c(mask4d, NA), robust=0, smooth=0., cthresh = c(0, 0) ) #, nboot=50 )  # subaal
    for ( j in 1:nccavecs ) {
       pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
       pmat<-timeserieswindow2matrix( data.matrix( pmat ), subaal, 4, responselength, 0 )$eventmatrix
@@ -131,7 +137,6 @@ if ( docca == TRUE ) {
 #    for ( i in 1:24 ) { plot(mm[i,],type='l'); Sys.sleep(0.5) }
   }
 }
-wclassesf<-as.factor(wclasses)
 decode<-T
 if ( decode ) {
 #  eanat1<-sparseDecom( (ccafeatspace[ redlist, ])   , sparseness=-0.9, nvecs=50, its=2, mycoption=1 )
@@ -152,7 +157,7 @@ if ( decode ) {
       guides(colour = guide_legend(override.aes = list(size = pltsz)))+
                          theme(text = element_text(size=pltsz*2)) +
                      scale_size(range=c(pltsz/2, pltsz))
-  ggsave("myqplot.pdf")
+  ggsave("myqplot.pdf",height=8,width=12)
 
   mydf <-data.frame( dx=wclassesf[l1],  # sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
                     fsp= (ccafeatspace[ redlist[l1], ]   %*% decodemat  ) )
@@ -168,7 +173,7 @@ if ( decode ) {
   source(paste(srcdir,"setup.R",sep=''))
   sentencesubset<- sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
   nodedf<-data.frame( nodename=sentencedf[sentencesubset,1], nodeid=sentencedf[sentencesubset,2] )
-  ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile='temp2.html', mycharge=-2066,zoom=F) 
+  ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile='temp2.html', mycharge=-2066,zoom=T) 
   ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile='temp.html',zoom=F, mycharge=-2066, whichviz="Simple")
   
   pltsz<-10
