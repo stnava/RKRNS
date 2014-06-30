@@ -126,7 +126,7 @@ and $Y$ are similarly defined.  CCA optimizes the matrices $W, Y$
 operating on $X, Z$ to find a low-dimensional representation of the
 data pair $( X , Z )$ in which correlation is maximal.  Following
 ideas outlined in @Dhillon2014 and @Avants2014, this method can be
-extended with sparse methods that find rows of $W, Y$ with a
+extended with sparsity constraints that yield rows of $W, Y$ with a
 controllable number of non-zero entries.
 
 ## Predictive model

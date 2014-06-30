@@ -83,26 +83,26 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <p>The full experiment employs randomized sentence presentation in an event-related design with TR=0.5 BOLD data. In total, we acquired 8 hours of scan time over X sessions. Within a session, the subject is scanned over multiple blocks of fMRI of length 225 seconds. We expunge the first 8 volumes.</p>
 <p>The sentence stimuli are presented randomly and with varying delays. Example sentences, with the total number of presentations, include:</p>
 <pre><code>## fspacenames
-##        The.happy.couple.visited.the.embassy. 
+## The.patient.put.the.medicine.in.the.cabinet. 
 ##                                           17 
-##         The.commander.opened.the.heavy.door. 
-##                                           16 
-##   The.commander.negotiated.with.the.council. 
-##                                           16 
-##  The.family.survived.the.powerful.hurricane. 
+##                          The.glass.was.cold. 
 ##                                           18 
-##     The.tourist.found.a.bird.in.the.theater. 
-##                                           16 
-##         The.artist.hiked.along.the.mountain. 
-##                                           16 
+##               The.soldier.crossed.the.field. 
+##                                           19 
+##             The.minister.visited.the.prison. 
+##                                           17 
+##              The.ticket.was.on.the.red.desk. 
+##                                           17 
 ## The.child.broke.the.glass.in.the.restaurant. 
 ##                                           16 
-##     The.worker.fixed.the.door.at.the.church. 
-##                                           17 
-##              The.council.feared.the.protest. 
-##                                           17 
-##   The.activist.listened.to.the.tired.victim. 
-##                                           18</code></pre>
+##              The.hurricane.damaged.the.boat. 
+##                                           18 
+##        The.young.author.spoke.to.the.editor. 
+##                                           18 
+##         The.tired.lawyer.visited.the.island. 
+##                                           16 
+##        The.accident.destroyed.the.empty.lab. 
+##                                           17</code></pre>
 </div>
 <div id="eigenwords-and-eigensentences" class="section level1">
 <h1>Eigenwords and eigensentences</h1>
@@ -147,7 +147,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="sparse-canonical-correlation-between-space-time-bold-and-eigenwords" class="section level2">
 <h2>Sparse canonical correlation between space-time BOLD and eigenwords</h2>
-<p>CCA maximizes <span class="math">\(PearsonCorrelation( XW^T, ZY^T )\)</span> where <span class="math">\(X, W\)</span> are as above and <span class="math">\(Z\)</span> and <span class="math">\(Y\)</span> are similarly defined. CCA optimizes the matrices <span class="math">\(W, Y\)</span> operating on <span class="math">\(X, Z\)</span> to find a low-dimensional representation of the data pair <span class="math">\(( X , Z )\)</span> in which correlation is maximal. Following ideas outlined in <span class="citation">Dhillon et al. (2014)</span> and <span class="citation">Avants et al. (2014)</span>, this method can be extended with sparse methods that find rows of <span class="math">\(W, Y\)</span> with a controllable number of non-zero entries.</p>
+<p>CCA maximizes <span class="math">\(PearsonCorrelation( XW^T, ZY^T )\)</span> where <span class="math">\(X, W\)</span> are as above and <span class="math">\(Z\)</span> and <span class="math">\(Y\)</span> are similarly defined. CCA optimizes the matrices <span class="math">\(W, Y\)</span> operating on <span class="math">\(X, Z\)</span> to find a low-dimensional representation of the data pair <span class="math">\(( X , Z )\)</span> in which correlation is maximal. Following ideas outlined in <span class="citation">Dhillon et al. (2014)</span> and <span class="citation">Avants et al. (2014)</span>, this method can be extended with sparsity constraints that yield rows of <span class="math">\(W, Y\)</span> with a controllable number of non-zero entries.</p>
 </div>
 <div id="predictive-model" class="section level2">
 <h2>Predictive model</h2>
