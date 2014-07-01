@@ -3,7 +3,7 @@
 #########################################
 dosvd<-F
 docca<-TRUE
-nv<-50; its<-55 # cca params
+nv<-5; its<-3 # cca params
 nvsvm<-8      # svd params
 mysparse<-c(  -1/(nv-1),  -1/(nv-1) )
 ###########constant params below########
@@ -158,13 +158,12 @@ if ( dosvd )
     antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
-    print(mysparse)
-    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, ell1=10 , perms=nperm, robust=0, smooth=0., cthresh = c(0, 0) ,  inmask = c(NA, NA)) #, nboot=50 )  # subaal
+    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, ell1=10 , perms=nperm, robust=0, smooth=0., cthresh = c(1250, 0) ,  inmask = c(mask4d, NA)) #, nboot=50 )  # subaal
     if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       for ( j in 1:nccavecs ) {
         pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
-        pmat<-timeserieswindow2matrix( data.matrix( pmat ), subaal, 4, responselength, 0 )$eventmatrix
-        sccanBdictionary[,wct+(j-1)]<-pmat[1,]
+        pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
+        sccanBdictionary[,j]<-pmat[1,]
 #        sccanWdictionary[,wct+(j-1)]<-fcca1$eig2[,j]
       }
     fcca1$eig1<-sccanBdictionary
