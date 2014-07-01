@@ -1,96 +1,136 @@
 #########################################
+# parameters
+#########################################
+dosvd<-F
+docca<-TRUE
+nv<-50; its<-55 # cca params
+nvsvm<-8      # svd params
+mysparse<-c(  -1/(nv-1),  -1/(nv-1) )
+###########constant params below########
+longc<-0
+nperm<-0
+myrob<-0
+#########################################
+#########################################
+#########################################
 print("########basic validation########")
 #########################################
-#fglobsig<-apply(featspace,FUN=mean,MARGIN=1)
+if ( ! exists("eventdata") ) {
+print("########basic speech parts########")
+sentenceids<-1:length(unique(sentences))
+sentencedf<-data.frame(  sentences=sentences, sentenceids=sentenceids )
+wordids<-1:length(unique(words))
+worddf<-data.frame( words=words, wordids=wordids )
+eventdata<-data.frame(eventtimes=eventtimes,sentences=fspacenames)
+enouns1<-rep(NA,nrow(eventdata))
+enouns1lab<-rep(NA,nrow(eventdata))
+everbs1<-rep(NA,nrow(eventdata))
+everbs1lab<-rep(NA,nrow(eventdata))
+enouns2<-rep(NA,nrow(eventdata))
+enouns2lab<-rep(NA,nrow(eventdata))
+sentlab<-rep(NA,nrow(eventdata))
+sent_token_annotator <- Maxent_Sent_Token_Annotator()
+word_token_annotator <- Maxent_Word_Token_Annotator()
+pos_tag_annotator <- Maxent_POS_Tag_Annotator()
+wordcols<-colnames(dmatw)
+for ( i in 1:nrow(eventdata) ) {
+    s<-eventdata$sentences[i]
+    s<-gsub('[.]',' ',s)
+    realwords<-unlist( strsplit(s,' ') )
+    rpl<-as.character(sentencedf$sentences) == eventdata$sentences[i]
+    if ( sum(rpl) > 0 ) sentlab[i]<-sentencedf$sentenceids[ rpl ]
+    locwords<-wordcols[ dmatw[ eventdata$eventtimes[i], ] == 1 ]
+    # find position of locwords in realwords
+    locwordpos<-rep(0,length(locwords))
+    ct<-1
+    for ( k in locwords ) {
+      pos<-1
+      for ( j in realwords ) {
+        if( length( grep(k,j) ) > 0 ) locwordpos[ct]<-pos;
+        pos<-pos+1
+        }
+      ct<-ct+1
+    }
+    a2 <- annotate(s, list(sent_token_annotator, word_token_annotator))
+    a3 <- annotate(s, pos_tag_annotator, a2)
+    a3w <- subset(a3, type == "word")
+    tags <- sapply(a3w$features, `[[`, "POS")
+    grepverb<-grep("V",tags[locwordpos])
+    if (length(grepverb)>0){
+    everbs1[i]<-locwords[grepverb]
+    rpl<-as.character(worddf$words) == everbs1[i]
+    if ( sum(rpl) > 0 ) everbs1lab[i]<-worddf$wordids[ rpl ]
+    }
+    grepnouns<-grep("NN",tags[locwordpos])
+    enouns1[i]<-locwords[grepnouns[1]]
+    rpl<-as.character(worddf$words) == enouns1[i]
+    if ( sum(rpl) > 0 ) enouns1lab[i]<-worddf$wordids[ rpl ]
+    nextnoun<-grepnouns[1]
+    if ( length(grepnouns) > 1 ) nextnoun<-grepnouns[2]
+    enouns2[i]<-locwords[nextnoun]
+    rpl<-as.character(worddf$words) == enouns2[i]
+    if ( sum(rpl) > 0 ) enouns2lab[i]<-worddf$wordids[ rpl ]
+}
+eventdata<-cbind( eventdata, enouns1=enouns1, enouns1lab=enouns1lab, everbs1=everbs1, everbs1lab=everbs1lab, enouns2=enouns2, enouns2lab=enouns2lab, sentlab=sentlab )
+} # check if data exists
+################################################################################################################################
+################################################################################################################################
 if ( !exists("ccafeatspace") ) ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
-# ccafeatspace<-feat2$amplitudeTransform
-# ccafeatspace<-residuals(lm(feat2$frequencyTransform~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
-# ccafeatspace<-featspace
 nl<-nrow(  ccafeatspace )
 inds1<-1:(nl/2)+5
 inds2<-(max(inds1)+1):nl
-meanfeat1<-apply(ccafeatspace[ inds1  , ], FUN=mean,MARGIN=2)
-meanfeat2<-apply(ccafeatspace[ inds2  , ], FUN=mean,MARGIN=2)
-docca<-T
-sentenceids<-1:length(unique(sentences))
-sentencedf<-data.frame( sentences=sentences, sentenceids=sentenceids )
-wordids<-1:length(unique(words))
-worddf<-data.frame( words=words, wordids=wordids )
-if ( docca == TRUE ) {
-  longc<-0
-  nperm<-0
-  nv<-50; its<-25
-  nvsvm<-8
-  mysparse<-c(  -1/(nv-1),  1/(nv-1) )
-  myrob<-0
-  # c('lake','mountain','stone','beach','river')  ) c('politician')  ) 
-  # c("child","woman") c('doctor','terrorist','artist')c('lake','mountain','woman') 
-  redlist<-c()
-  locwordlist<-'.red.'
-  locwordlist<-c('tree','bird','green','red') #
-  locwordlist<-c('politician','scientist')
-  locwordlist<-c('lake','mountain','stone','beach','river')
-  locwordlist<-c('criminal','terrorist','doctor','artist')
-  locwordlist<-c('child')   #
-  locwordlist<-c('green','red') #
-  locwordlist<-c('cross','lake') 
-  locwordlist<-c("young","yellow")
-  locwordlist<-c('dime' ,'green','red') #
-  locwordlist<-c('bird','duck')
-  locwordlist<-c('child','woman','man','boy','girl')   #
-  locwordlist<-c('summer','winter')
-  locwordlist<-c('eat','drink')
-  locwordlist<-c('fish','bird','dog')
-  locwordlist<-'coffee'
-  locwordlist<-c('politician','scientist','judge','doctor','artist')
-  locwordlist<-c('yellow','white','blue','black','green','red') #
-  locwordlist<-c('lake','mountain','stone','beach','river','tree')
-  locwordlist<-c('judge','criminal')
+redlist<-c()
+locwordlist<-'.red.'
+locwordlist<-c('tree','bird','green','red') #
+locwordlist<-c('politician','scientist')
+locwordlist<-c('lake','mountain','stone','beach','river')
+locwordlist<-c('criminal','terrorist','doctor','artist')
+locwordlist<-c('child')   #
+locwordlist<-c('green','red') #
+locwordlist<-c('cross','lake') 
+locwordlist<-c("young","yellow")
+locwordlist<-c('dime' ,'green','red') #
+locwordlist<-c('bird','duck')
+locwordlist<-c('child','woman','man','boy','girl')   #
+locwordlist<-c('summer','winter')
+locwordlist<-c('eat','drink')
+locwordlist<-c('fish','bird','dog')
+locwordlist<-c('politician','scientist','judge','doctor','artist')
+locwordlist<-c('yellow','white','blue','black','green','red') #
+locwordlist<-c('lake','mountain','stone','beach','river','tree')
+locwordlist<-c('judge','criminal')
+locwordlist<-'coffee'
 ####################################  
-  wordcounts<-rep(0,length(words))
-  wct<-1 ; l1<-length(fspacenames)/2
-  for ( w in words ) {
-      myct<-length( unique( grep(w,unique(fspacenames[1:l1])) ) )
-      wordcounts[wct]<-myct
-      wct<-wct+1
-  }
+wordcounts<-rep(0,length(words))
+wct<-1 ; l1<-length(fspacenames)/2
+for ( w in words ) {
+    myct<-length( unique( grep(w,unique(fspacenames[1:l1])) ) )
+    wordcounts[wct]<-myct
+    wct<-wct+1
+}
 #  locwordlist<-words[ wordcounts > 5 ]
-  print(locwordlist)
-  for ( w in locwordlist ) redlist<-sort(unique(c(redlist,grep(w, fspacenames ))))
-  l1<-length(redlist)/2
-  l1<-1:l1
-  l2<-((max(l1)+1):length(redlist))
-  wct<-1
-  wclasses<-rep(0,length(redlist))
-  wclasslevs<-(unique(fspacenames[redlist]))
-  print(paste("NL rows:",nl,"classes:",length(wclasslevs)))
-  mywf <- function( x ) return(length(grep(w,x)))
-  for ( w in fspacenames[redlist] ) {
-      wclasses[wct]<-sentencedf$sentenceids[  sentencedf$sentences == w ]
-      wct<-wct+1
-  }
-  wclassesf<-as.factor(wclasses)
-  decode2<-T # just a comparison to CCA 
-  pltsz<-8
-  if ( decode2 )
+designmat<-dmats # dmats/w
+redlist<-which( !is.na(eventdata$sentences) )
+wclassesf<-as.factor( eventdata$sentlab[redlist] )
+whichcols<- colnames(designmat) %in%  eventdata$sentences[redlist]
+wclasslevs<-( levels( wclassesf ) )
+l1<-seq(1,length(redlist)-1,2)
+l2<-l1+1
+if ( dosvd )
     {
+    print(paste("SVD",length(wclasslevs)))
     svdred<-svd( ccafeatspace[ redlist[l1], ] , nv=nvsvm, nu=0 )
-    mydf <-data.frame( dx=wclasses[l1],  fsp=ccafeatspace[ redlist[l1], ]  %*% svdred$v )
-    myudf <-data.frame( dx=wclasses[l2], fsp=ccafeatspace[ redlist[l2], ]  %*% svdred$v )
+    mydf <-data.frame( dx=wclassesf[l1],  fsp=ccafeatspace[ redlist[l1], ]  %*% svdred$v )
+    myudf <-data.frame( dx=wclassesf[l2], fsp=ccafeatspace[ redlist[l2], ]  %*% svdred$v )
     myrf<-svm(dx ~ . ,mydf, kernel='linear',type='C-classification',probability=TRUE)
-                                        #  myrf<-RRF( dx ~ . ,  mydf ,  ntree=5000 )
-    pred2<-predict( myrf, newdata=myudf )
+    pred2<-predict( myrf , newdata=myudf )
     svmerr<-sum(wclassesf[l2]==pred2)/length(pred2)
     randerr<-1.0/length(wclasslevs)
     svmresult<-paste("SVM-PredErr:",svmerr*100,"%, vs random",randerr*100,"%")
     print(svmresult)
-    mydata <- data.frame(group=fspacenames[redlist[l2]], Real=wclasses[l2]+rnorm(length(l2))*0.1,Pred=pred2)
-    gpic <-  ggplot(mydata,aes(Real,Pred,color=group,fill=group))+geom_point()+
-        guides(colour = guide_legend(override.aes = list(size = pltsz)))+
-                         theme(text = element_text(size=pltsz*2)) +
-                     scale_size(range=c(pltsz/2, pltsz))
-    ggsave("myqplot_svm.pdf",height=8,width=12)
     }
+###########################################################
+#  Great!  Now do some cca based dimensionality reduction #
 ###########################################################
   sentspace2<-cbind(  log( sentspace - min(sentspace) + 1 ) ) #  sentspace2<-sentspace 
   # multivariate correlation between global bold features and eigensentences
@@ -102,19 +142,37 @@ if ( docca == TRUE ) {
 #  for ( myw in locwordlist ) {
 #    blulist<-sort(unique(c(grep(myw, fspacenames[l1] ))))
     blulist<-redlist[l1]
-    ccamats1<-list( whiten( ccafeatspace[ blulist, ] ) , whiten( sentspace2[ blulist, ] ) )
+    classmatrix<-data.matrix( designmat[ eventtimes , whichcols ] )
+    classmatrix<-classmatrix[ blulist , ]
+    if ( T ) {
+    classmatrix<-interleaveMatrixWithItself( classmatrix, eigsentbasislength )
+    for ( i in 1:nrow(classmatrix) )
+      {
+      esent<-sentspace[blulist[i],]
+      classmatrix[i, (classmatrix[i,] > 0 ) ]<-esent
+      }
+    }
+    ccamats1<-list( ( ccafeatspace[ blulist, ] ) , (classmatrix) )
+#    mysparse<-c(mysparse[1], -1.0/length(wclasslevs))
 #    ccamats1<-list(       ( ccafeatspace[ blulist, ] ) ,       ( sentspace2[ blulist, ] ) )
     antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
-    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, ell1=10 , perms=nperm, inmask = c(mask4d, NA), robust=0, smooth=0., cthresh = c(0, 0) ) #, nboot=50 )  # subaal
-   for ( j in 1:nccavecs ) {
-      pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
-      pmat<-timeserieswindow2matrix( data.matrix( pmat ), subaal, 4, responselength, 0 )$eventmatrix
-      sccanBdictionary[,wct+(j-1)]<-pmat[1,]
-      sccanWdictionary[,wct+(j-1)]<-fcca1$eig2[,j]
-    }
+if ( docca == T ) {
+    print(paste("CCA",length(wclasslevs)))
+    print(mysparse)
+    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, ell1=10 , perms=nperm, robust=0, smooth=0., cthresh = c(0, 0) ,  inmask = c(NA, NA)) #, nboot=50 )  # subaal
+    if ( typeof(fcca1$eig1[[1]]) != "double" )  {
+      for ( j in 1:nccavecs ) {
+        pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
+        pmat<-timeserieswindow2matrix( data.matrix( pmat ), subaal, 4, responselength, 0 )$eventmatrix
+        sccanBdictionary[,wct+(j-1)]<-pmat[1,]
+#        sccanWdictionary[,wct+(j-1)]<-fcca1$eig2[,j]
+      }
+    fcca1$eig1<-sccanBdictionary
     wct<-wct+nccavecs
+  }
 #  }
-  fcca1$eig1<-sccanBdictionary
+  decodemat<-as.matrix( fcca1$eig1 )
+  if ( TRUE ) {
   fcca1$eig2<-sccanWdictionary
   pj1<-  ccafeatspace[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig1)
   pj2<- sentspace2[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig2)
@@ -136,29 +194,21 @@ if ( docca == TRUE ) {
     brainregionlist<-lappend(brainregionlist,colnames(imat)[ selector ])
 #    for ( i in 1:24 ) { plot(mm[i,],type='l'); Sys.sleep(0.5) }
   }
+  }
 }
-decode<-T
-if ( decode ) {
-#  eanat1<-sparseDecom( (ccafeatspace[ redlist, ])   , sparseness=-0.9, nvecs=50, its=2, mycoption=1 )
-#  decodemat<-as.matrix( eanat1$eig )
-  decodemat<-as.matrix(fcca1$eig1)
-  decodemat2<-as.matrix(fcca1$eig2)
-  mydfc <-data.frame( dx=sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
-                    fsp= ccafeatspace[ redlist[l1], ]   %*% decodemat  )
-  myudfc<-data.frame( dx=sentspace2[ redlist[l2]  , ] %*% decodemat2[,1],
-                    fsp= ccafeatspace[ redlist[l2], ]   %*% decodemat )
-  myrf<-RRF( dx ~ . , data=mydfc ) # , ntry=2000 , mtry=5 )
-  predc<-predict( myrf, newdata=myudfc )
-  mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudfc$dx,Pred=predc)
-  eigSz<-apply(sentspace2[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
-  chart_title<-locwordlist
-  pltsz<-8
-  gpic <-  ggplot(mydata,aes(Real,Pred,size=eigSz,color=group,fill=group))+geom_point()+
-      guides(colour = guide_legend(override.aes = list(size = pltsz)))+
-                         theme(text = element_text(size=pltsz*2)) +
-                     scale_size(range=c(pltsz/2, pltsz))
-  ggsave("myqplot.pdf",height=8,width=12)
 
+
+if ( TRUE  ) {
+  if ( docca == F ) {
+    eanat1<-sparseDecom(  ( ccafeatspace[ blulist, ] )   , sparseness=mysparse[1], nvecs=nv, its=4, mycoption=1, cthresh = 0 ) #, inmask=mask4d )
+    if ( typeof(eanat1$eig[[1]]) == "double" ) decodemat<-as.matrix( eanat1$eig ) else {
+        for ( j in 1:nv ) {
+          pmat<-timeseries2matrix( eanat1$eig[[j]], subaal )
+          pmat<-timeserieswindow2matrix( data.matrix( pmat ), subaal, eventshift+4, responselength, 0 )$eventmatrix
+          sccanBdictionary[,j]<-pmat[1,]
+          decodemat<-as.matrix( sccanBdictionary )
+      }}
+  }
   mydf <-data.frame( dx=wclassesf[l1],  # sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
                     fsp= (ccafeatspace[ redlist[l1], ]   %*% decodemat  ) )
   myudf<-data.frame( dx=wclassesf[l2], # sentspace2[ redlist[l2]  , ] %*% decodemat2[,1],
@@ -170,38 +220,26 @@ if ( decode ) {
   randerr<-1.0/length(wclasslevs)
   ccaresult<-paste("CCA-PredErr:",ccaerr*100,"%, vs random",randerr*100,"%")
   print(ccaresult)
-  source(paste(srcdir,"setup.R",sep=''))
+  print(svmresult)
+
   sentencesubset<- sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
   nodedf<-data.frame( nodename=sentencedf[sentencesubset,1], nodeid=sentencedf[sentencesubset,2] )
-  ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile='temp2.html', mycharge=-2066,zoom=T) 
-  ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile='temp.html',zoom=F, mycharge=-2066, whichviz="Simple")
-  
-  pltsz<-10
-  mydata <- data.frame(group=fspacenames[redlist[l2]], Real=wclasses[l2]+rnorm(length(l2))*0.1,Pred=pred)
-  gpic <-  ggplot(mydata,aes(Real,Pred,color=group,fill=group))+geom_point()+
+  ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile='temp2.html', mycharge=-2066,zoom=T)
+
+  mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudf$dx,Pred=pred)
+  eigSz<-apply(sentspace2[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
+  chart_title<-locwordlist
+  pltsz<-8
+  gpic <-  ggplot(mydata,aes(Real,Pred,size=eigSz,color=group,fill=group))+geom_point()+
       guides(colour = guide_legend(override.aes = list(size = pltsz)))+
-          theme(text = element_text(size=pltsz)) +
-              scale_size(range=c(pltsz/2, pltsz))
-  ggsave("myqplot_cca.pdf",height=8,width=12)
+                         theme(text = element_text(size=pltsz*2)) +
+                     scale_size(range=c(pltsz/2, pltsz))
+  ggsave("myqplot.pdf",height=8,width=12)
 
-  
-  mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudfc$dx,Predc=predc, Pred=pred)
-  mydata$group <- as.character(mydata$group)
-  m1 <- rPlot(Predc ~ Real  | group  ,type = 'point', color='group', data = mydata)
-  m2 <- rPlot(Predc ~ Real           ,type = 'point', color='group', data = mydata)
-  m2$addParams(width = 1200, height = 600, dom = 'chart1',
-    title = "SCCAN-Decode")
-#  m2$publish('r1', id='17af51c7e4b8c809b096' ) # host='gist' )
-  
-
-  
-  # myrf<-bgp(sX=mydf[,2:ncol(mydf)],Z=mydf[,1],XX=myudf[,2:ncol(myudf)])
-  # cbind(myudf$dx,pred) )
-# print( sum( myudf$dx == pred )/length(pred) )
-if ( typeof(pred) != "integer" ) print( cor.test(myudf$dx,pred) )
 }
-# print(brainregionlist)
-#print("Final result of this script: we can predict the low-dimensional representation of the eigenwords as seen by bold.")
-# print(unique(fspacenames[redlist]))
-
-
+#
+# fglobsig<-apply(featspace,FUN=mean,MARGIN=1)
+# ccafeatspace<-feat2$amplitudeTransform
+# ccafeatspace<-residuals(lm(feat2$frequencyTransform~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
+# ccafeatspace<-featspace
+#

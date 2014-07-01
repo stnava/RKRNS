@@ -12,7 +12,7 @@ for ( i in 1:length( eventtimes ) ) {
 #                    plot = TRUE, na.action = na.fail) 
   fspacenames[i]<-dmatsnames[ which( dmats[eventtimes[i],  ] == 1  ) ]
 }
-eventshift<-8
+eventshift<-4
 featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes+eventshift, responselength, 3, c(1,1,1,0.25) )
 featspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d

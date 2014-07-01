@@ -24,7 +24,7 @@ output:
 
 # Background
 
-##
+## A long history of research
 
 Comprehension from reading, like hearing (@French1947), is fast and contextual.
 
@@ -134,7 +134,7 @@ Our processing therefore uses the following steps:
 Once these steps are complete we choose a training
 and testing split and perform statistical modeling.
 
-# Multivariate statistical modeling and prediction
+# Multivariate statistical modeling
 
 ## Formulation
 
@@ -183,12 +183,19 @@ that is, learning a (sentence) label function from the BOLD data.
 
 ## Decoding targets
 
-We decode sentences containing the words `r locwordlist`.  These
-include sentences: `r wclasslevs`.  Preliminarily, we find SVD-SVM `r svmresult` and
+We decode all `r nrow(sentencedf)` sentences.  Preliminarily, we find SVD-SVM `r svmresult` and
 CCA-SVM results `r ccaresult`.  The SVD-SVM uses the SVD of the matrix
 $X$ as predictors.
 
-A simple example [link](http://htmlpreview.github.io/?https://github.com/stnava/RKRNS/blob/doc/src/eigBrainLang.html)
+A simple example
+[link](http://htmlpreview.github.io/?https://github.com/stnava/RKRNS/blob/doc/src/eigBrainLang.html)
+shows the misclassification network ( see the interactive graph ).
+Every sentence is represented by 2 nodes, the truth and the
+prediction.  These 2 nodes have the same color.  Under perfect
+classification, only these node pairs will be connected with a thick
+edge.  The edge weights are proportional to the number of
+classification cases.  You can zoom and click on the graph to get an
+idea of what sentences are well-classified.
 
 ```{r d3,results='asis',iframe = TRUE,fig.cap='A (mis)-classification network',echo=FALSE}
 ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=T) 
@@ -241,17 +248,4 @@ chance with current ceilings around a factor of M times chance.
 
 # References
 
-<!---
-# And some pictures
-
-```{r lm-vis, fig.cap='Regression diagnostics'}
-par(mfrow = c(2, 2), pch = 20, mar = c(4, 4, 2, .1), bg = 'white')
-plot(fit)
-```
-# A little bit math
-
-Our regression equation is $Y=`r b[1]`+`r b[2]`x$, and the model is:
-
-$$ Y = \beta_0 + \beta_1 x + \epsilon$$
--->
 
