@@ -89,7 +89,7 @@ print( tbl[ sample(dim(tbl))[1:10]] )
 
 # Eigenwords and eigensentences
 
-##
+## Definitions
 
 The eigenword representation is a a quantitative, contextual semantic similarity space recently contributed by Dhillon and Ungar [link](http://www.cis.upenn.edu/~ungar/CVs/spectral_NLP.html) in @dhillon_icml12_tscca .  Eigenwords are based on the canonical correlation analysis of the adjacency matrix (FIXME word choice) of words within a large corpus (Wikipedia).  That is, eigenword representations are driven by the sentence-level context(s) within which a word appears.
 
