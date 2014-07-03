@@ -18,6 +18,7 @@ removeEventOverlap<-FALSE
 eigsentbasislength<-100
 aalimg<-antsImageRead( paste("aal/",subject,"_aal2.nii.gz",sep='') , 3 )
 bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
+ref<-antsImageRead( paste("ref/",subject,"_mocoref.nii.gz",sep='') , 3 )
 imagedir<-"moco/"
 imagepostfix<-"_moco.nii.gz"
 data("aal",package="ANTsR")

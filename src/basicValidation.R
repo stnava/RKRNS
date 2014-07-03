@@ -2,8 +2,8 @@
 # parameters
 #########################################
 dosvd<-F
-docca<-TRUE
-nv<-5; its<-3 # cca params
+docca<-T
+nv<-30; its<-41 # cca params
 nvsvm<-8      # svd params
 mysparse<-c(  -1/(nv-1),  -1/(nv-1) )
 ###########constant params below########
@@ -77,8 +77,10 @@ eventdata<-cbind( eventdata, enouns1=enouns1, enouns1lab=enouns1lab, everbs1=eve
 ################################################################################################################################
 if ( !exists("ccafeatspace") ) ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
 nl<-nrow(  ccafeatspace )
-inds1<-1:(nl/2)+5
-inds2<-(max(inds1)+1):nl
+inds1<-seq(1,(nl-1),by=2)
+inds2<-inds1+1
+inds1<-c(inds1,inds2[1:(length(inds2)*5/6)])
+inds2<-inds2[(length(inds2)*5/6):length(inds2)]
 redlist<-c()
 locwordlist<-'.red.'
 locwordlist<-c('tree','bird','green','red') #
@@ -158,14 +160,20 @@ if ( dosvd )
     antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
-    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, ell1=10 , perms=nperm, robust=0, smooth=0., cthresh = c(1250, 0) ,  inmask = c(mask4d, NA)) #, nboot=50 )  # subaal
+    if ( ! exists("fcca1") )
+        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, ell1=10 , perms=nperm, robust=0, smooth=0., cthresh = c(1250, 0) ,  inmask = c(mask4d, NA)) #, nboot=50 )  # subaal
     if ( typeof(fcca1$eig1[[1]]) != "double" )  {
+      vislist<-list()
       for ( j in 1:nccavecs ) {
+        viewimg<-projectImageAlongAxis(  fcca1$eig1[[j]], subaal )
+        viewimg[ subaal > 0 ]<-viewimg[ subaal > 0 ]/max( viewimg[ subaal > 0 ] )
+        vislist<-lappend( vislist, viewimg )
         pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
         pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
         sccanBdictionary[,j]<-pmat[1,]
 #        sccanWdictionary[,wct+(j-1)]<-fcca1$eig2[,j]
       }
+    plotANTsImage( ref, vislist , slices='12x56x2' , thresh="0.25x1", color=rainbow(2), outname="eanatviz.jpg" )
     fcca1$eig1<-sccanBdictionary
     wct<-wct+nccavecs
   }
@@ -199,11 +207,11 @@ if ( docca == T ) {
 
 if ( TRUE  ) {
   if ( docca == F ) {
-    eanat1<-sparseDecom(  ( ccafeatspace[ blulist, ] )   , sparseness=mysparse[1], nvecs=nv, its=4, mycoption=1, cthresh = 0 ) #, inmask=mask4d )
+    eanat1<-sparseDecom(  ( ccafeatspace[ blulist, ] )   , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=1, cthresh = 250 , inmask=mask4d )
     if ( typeof(eanat1$eig[[1]]) == "double" ) decodemat<-as.matrix( eanat1$eig ) else {
         for ( j in 1:nv ) {
           pmat<-timeseries2matrix( eanat1$eig[[j]], subaal )
-          pmat<-timeserieswindow2matrix( data.matrix( pmat ), subaal, eventshift+4, responselength, 0 )$eventmatrix
+          pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
           sccanBdictionary[,j]<-pmat[1,]
           decodemat<-as.matrix( sccanBdictionary )
       }}
