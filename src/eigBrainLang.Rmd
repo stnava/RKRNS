@@ -2,9 +2,6 @@
 title: "Spectral representations of language are reflected in brain function"
 bibliography: rkrns.bib
 output:
-  html_document:
-    toc: true
-    theme: readable
   pdf_document:
     toc: true
     highlight: zenburn
@@ -12,6 +9,9 @@ output:
     incremental: false
     widescreen: true
     smaller: false
+  html_document:
+    toc: true
+    theme: readable
 ---
 <!---
   revealjs_presentation:
@@ -224,6 +224,10 @@ done carefully.  Preliminary investigations (and our use of
 spatiotemporally regularized SCCAN @Avants2014) show that the voxels
 are locally clustered and distributed across inferior temporal lobe,
 superior temporal (Heschl's?) gyrus and inferior frontal gyrus.
+
+```{r viz,results='asis',iframe = TRUE,fig.cap='Functional-Anatomical clustering / predictors',echo=FALSE}
+  plotANTsImage( ref, vislist , slices='12x56x2' , thresh="0.25x1", color=rainbow( length(vislist) ) )
+```
 
 # Discussion
 

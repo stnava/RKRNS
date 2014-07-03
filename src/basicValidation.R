@@ -173,7 +173,7 @@ if ( docca == T ) {
         sccanBdictionary[,j]<-pmat[1,]
 #        sccanWdictionary[,wct+(j-1)]<-fcca1$eig2[,j]
       }
-    plotANTsImage( ref, vislist , slices='12x56x2' , thresh="0.25x1", color=rainbow(2), outname="eanatviz.jpg" )
+    plotANTsImage( ref, vislist , slices='12x56x2' , thresh="0.25x1", color=rainbow(length(vislist)), outname="eanatviz.jpg" )
     fcca1$eig1<-sccanBdictionary
     wct<-wct+nccavecs
   }
