@@ -5,7 +5,7 @@ library(devtools)
 install_github('RKRNS','stnava')
 ```
 
-Then check the vignette
+Then check the help / vignette
 
 ```
 help(package = "RKRNS", help_type = "html")
