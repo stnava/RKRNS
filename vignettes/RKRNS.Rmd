@@ -73,6 +73,9 @@ blocklength<-450*TR
 throwaway<-8
 if ( exists("imat") ) nvol<-nrow(imat) else nvol<-57600
 boldhours<-nvol*TR/3600
+srcfiles<-paste("demo/",c("setup.R","assembleDesign.R","assembleBlocks.R","organizeDesign.R","boldbasedSentenceMap.R","basicValidation.R"))
+for ( f in srcfiles ) source(system.file("demo/setup.R", package="RKRNS"))
+% 
 ```
 ## BOLD Mechanics
 

@@ -16,9 +16,12 @@ winsorval<-0.01
 removeSentLengthEffects<-TRUE
 removeEventOverlap<-FALSE
 eigsentbasislength<-100
-aalimg<-antsImageRead( paste("aal/",subject,"_aal2.nii.gz",sep='') , 3 )
-bmask<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
-ref<-antsImageRead( paste("ref/",subject,"_mocoref.nii.gz",sep='') , 3 )
+aalfn<-paste("aal/",subject,"_aal2.nii.gz",sep='')
+if ( file.exists(aalfn) ) aalimg<-antsImageRead( aalfn , 3 )
+bmaskfn<-paste("ref/",subject,"_mask.nii.gz",sep='')
+if ( file.exists(bmaskfn) ) bmask<-antsImageRead( bmaskfn , 3 )
+reffn<-paste("ref/",subject,"_mocoref.nii.gz",sep='')
+if ( file.exists(reffn) ) ref<-antsImageRead( reffn , 3 )
 imagedir<-"moco/"
 imagepostfix<-"_moco.nii.gz"
 data("aal",package="ANTsR")
