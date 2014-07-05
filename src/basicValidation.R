@@ -3,9 +3,10 @@
 #########################################
 dosvd<-F
 docca<-T
-nv<-30; its<-41 # cca params
+nv<-30; its<-25 # cca params
 nvsvm<-8      # svd params
-mysparse<-c(  -1/(nv-1),  -1/(nv-1) )
+mysparse<-c(  -1/(nv),  -1/(nv) )
+cthresh<-50
 ###########constant params below########
 longc<-0
 nperm<-0
@@ -160,43 +161,45 @@ if ( dosvd )
     antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
-    if ( ! exists("fcca1") )
-        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, ell1=10 , perms=nperm, robust=0, smooth=0., cthresh = c(1250, 0) ,  inmask = c(mask4d, NA)) #, nboot=50 )  # subaal
+    #if ( ! exists("fcca1") )
+        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=0, perms=nperm, robust=0, smooth=0., cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.01 ) #, nboot=50 )  # subaal mask4d
     if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       vislist<-list()
       for ( j in 1:nccavecs ) {
-        viewimg<-projectImageAlongAxis(  fcca1$eig1[[j]], subaal )
-        viewimg[ subaal > 0 ]<-viewimg[ subaal > 0 ]/max( viewimg[ subaal > 0 ] )
+        temp<-antsImageClone( fcca1$eig1[[j]] )
+        temp2<-antsImageClone( fcca1$eig1[[j]] )
+        ImageMath(4,temp2,"abs",temp)
+        ImageMath(4,temp2,"Normalize",temp2)
+        viewimg<-projectImageAlongAxis( temp2, subaal, 3 , 0 );
         vislist<-lappend( vislist, viewimg )
         pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
         pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
         sccanBdictionary[,j]<-pmat[1,]
 #        sccanWdictionary[,wct+(j-1)]<-fcca1$eig2[,j]
       }
-    plotANTsImage( ref, vislist , slices='12x56x2' , thresh="0.25x1", color=rainbow(length(vislist)), outname="eanatviz.jpg" )
-    fcca1$eig1<-sccanBdictionary
+    plotANTsImage( ref, vislist , slices='12x56x2' , thresh="0.9x1", color=rainbow(length(vislist)), outname="eanatviz.jpg" )
     wct<-wct+nccavecs
-  }
+  } else sccanBdictionary <- fcca1$eig1
 #  }
-  decodemat<-as.matrix( fcca1$eig1 )
+  decodemat<-as.matrix(sccanBdictionary)
+  
   if ( TRUE ) {
   fcca1$eig2<-sccanWdictionary
-  pj1<-  ccafeatspace[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig1)
+  pj1<-  ccafeatspace[ redlist[l2]  , ]  %*%  decodemat
   pj2<- sentspace2[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig2)
   par(mfrow=c(2,1))
   brainregionlist<-list()
-  for ( k in 1:1 ) {
-    plot( pj2[,k], pj1[,k] )
-    mm<-matrix(fcca1$eig1[,k],nrow=responselength)
+  for ( k in 1:ncol(decodemat)) {
+    mm<-matrix(decodemat[,k],nrow=responselength)
     myestimatedhrf<-rowMeans(mm)
     whtimes<-which( abs(myestimatedhrf) > 0 )
     plot(myestimatedhrf,type='l')
     mmmag<-sqrt( mm^2 )
-    myestimatedbrainregionsval<-apply(mmmag[whtimes,],FUN=sum,MARGIN=2)
+    myestimatedbrainregionsval<-apply(mmmag[,],FUN=sum,MARGIN=2)
     myestimatedbrainregionsval<-myestimatedbrainregionsval/sum(myestimatedbrainregionsval)
     myccavec<-antsImageClone( subaal )
     myccavec[ subaal > 0 ]<-myestimatedbrainregionsval
-    antsImageWrite(myccavec,'temp.nii.gz')
+    antsImageWrite(myccavec,paste('temp',k,'.nii.gz',sep=''))
     selector<-myestimatedbrainregionsval >  mean(myestimatedbrainregionsval[myestimatedbrainregionsval>0])
     brainregionlist<-lappend(brainregionlist,colnames(imat)[ selector ])
 #    for ( i in 1:24 ) { plot(mm[i,],type='l'); Sys.sleep(0.5) }
