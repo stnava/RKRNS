@@ -1,4 +1,6 @@
 print("#################correlation of sentences based on bold#################")
+data(sentences, package = "RKRNS")
+nsentences<-nrow(sentences)
 # 0. create a vector denoting times of events w/ child vs not child at sentence level
 sentnames<-colnames( dmats )
 sentnames<-colnames(dmatw)
@@ -18,21 +20,20 @@ featspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d
 #source(paste(srcdir,"timeserieswindow2freqamp.R",sep=''))
 #feat2<-timeserieswindow2freqamp(  data.matrix( imatf ) , eventlist=eventtimes, timewindow=40, f=2, wl=32 )
-sentspace<-matrix(rep(NA, length(eventtimes)*(nsentences) ),nrow=length(eventtimes))
-for ( i in 1:length( eventtimes ) )   sentspace[i,]<-sentsimilarity[  which(colnames(sentsimilarity) == fspacenames[i]  ), ]    
 sentspace<-matrix(rep(NA, length(eventtimes)*ncol(eigsent) ),nrow=length(eventtimes))
-for ( i in 1:length( eventtimes ) )   sentspace[i,]<-eigsent[  which(colnames(sentsimilarity) == fspacenames[i]  ), ]    
+for ( i in 1:length( eventtimes ) )   sentspace[i,]<-eigsent[  which(rownames(eigsent) == fspacenames[i]  ), ]    
 rownames(featspace)<-(fspacenames)
-agg<-aggregate( featspace , list(Sent=fspacenames), mean )
-aggcor<-cor(t(data.matrix(agg[,2:ncol(agg)])))
-colnames(aggcor)<-rownames(aggcor)<-dmatsnames
-pdf("fspace_corr.pdf",width=32,height=32)
-pheatmap(aggcor,fontsize = 10)
-dev.off()
-#pdf("fspace_corr.pdf",width=4096,height=4096)
-#pheatmap(cor(featspace))
-#dev.off()
-
+#
+# agg<-aggregate( featspace , list(Sent=fspacenames), mean )
+# aggcor<-cor(t(data.matrix(agg[,2:ncol(agg)])))
+# colnames(aggcor)<-rownames(aggcor)<-dmatsnames
+# pdf("fspace_corr.pdf",width=32,height=32)
+# pheatmap(aggcor,fontsize = 10)
+# dev.off()
+# pdf("fspace_corr.pdf",width=4096,height=4096)
+# pheatmap(cor(featspace))
+# dev.off()
+#
 if ( FALSE ) {
 # dictionaries of all bold responses 
 eanat1<-sparseDecom( featspace[ grep("red",rownames(featspace)),]    , sparseness=-0.9, nvecs=10, its=5, mycoption=1 )

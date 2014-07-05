@@ -3,7 +3,7 @@
 #########################################
 dosvd<-F
 docca<-T
-nv<-8; its<-11 # cca params
+nv<-4; its<-3 # cca params
 nvsvm<-8      # svd params
 mysparse<-c(  -1/(nv),  -1/(nv) )
 cthresh<-50
@@ -18,8 +18,8 @@ print("########basic validation########")
 #########################################
 if ( ! exists("eventdata") ) {
 print("########basic speech parts########")
-sentenceids<-1:length(unique(sentences))
-sentencedf<-data.frame(  sentences=sentences, sentenceids=sentenceids )
+sentenceids<-1:length(unique(sentences$Sentence))
+sentencedf<-data.frame(  sentences=sentences$Sentence, sentenceids=sentenceids )
 wordids<-1:length(unique(words))
 worddf<-data.frame( words=words, wordids=wordids )
 eventdata<-data.frame(eventtimes=eventtimes,sentences=fspacenames)
@@ -230,7 +230,7 @@ if ( TRUE  ) {
   randerr<-1.0/length(wclasslevs)
   ccaresult<-paste("CCA-PredErr:",ccaerr*100,"%, vs random",randerr*100,"%")
   print(ccaresult)
-  print(svmresult)
+  if ( exists("svmresult") ) print(svmresult)
 
   sentencesubset<- sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
   nodedf<-data.frame( nodename=sentencedf[sentencesubset,1], nodeid=sentencedf[sentencesubset,2] )
@@ -247,9 +247,3 @@ if ( TRUE  ) {
   ggsave("myqplot.pdf",height=8,width=12)
 
 }
-#
-# fglobsig<-apply(featspace,FUN=mean,MARGIN=1)
-# ccafeatspace<-feat2$amplitudeTransform
-# ccafeatspace<-residuals(lm(feat2$frequencyTransform~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
-# ccafeatspace<-featspace
-#
