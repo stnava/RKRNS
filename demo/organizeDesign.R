@@ -7,7 +7,8 @@ dmats<-dmat[,sentinds]
 eventsw<-apply( dmatw, FUN=sum, MARGIN=1 )
 eventswr<-apply( dmatw, FUN=sum, MARGIN=2 )
 eventss<-apply( dmats, FUN=sum, MARGIN=1 )
-nchar<-as.numeric( dmat$nchar )
+if ( !is.na( removeSentLengthEffects ) ) removeSentLengthEffects<-as.numeric( dmat$nchar )
+if ( !is.na(removeEventOverlap) ) removeEventOverlap<-eventss
 eventssr<-apply( dmats, FUN=sum, MARGIN=2 )
 dmatsblock<-dmats
 blocksize<-responselength

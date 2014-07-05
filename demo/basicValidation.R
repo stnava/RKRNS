@@ -1,9 +1,9 @@
 #########################################
 # parameters
 #########################################
-dosvd<-F
+dosvd<-T
 docca<-T
-nv<-4; its<-3 # cca params
+nv<-8; its<-3 # cca params
 nvsvm<-8      # svd params
 mysparse<-c(  -1/(nv),  -1/(nv) )
 cthresh<-50
@@ -135,7 +135,8 @@ if ( dosvd )
 ###########################################################
 #  Great!  Now do some cca based dimensionality reduction #
 ###########################################################
-  sentspace2<-cbind(  log( sentspace - min(sentspace) + 1 ) ) #  sentspace2<-sentspace 
+  sentspace2<-cbind(  log( sentspace - min(sentspace) + 1 ) )
+  # sentspace2<-sentspace 
   # multivariate correlation between global bold features and eigensentences
   nccavecs<-nv
   perword<-1 # length(locwordlist)
@@ -161,7 +162,7 @@ if ( dosvd )
     antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
-    #if ( ! exists("fcca1") )
+    if ( ! exists("fcca1") )
         fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=0, perms=nperm, robust=0, smooth=0., cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.01 ) #, nboot=50 )  # subaal mask4d
     if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       vislist<-list()
@@ -234,7 +235,7 @@ if ( TRUE  ) {
 
   sentencesubset<- sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
   nodedf<-data.frame( nodename=sentencedf[sentencesubset,1], nodeid=sentencedf[sentencesubset,2] )
-  ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile='temp2.html', mycharge=-2066,zoom=T)
+  ww<-  classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile='temp2.html', mycharge=-2066,zoom=T)
 
   mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudf$dx,Pred=pred)
   eigSz<-apply(sentspace2[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
