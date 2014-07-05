@@ -66,7 +66,7 @@ reduction.
 
 # The basic design
 
-```{r define variables,echo=FALSE}
+```{r define variables,echo=TRUE}
 TR<-0.5 
 srcfiles<-paste("demo/",c("setup.R","assembleDesign.R","assembleBlocks.R","organizeDesign.R"),sep='')
 for ( f in srcfiles ) source(system.file(f, package="RKRNS"))
@@ -78,7 +78,6 @@ blocklength<-450*TR
 throwaway<-8
 if ( exists("imat") ) nvol<-nrow(imat) else nvol<-57600
 boldhours<-nvol*TR/3600
-% 
 ```
 ## BOLD Mechanics
 

@@ -1,4 +1,5 @@
 print("#####organize design#####")
+### THIS SHOULD GO IN THE RMD
 if ( ! exists("wordinds" ) ) {
 wordinds<-39:280
 sentinds<-281:ncol(dmat)

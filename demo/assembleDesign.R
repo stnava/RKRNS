@@ -1,13 +1,11 @@
 print("######### assemble overarching data-organization & design files #########")
-whichblocks<-Sys.glob("design/*csv")
+whichblocks<-Sys.glob("design/*csv")   # INPUT csv list
 whichblocks2<-unlist( strsplit( whichblocks, "/" ) )[c(1:length(whichblocks))*2]
 whichblocks<-gsub("_design.csv","",whichblocks2)
 dsplits<-paste("design/",whichblocks,"_design.csv",sep='')
 if ( istest ) dsplits<-dsplits[1:10] # for testing 
-dfn<-paste("assembly/assembled_design_",labs[1],"_",labs[length(labs)],"test.csv",sep='')
-afn<-paste("assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.csv",sep='')
-afn<-paste("assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.mha",sep='')
-print(paste("assemble",dfn))
+dfn<-paste("assembly/assembled_design_",labs[1],"_",labs[length(labs)],"test.csv",sep='') # INPUT out csv name
+afn<-paste("assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.mha",sep='') # INPUT out img name
 if ( ! exists("dmat") | ! exists("imat") ) {
   if ( file.exists( afn ) & file.exists( dfn ) ) {
     print(paste("read",afn))
@@ -23,3 +21,5 @@ if ( ! exists("dmat") | ! exists("imat") ) {
 }
 print("design assembly done")
 usedesignrow<-rep(FALSE,nrow(dmat))
+# return imat and dmat
+
