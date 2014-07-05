@@ -1,6 +1,6 @@
 Package: RKRNS
 Type: Package
-Title: What the package does (short line)
+Title: ANTsR Decoding
 Version: 1.0
 Date: 2014-07-05
 Author: Brian B. Avants
@@ -8,5 +8,6 @@ Maintainer: Brian B. Avants <stnava@gmail.com>
 Description: Decoding from BOLD based on (sparse) dimensionality reduction
 License: GPL-2
 VignetteBuilder: knitr
-Imports: Rcpp (>= 0.11.2), ANTsR
+Imports: Rcpp (>= 0.11.2)
+Depends: ANTsR, ggplot2,fpc,waveslim,FitARMA,forecast,multitaper,pheatmap,psych,visreg,randomForest,e1071,kernlab,RRF,vbmp,tgp,seewave,rCharts,rmarkdown,languageR,wordnet,openNLP,NLP
 LinkingTo: Rcpp
