@@ -13,10 +13,9 @@ output:
     toc: true
     theme: readable
 ---
-<!---
- \VignetteEngine{knitr::knitr}
--->
-<!---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{Intro to RKRNS}
   revealjs_presentation:
     theme: sky
     transition: fade

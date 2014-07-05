@@ -9,5 +9,6 @@ Then check the vignette
 
 ```
 help(package = "RKRNS", help_type = "html")
-browseVignettes("RKRNS")
+browseVignettes("RKRNS") # doesnt work yet
+% render( paste(RKRNSsrcdir,"/vignettes/RKRNS.Rmd",sep='') ,'all')
 ```
