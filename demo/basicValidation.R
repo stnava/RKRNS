@@ -1,9 +1,10 @@
 #########################################
 # parameters
 #########################################
-dosvd<-T
+dosvd<-F
 docca<-T
-nv<-8; its<-3 # cca params
+if ( !exists('nv') ) nv<-8
+its<-3 # cca params
 nvsvm<-8      # svd params
 mysparse<-c(  -1/(nv),  -1/(nv) )
 cthresh<-50
@@ -119,7 +120,7 @@ whichcols<- colnames(designmat) %in%  eventdata$sentences[redlist]
 wclasslevs<-( levels( wclassesf ) )
 l1<-seq(1,length(redlist)-1,2)
 l2<-l1+1
-if ( dosvd )
+if ( dosvd & ! exists("svmresult") )
     {
     print(paste("SVD",length(wclasslevs)))
     svdred<-svd( ccafeatspace[ redlist[l1], ] , nv=nvsvm, nu=0 )
@@ -163,7 +164,7 @@ if ( dosvd )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
     if ( ! exists("fcca1") )
-        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=0, perms=nperm, robust=0, smooth=0., cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.01 ) #, nboot=50 )  # subaal mask4d
+        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=0, perms=nperm, robust=0, smooth=0., cthresh = c(cthresh, 0) ,  inmask = c(NA, NA), ell1=1 ) #, nboot=50 )  # subaal mask4d
     if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       vislist<-list()
       for ( j in 1:nccavecs ) {

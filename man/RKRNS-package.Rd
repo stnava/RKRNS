@@ -3,11 +3,12 @@
 \alias{RKRNS}
 \docType{package}
 \title{
-What the package does (short line)
+Research on decoding sentences from BOLD data
 }
 \description{
-More about what it does (maybe more than one line)
-~~ A concise (1-5 lines) description of the package ~~
+Filters fMRI in order to identify signal that may relate to sentence
+reading.  Features spaces based on spectral representations of the
+data.  Also seeks to help understand classification patterns.
 }
 \details{
 \tabular{ll}{
@@ -17,8 +18,7 @@ Version: \tab 1.0\cr
 Date: \tab 2014-07-05\cr
 License: \tab GPL-2\cr
 }
-~~ An overview of how to use the package, including the most important ~~
-~~ functions ~~
+Significant content in the demo folder of the source package.  Assumes the data is stored elsewhere.  The vignette also provides an overview of the ideas here.
 }
 \author{
 Brian B. Avants
@@ -26,12 +26,12 @@ Brian B. Avants
 Maintainer: Brian B. Avants <stnava@gmail.com>
 }
 \references{
-~~ Literature or other references for background information ~~
+See the vignette
 }
 \keyword{ package }
 \seealso{
 ~~ Optional links to other man pages, e.g. ~~
-~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
+~~ \code{\link[https://github.com/stnava/ANTsR]{ANTsR}} ~~
 }
 \examples{
 %% ~~ simple examples of the most important functions ~~
