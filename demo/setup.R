@@ -1,6 +1,8 @@
+## ---- ext1
 print("#########setup#########TODO: need to incorporate motion parameters!")
 istest<-FALSE
 subject<-"111157"
+datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
 tr<-as.numeric(0.5)
 responselength<-8/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
@@ -15,31 +17,12 @@ winsorval<-0.01
 removeSentLengthEffects<-TRUE
 removeEventOverlap<-NA # dont do it
 eigsentbasislength<-100
-aalfn<-paste("aal/",subject,"_aal2.nii.gz",sep='')
+aalfn<-paste(datadir,"aal/",subject,"_aal2.nii.gz",sep='')
 if ( file.exists(aalfn) ) aalimg<-antsImageRead( aalfn , 3 )
-bmaskfn<-paste("ref/",subject,"_mask.nii.gz",sep='')
+bmaskfn<-paste(datadir,"ref/",subject,"_mask.nii.gz",sep='')
 if ( file.exists(bmaskfn) ) bmask<-antsImageRead( bmaskfn , 3 )
-reffn<-paste("ref/",subject,"_mocoref.nii.gz",sep='')
+reffn<-paste(datadir,"ref/",subject,"_mocoref.nii.gz",sep='')
 if ( file.exists(reffn) ) ref<-antsImageRead( reffn , 3 )
-imagedir<-"moco/"
+imagedir<-paste(datadir,"moco/",sep='')
 imagepostfix<-"_moco.nii.gz"
 data("aal",package="ANTsR")
-########################## that's the important stuff, above ##########################
-mygamma <- function(x, a1 = 6.,   a2 = 12., b1 = 0.9, b2 = 0.9, cc = 0.35) {
-    d1 <- a1 * b1
-    d2 <- a2 * b2
-    c1 <- (x/d1)^a1
-    c2 <- cc * (x/d2)^a2
-    res <- c1 * exp(-(x - d1)/b1) - c2 * exp(-(x - d2)/b2)
-    res
-  }
-print("# define deconvolution bases")
-basislength<-50
-b1<-mygamma(c(1:basislength),  1,  5 ,0.9,0.9,0.05) 
-b2<-mygamma(c(1:basislength),  5, 10 ,0.9,0.9,0.05) 
-b3<-mygamma(c(1:basislength), 10, 15 ,0.9,0.9,0.05) 
-b4<-mygamma(c(1:basislength), 15, 20 ,0.9,0.9,0.05) 
-b5<-mygamma(c(1:basislength), 20, 25 ,0.9,0.9,0.05) 
-b6<-mygamma(c(1:basislength), 25, 30 ,0.9,0.9,0.05)
-basismat<-cbind( b1, b2, b3, b4, b5, b6 )
-##########################################

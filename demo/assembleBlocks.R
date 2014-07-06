@@ -1,3 +1,4 @@
+## ---- ext3
 print("#########assemble image blocks, potentially event-specifically#########")
 maskdim<-dim( bmask )
 aalmask<-antsImageClone( aalimg )
@@ -64,7 +65,7 @@ colnames(imat)<-aal$label_name[labs]
 print("assembly done")
 if ( istest ) {
   plot(rowMeans(imat),type='l')
-  bmask2<-antsImageRead( paste("ref/",subject,"_mask.nii.gz",sep='') , 3 )
+  bmask2<-antsImageRead( paste(datadir,"ref/",subject,"_mask.nii.gz",sep='') , 3 )
   bbn<-bmask[ bmask == 1 ]
   bbn[highvarmatinds]<-2
   bmask2[ bmask == 1 ]<-bbn
