@@ -93,27 +93,31 @@ wordinds<-39:280
 sentinds<-281:ncol(dmat)
 dmatw<-dmat[,wordinds]
 dmats<-dmat[,sentinds]
-eventsw<-apply( dmatw, FUN=sum, MARGIN=1 )
-eventswr<-apply( dmatw, FUN=sum, MARGIN=2 )
 eventss<-apply( dmats, FUN=sum, MARGIN=1 )
 if ( !is.na( removeSentLengthEffects ) ) removeSentLengthEffects<-as.numeric( dmat$nchar )
 if ( !is.na(removeEventOverlap) ) removeEventOverlap<-eventss
 events1<-apply( dmats     , FUN=sum, MARGIN=1 )
 eventtimes<-which( events1 > 0 )
 words<-colnames(dmatw)
-data(wiki_words,package="RKRNS")
-eigsent<-eigenSentences(wiki_words)
-imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
-   removeSentLengthEffects=removeSentLengthEffects, 
-   removeEventOverlap=removeEventOverlap )
-source( system.file( paste("demo/","boldbasedSentenceMap.R",sep=''), package="RKRNS") )
-source( system.file( paste("demo/","basicValidation.R",sep='')     , package="RKRNS") )
-# in the future this should load a user defined setup file
-# then call the appropriate functions
-# ...
-#
 ```
 
+
+```{r eigensentences,echo=TRUE}
+data(wiki_words,package="RKRNS")
+eigsent<-eigenSentences(wiki_words)
+```
+
+
+```{r filtering,echo=TRUE}
+imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
+   removeEventOverlap=removeEventOverlap )
+
+```{r validation,echo=TRUE}
+#
+# in the future these should call the appropriate functions or be embedded here ...
+source( system.file( paste("demo/","boldbasedSentenceMap.R",sep=''), package="RKRNS") )
+source( system.file( paste("demo/","basicValidation.R",sep='')     , package="RKRNS") )
+```
 
 ```{r define variables,echo=TRUE}
 TR<-0.5
