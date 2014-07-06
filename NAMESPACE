@@ -1,2 +1,6 @@
 exportPattern("^[[:alpha:]]+")
 importFrom(Rcpp, evalCpp)
+importFrom(ANTsR, .__T__as.antsImage:ANTsR)
+importFrom(ANTsR, .__T__as.antsMatrix:ANTsR)
+importFrom(ANTsR, .__T__as.array:base)
+importFrom(ANTsR, .__T__as.numeric:base)
