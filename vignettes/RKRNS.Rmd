@@ -68,12 +68,13 @@ reduction.
 
 ```{r define variables,echo=TRUE}
 TR<-0.5 
-srcfiles<-paste("demo/",c("setup.R","assembleDesign.R","assembleBlocks.R","organizeDesign.R"),sep='')
+rootdir<-"demo/"
+srcfiles<-paste(rootdir,c("setup.R","assembleDesign.R","assembleBlocks.R","organizeDesign.R"),sep='')
 for ( f in srcfiles ) source(system.file(f, package="RKRNS"))
 eigsent<-eigenSentences()
 imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, removeSentLengthEffects=removeSentLengthEffects )
-source( system.file( "demo/boldbasedSentenceMap.R", package="RKRNS") )
-source( system.file( "demo/basicValidation.R"     , package="RKRNS") )
+source( system.file( paste(rootdir,"boldbasedSentenceMap.R",sep=''), package="RKRNS") )
+source( system.file( paste(rootdir,"basicValidation.R",sep='')     , package="RKRNS") )
 blocklength<-450*TR
 throwaway<-8
 if ( exists("imat") ) nvol<-nrow(imat) else nvol<-57600
