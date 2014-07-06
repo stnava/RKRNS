@@ -283,7 +283,7 @@ are locally clustered and distributed across inferior temporal lobe,
 superior temporal (Heschl's?) gyrus and inferior frontal gyrus.
 
 ```{r viz,results='asis',iframe = TRUE,fig.cap='Functional-Anatomical clustering / predictors',echo=FALSE}
-  plotANTsImage( ref, vislist , slices='12x56x2' , thresh="0.25x1", color=rainbow( length(vislist) ) )
+  print("plotANTsImage( ref, vislist , slices='12x56x2' , thresh='0.25x1', color=rainbow( length(vislist) ) )")
 ```
 
 # Discussion
