@@ -10,10 +10,13 @@ Applies a function to a matrix representation of a sentence to get an eigensente
 }
 
 \usage{
-esent<-eigenSentence(  functiontoapply = mean , normalize=T, eigsentbasislength = 5, option="wiki", sentencesIn=NA  )
+esent<-eigenSentence(  wordembed, functiontoapply = mean , normalize=T, eigsentbasislength = 5,  sentencesIn=NA  )
 }
 
 \arguments{
+\item{wordembed}{
+  the words and their vector embedding - a data frame with n basis length columns 
+}
 \item{functiontoapply}{
   e.g. mean, max, min, a custom function --- needs to work with apply
 }
@@ -34,5 +37,6 @@ Avants BB
 }
 
 \examples{
-esent<-eigenSentences()
+  data(reuters_words,package="RKRNS")
+  esent<-eigenSentences( reuters_words )
 }

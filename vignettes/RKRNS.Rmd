@@ -83,6 +83,7 @@ assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, imagepostfix,  dfn, afn
 dmat<-assembly2[[1]]
 imat<-assembly2[[2]]
 usedesignrow<-assembly2$usedesignrow
+subaal<-assembly2$subaal
 ```
 
 
@@ -100,7 +101,8 @@ if ( !is.na(removeEventOverlap) ) removeEventOverlap<-eventss
 events1<-apply( dmats     , FUN=sum, MARGIN=1 )
 eventtimes<-which( events1 > 0 )
 words<-colnames(dmatw)
-eigsent<-eigenSentences()
+data(wiki_words,package="RKRNS")
+eigsent<-eigenSentences(wiki_words)
 imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
    removeSentLengthEffects=removeSentLengthEffects, 
    removeEventOverlap=removeEventOverlap )

@@ -1,15 +1,5 @@
-eigenSentences <- function( functiontoapply = mean , normalize=T, eigsentbasislength = NA, option="wiki", sentencesIn=NA ) {
+eigenSentences <- function(  wordembed, functiontoapply = mean , normalize=F, eigsentbasislength = NA, sentencesIn=NA ) {
 ######## build the average eigenword for each sentence #########
-if ( option == "wiki" )
-  {
-  data(wiki_words,package="RKRNS")
-  wordembed<-wiki_words
-  }
-if ( option == "reuters" )
-  {
-  data(reuters_words,package="RKRNS")
-  wordembed<-reuters_words
-  }
 if ( is.na(sentencesIn) )
   {
   data(sentences,package="RKRNS")

@@ -60,5 +60,5 @@ if ( nrow(dmat) != nrow(imat) ) print("CHECK DIMENSIONS MATCH!")
 write.csv(dmat,dfn,row.names=F)
 } # existence
 imat<-data.frame(imat)
-return( list( dmat=dmat, imat=imat, usedesignrow=usedesignrow) )
+return( list( dmat=dmat, imat=imat, usedesignrow=usedesignrow, subaal=subaal ) )
 }
