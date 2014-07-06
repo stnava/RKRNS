@@ -78,6 +78,14 @@ imat<-assembly[[2]]
 usedesignrow<-assembly$usedesignrow
 ```
 
+```{r assembleimageblocks,echo=TRUE}
+assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, imagepostfix,  dfn, afn, dmat, usedesignrow, imat )
+dmat<-assembly2[[1]]
+imat<-assembly2[[2]]
+usedesignrow<-assembly2$usedesignrow
+```
+
+
 ```{r assemblebold,echo=TRUE}
 srcfiles<-paste("demo/",c("assembleBlocks.R","organizeDesign.R"),sep='')
 for ( f in srcfiles ) source(system.file(f, package="RKRNS"))

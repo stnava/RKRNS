@@ -1,5 +1,6 @@
-## ---- ext3
-print("#########assemble image blocks, potentially event-specifically#########")
+assembleBlocks <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix,  assembledImageOutPrefix, dmat, usedesignrow, imat=NA )
+{
+# print("#########assemble image blocks, potentially event-specifically#########")
 maskdim<-dim( bmask )
 aalmask<-antsImageClone( aalimg )
 aalmask[ aalmask > 1 ]<-1
@@ -7,7 +8,7 @@ subaal<-antsImageClone( aalimg )
 subaal[ aalimg > 0 ]<-0
 for ( lab in labs ) subaal[ aalimg == lab ]<-1
 print(paste("assemble blocks for",afn))
-if ( ! exists("imat") ) { # assembly begin ......
+if ( is.na(imat) ) { # assembly begin ......
 mysessions<-sort( unique( dmat$session) )
 imat<-matrix()
 for ( session in mysessions ) {
@@ -52,8 +53,6 @@ for ( session in mysessions ) {
   cat(paste(session,"done",dim(imat)[1],"by",dim(imat)[2],"assembled so far\n"))
 } # session 
 imat<-data.frame(imat)
-colnames(imat)<-aal$label_name[labs]
-# write.csv(imat,afn,row.names=F)
 antsImageWrite( as.antsImage( data.matrix( imat ) ) , afn )
 if ( sum( usedesignrow ) != nrow(imat) ) stop("  sum( usedesignrow ) != nrow(imat) ")
 dmat<-dmat[usedesignrow,]
@@ -61,13 +60,5 @@ if ( nrow(dmat) != nrow(imat) ) print("CHECK DIMENSIONS MATCH!")
 write.csv(dmat,dfn,row.names=F)
 } # existence
 imat<-data.frame(imat)
-colnames(imat)<-aal$label_name[labs]
-print("assembly done")
-if ( istest ) {
-  plot(rowMeans(imat),type='l')
-  bmask2<-antsImageRead( paste(datadir,"ref/",subject,"_mask.nii.gz",sep='') , 3 )
-  bbn<-bmask[ bmask == 1 ]
-  bbn[highvarmatinds]<-2
-  bmask2[ bmask == 1 ]<-bbn
-  antsImageWrite(bmask2,'highvarmask.nii.gz')
+return( list( dmat=dmat, imat=imat, usedesignrow=usedesignrow) )
 }
