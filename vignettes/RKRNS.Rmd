@@ -73,8 +73,10 @@ source(system.file( setupfile, package="RKRNS"))
 
 ```{r assembledesign,echo=TRUE}
 assembly<-assembleDesign( blocksCSVlist, datadir, dfn, afn )
+dmat<-assembly[[1]]
+imat<-assembly[[2]]
+usedesignrow<-assembly$usedesignrow
 ```
-
 
 ```{r assemblebold,echo=TRUE}
 srcfiles<-paste("demo/",c("assembleBlocks.R","organizeDesign.R"),sep='')

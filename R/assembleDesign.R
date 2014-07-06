@@ -8,7 +8,7 @@ whichblocks<-gsub("_design.csv","",whichblocks2)
 dsplits<-paste(datadir,"design/",whichblocks,"_design.csv",sep='')
 imat<-NA
 if ( file.exists( afn ) & file.exists( dfn ) ) {
-  imat<-as.matrix( antsImageRead( afn , 2 ) )
+  imat<-as.matrix( as.array( antsImageRead( afn , 2 ) ) )
   dmat<-data.frame( read.csv( dfn ) )
 } else {
   dmat<-data.frame( read.csv( dsplits[1] ) )
