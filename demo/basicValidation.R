@@ -166,7 +166,7 @@ if ( dosvd & ! exists("svmresult") )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
 #    if ( ! exists("fcca1") )
-        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=0, perms=nperm, robust=0, smooth=0., cthresh = c(cthresh, 0) ,  inmask = c(NA, NA), ell1=1 ) #, nboot=50 )  # subaal mask4d
+        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=0., cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=1 ) #, nboot=50 )  # subaal mask4d
     if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       vislist<-list()
       for ( j in 1:nccavecs ) {
