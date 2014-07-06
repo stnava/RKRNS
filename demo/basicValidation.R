@@ -77,7 +77,8 @@ eventdata<-cbind( eventdata, enouns1=enouns1, enouns1lab=enouns1lab, everbs1=eve
 } # check if data exists
 ################################################################################################################################
 ################################################################################################################################
-if ( !exists("ccafeatspace") ) ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
+print("FIXME - eventss probably not well defined, might also need eventsw")
+if ( !exists("ccafeatspace") ) ccafeatspace<-featspace # residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
 nl<-nrow(  ccafeatspace )
 inds1<-seq(1,(nl-1),by=2)
 inds2<-inds1+1

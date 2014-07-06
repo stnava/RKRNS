@@ -113,7 +113,6 @@ imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength,
    removeEventOverlap=removeEventOverlap )
 
 ```{r validation,echo=TRUE}
-#
 # in the future these should call the appropriate functions or be embedded here ...
 source( system.file( paste("demo/","boldbasedSentenceMap.R",sep=''), package="RKRNS") )
 source( system.file( paste("demo/","basicValidation.R",sep='')     , package="RKRNS") )
