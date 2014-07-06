@@ -78,7 +78,8 @@ eventdata<-cbind( eventdata, enouns1=enouns1, enouns1lab=enouns1lab, everbs1=eve
 ################################################################################################################################
 ################################################################################################################################
 print("FIXME - eventss probably not well defined, might also need eventsw")
-if ( !exists("ccafeatspace") ) ccafeatspace<-featspace # residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
+# if ( !exists("ccafeatspace") )
+ccafeatspace<-featspace # residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
 nl<-nrow(  ccafeatspace )
 inds1<-seq(1,(nl-1),by=2)
 inds2<-inds1+1
@@ -164,7 +165,7 @@ if ( dosvd & ! exists("svmresult") )
     antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
-    if ( ! exists("fcca1") )
+#    if ( ! exists("fcca1") )
         fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=0, perms=nperm, robust=0, smooth=0., cthresh = c(cthresh, 0) ,  inmask = c(NA, NA), ell1=1 ) #, nboot=50 )  # subaal mask4d
     if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       vislist<-list()
@@ -233,7 +234,7 @@ if ( TRUE  ) {
   randerr<-1.0/length(wclasslevs)
   ccaresult<-paste("CCA-PredErr:",ccaerr*100,"%, vs random",randerr*100,"%")
   print(ccaresult)
-  if ( exists("svmresult") ) print(svmresult)
+  if ( exists("svmresult") ) print(svmresult) else svmresult<-0
 
   sentencesubset<- sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
   nodedf<-data.frame( nodename=sentencedf[sentencesubset,1], nodeid=sentencedf[sentencesubset,2] )

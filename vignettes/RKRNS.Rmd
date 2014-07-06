@@ -95,7 +95,10 @@ dmatw<-dmat[,wordinds]
 dmats<-dmat[,sentinds]
 eventss<-apply( dmats, FUN=sum, MARGIN=1 )
 if ( !is.na( removeSentLengthEffects ) ) removeSentLengthEffects<-as.numeric( dmat$nchar )
-if ( !is.na(removeEventOverlap) ) removeEventOverlap<-eventss
+if ( !is.na(removeEventOverlap) ) {
+  removeEventOverlap<-eventss	
+  for ( j in 2:responselength) removeEventOverlap<-removeEventOverlap+shift(eventss,j)
+}
 events1<-apply( dmats     , FUN=sum, MARGIN=1 )
 eventtimes<-which( events1 > 0 )
 words<-colnames(dmatw)
@@ -110,7 +113,7 @@ eigsent<-eigenSentences(wiki_words)
 
 ```{r filtering,echo=TRUE}
 imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
-   removeEventOverlap=removeEventOverlap )
+   removeEventOverlap=removeEventOverlap,removeSentLengthEffects=removeSentLengthEffects )
 
 ```{r validation,echo=TRUE}
 # in the future these should call the appropriate functions or be embedded here ...
