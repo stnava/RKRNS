@@ -86,11 +86,24 @@ usedesignrow<-assembly2$usedesignrow
 ```
 
 
-```{r assemblebold,echo=TRUE}
-srcfiles<-paste("demo/",c("assembleBlocks.R","organizeDesign.R"),sep='')
-for ( f in srcfiles ) source(system.file(f, package="RKRNS"))
+```{r organizeStudy,echo=TRUE}
+# 
+wordinds<-39:280
+sentinds<-281:ncol(dmat)
+dmatw<-dmat[,wordinds]
+dmats<-dmat[,sentinds]
+eventsw<-apply( dmatw, FUN=sum, MARGIN=1 )
+eventswr<-apply( dmatw, FUN=sum, MARGIN=2 )
+eventss<-apply( dmats, FUN=sum, MARGIN=1 )
+if ( !is.na( removeSentLengthEffects ) ) removeSentLengthEffects<-as.numeric( dmat$nchar )
+if ( !is.na(removeEventOverlap) ) removeEventOverlap<-eventss
+events1<-apply( dmats     , FUN=sum, MARGIN=1 )
+eventtimes<-which( events1 > 0 )
+words<-colnames(dmatw)
 eigsent<-eigenSentences()
-imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, removeSentLengthEffects=removeSentLengthEffects )
+imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
+   removeSentLengthEffects=removeSentLengthEffects, 
+   removeEventOverlap=removeEventOverlap )
 source( system.file( paste("demo/","boldbasedSentenceMap.R",sep=''), package="RKRNS") )
 source( system.file( paste("demo/","basicValidation.R",sep='')     , package="RKRNS") )
 # in the future this should load a user defined setup file
