@@ -255,7 +255,7 @@ classification cases.  You can zoom and click on the graph to get an
 idea of what sentences are well-classified.
 
 ```{r d3,results='asis',iframe = TRUE,fig.cap='A (mis)-classification network',echo=FALSE}
-ww<-  misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=T) 
+  ww <- classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=T) 
 ```
 
 ## Temporal dynamics 
