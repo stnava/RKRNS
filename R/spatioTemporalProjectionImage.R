@@ -1,6 +1,6 @@
 spatioTemporalProjectionImage <- function( spacetimevec, timelength, summaryFUN=mean, nDminus1ref=NA ) {
   mm<-matrix(spacetimevec,nrow=timelength)
-  myestimatedhrf<-rowMeans(mm)
+  myestimatedhrf<-apply(mm,FUN=summaryFUN,MARGIN=1)
   mmmag<-sqrt( mm^2 )
   myestimatedbrainregionsval<-apply(mmmag,FUN=summaryFUN,MARGIN=2)
   spaceimage<-NA
