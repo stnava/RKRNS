@@ -38,9 +38,10 @@ Avants BB
 
 \examples{
 \dontrun{
-img<-antsImageRead("TEST0View1vec000.nii.gz",4)
-stvec<-timeserieswindow2matrix(eventlist=1,timewindow=16,
-  mask=subaal,timeseriesmatrix=timeseries2matrix(img,subaal))$eventmatrix
+# img<-antsImageRead("TEST0View1vec000.nii.gz",4)
+# stvec<-timeserieswindow2matrix(eventlist=1,timewindow=16,
+#    mask=subaal,timeseriesmatrix=timeseries2matrix(img,subaal))$eventmatrix
+stvec<-read.csv("TEST0_Variate_View1vec.csv")[,3]
 ff<-spatioTemporalProjectionImage( stvec, 16, sum, subaal )
 antsImageWrite(ff$spaceimage,'temp.nii.gz')
 plot(ff$timefunction,type='l')
