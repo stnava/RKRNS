@@ -119,7 +119,8 @@ eigsent<-eigenSentences(wiki_words)
 
 ```{r filtering,echo=TRUE, message=FALSE, warning=FALSE}
 imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
-   removeEventOverlap=NA, removeSentLengthEffects=removeSentLengthEffects )
+   removeEventOverlap=NA, removeSentLengthEffects=NA )
+imatf<-residuals(lm(imatf~0+rowMeans(imatf)))
 ```
 
 ```{r validation,echo=TRUE, message=FALSE, warning=FALSE}
