@@ -3,7 +3,7 @@
 #########################################
 dosvd<-F
 docca<-T
-nv<-5; its<-1 # cca params
+nv<-10; its<-2 # cca params
 nvsvm<-nv    # svd params
 mysparse<-c(  -1.0/(nv),  -0.1 )
 cthresh<-50
@@ -160,9 +160,9 @@ if ( dosvd & ! exists("svmresult") )
     ccamats1<-list( ( ccafeatspace[ blulist, ] ) , (classmatrix) )
     antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
 if ( docca == T ) {
-    print(paste("CCA",length(wclasslevs)))
-    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, perms=nperm, robust=0, smooth=0.0, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
-        if ( typeof(fcca1$eig1[[1]]) != "double" )  {
+    print(paste("CCA",length(wclasslevs),its))
+    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=0.0, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
+    if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       for ( j in 1:nccavecs ) {
         pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
         pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
@@ -177,6 +177,7 @@ if ( docca == T ) {
   pj2<- sentspace2[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig2)
   par(mfrow=c(2,1))
   brainregionlist<-list()
+  for ( k in 1:ncol(decodemat)) {
     {
     kk<-spatioTemporalProjectionImage( decodemat[,k], responselength, sum, subaal )
     myestimatedhrf<-kk$timefunction
@@ -199,8 +200,8 @@ if ( TRUE  ) {
       }}
   }
   if ( FALSE ) {
-    kk<-joinEigenanatomy( ccamats1[[1]], mask=NA, decodemat , c(1:20)/100 )
     decodemat2<-decodemat
+    kk<-joinEigenanatomy( ccamats1[[1]], mask=NA, decodemat2 , c(1:10)/100 )
     decodemat<-t( kk$fusedlist )
   }
   mydf <-data.frame( dx=wclassesf[l1],  # sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
