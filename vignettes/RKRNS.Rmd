@@ -66,19 +66,19 @@ reduction.
 
 # The basic design
 
-```{r setup,echo=TRUE}
+```{r setup,echo=TRUE, message=FALSE, warning=FALSE}
 setupfile<-paste("demo/",c("setup.R"),sep='')
 source(system.file( setupfile, package="RKRNS"))
 ```
 
-```{r assembledesign,echo=TRUE}
+```{r assembledesign,echo=TRUE, message=FALSE, warning=FALSE}
 assembly<-assembleDesign( blocksCSVlist, datadir, dfn, afn )
 dmat<-assembly[[1]]
 imat<-assembly[[2]]
 usedesignrow<-assembly$usedesignrow
 ```
 
-```{r assembleimageblocks,echo=TRUE}
+```{r assembleimageblocks,echo=TRUE, message=FALSE, warning=FALSE}
 assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, 
   imagepostfix,  dfn, afn, dmat, usedesignrow, imat )
 dmat<-assembly2[[1]]
@@ -88,39 +88,47 @@ subaal<-assembly2$subaal
 ```
 
 
-```{r organizeStudy,echo=TRUE}
+```{r organizeStudy,echo=TRUE, message=FALSE, warning=FALSE}
 # 
 wordinds<-39:280
 sentinds<-281:ncol(dmat)
 dmatw<-dmat[,wordinds]
 dmats<-dmat[,sentinds]
 eventss<-apply( dmats, FUN=sum, MARGIN=1 )
-if ( !is.na( removeSentLengthEffects ) ) removeSentLengthEffects<-as.numeric( dmat$nchar )
+nschar<-as.numeric( dmat$nchar )
+dmatsblock<-dmats
+for ( i in 1:responselength ) {
+    dmatsblock<-dmatsblock+ashift(dmats,c(i,0))
+    nschar<-nschar+shift(nschar,1)
+}
+if ( !is.na( removeSentLengthEffects ) ) removeSentLengthEffects<-as.numeric( nschar )
 removeEventOverlap<-eventss	
 for ( j in 2:responselength) removeEventOverlap<-removeEventOverlap+shift(eventss,j)
 events1<-apply( dmats     , FUN=sum, MARGIN=1 )
+eventss<-apply( dmatsblock, FUN=sum, MARGIN=1 )
 eventtimes<-which( events1 > 0 )
+eventsw<-apply( dmatw, FUN=sum, MARGIN=1 )
 words<-colnames(dmatw)
 ```
 
 
-```{r eigensentences,echo=TRUE}
+```{r eigensentences,echo=TRUE, message=FALSE, warning=FALSE}
 data(wiki_words,package="RKRNS")
 eigsent<-eigenSentences(wiki_words)
 ```
 
-```{r filtering,echo=TRUE}
+```{r filtering,echo=TRUE, message=FALSE, warning=FALSE}
 imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
    removeEventOverlap=NA, removeSentLengthEffects=removeSentLengthEffects )
 ```
 
-```{r validation,echo=TRUE}
+```{r validation,echo=TRUE, message=FALSE, warning=FALSE}
 # in the future these should call the appropriate functions or be embedded here ...
 source( system.file( paste("demo/","boldbasedSentenceMap.R",sep=''), package="RKRNS") )
 source( system.file( paste("demo/","basicValidation.R",sep='')     , package="RKRNS") )
 ```
 
-```{r define variables,echo=TRUE}
+```{r define variables,echo=TRUE, message=FALSE, warning=FALSE}
 TR<-0.5
 blocklength<-450*TR
 throwaway<-8
@@ -137,7 +145,7 @@ the subject is scanned over multiple blocks of fMRI of length `r blocklength` se
 
 The sentence stimuli are presented randomly and with varying delays.  Example sentences, with the total number of presentations, include: 
 
-```{r sentences,echo=FALSE}
+```{r sentences,echo=FALSE, message=FALSE, warning=FALSE}
 if ( ! exists("fspacenames") ) fspacenames<-sample(rep(c(1:20),50))
 tbl<-table(fspacenames)
 print( tbl[ sample(dim(tbl))[1:10]] )	
@@ -158,7 +166,7 @@ $$ e_s = \Pi_i e_i \text{   ... or ...   } e_s = \frac{1}{n} \sum_{i=1}^{i=n} e_
 We have not yet carefully explored how these representations impact performance.  Currently, we simply "choose one" and proceed.
 
 # BOLD processing and priors
-```{r boldpro,echo=FALSE}
+```{r boldpro,echo=FALSE, message=FALSE, warning=FALSE}
 afilterlowfrequency<-filterlowfrequency*TR
 afilterhighfrequency<-filterhighfrequency*TR
 ```
@@ -253,14 +261,14 @@ edge.  The edge weights are proportional to the number of
 classification cases.  You can zoom and click on the graph to get an
 idea of what sentences are well-classified.
 
-```{r d3,results='asis',iframe = TRUE,fig.cap='A (mis)-classification network',echo=FALSE}
+```{r d3,results='asis',iframe = TRUE,fig.cap='A (mis)-classification network',echo=FALSE, message=FALSE, warning=FALSE}
   ww <- classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=T) 
 ```
 
 ## Temporal dynamics 
 
 A "HRF" is estimated by CCA.
-```{r hrf,fig.cap='SCCAN-Estimated HRF'}
+```{r hrf,fig.cap='SCCAN-Estimated HRF', message=FALSE, warning=FALSE}
 mydata <- data.frame(time=c(1:length(myestimatedhrf))*TR+eventshift*TR,BOLD=myestimatedhrf)
 ggplot(mydata,aes(time,BOLD))+geom_line()
 ```
@@ -281,7 +289,7 @@ spatiotemporally regularized SCCAN @Avants2014) show that the voxels
 are locally clustered and distributed across inferior temporal lobe,
 superior temporal (Heschl's?) gyrus and inferior frontal gyrus.
 
-```{r viz,results='asis',iframe = TRUE,fig.cap='Functional-Anatomical clustering / predictors',echo=FALSE}
+```{r viz,results='asis',iframe = TRUE,fig.cap='Functional-Anatomical clustering / predictors',echo=FALSE, message=FALSE, warning=FALSE}
   print("plotANTsImage( ref, vislist , slices='12x56x2' , thresh='0.25x1', color=rainbow( length(vislist) ) )")
 ```
 

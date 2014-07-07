@@ -15,7 +15,7 @@ filterhighfrequency<-1.0 # 0.4 # because of expected bold response < 25secs, > 5
 trendfrequency<-3
 winsorval<-0.01
 removeSentLengthEffects<-TRUE
-removeEventOverlap<-NA # dont do it
+removeEventOverlap<-FALSE # dont do it
 eigsentbasislength<-100
 aalfn<-paste(datadir,"aal/",subject,"_aal2.nii.gz",sep='')
 if ( file.exists(aalfn) ) aalimg<-antsImageRead( aalfn , 3 )

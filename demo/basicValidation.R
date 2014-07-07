@@ -1,13 +1,12 @@
 #########################################
 # parameters
 #########################################
-dosvd<-T
+dosvd<-F
 docca<-T
-if ( !exists('nv') ) nv<-25
-its<-3 # cca params
+nv<-5; its<-1 # cca params
 nvsvm<-nv    # svd params
-mysparse<-c(  -2.0/(nv),  -0.5 )
-cthresh<-100
+mysparse<-c(  -1.0/(nv),  -0.1 )
+cthresh<-50
 ###########constant params below########
 longc<-0
 nperm<-0
@@ -78,8 +77,7 @@ eventdata<-cbind( eventdata, enouns1=enouns1, enouns1lab=enouns1lab, everbs1=eve
 ################################################################################################################################
 ################################################################################################################################
 print("FIXME - eventss probably not well defined, might also need eventsw")
-# if ( !exists("ccafeatspace") )
-ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( removeSentLengthEffects[ events1 > 0 ] ) ) ) # + as.numeric(removeEventOverlap[ events1 > 0 ])  ))
+ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( nschar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
 nl<-nrow(  ccafeatspace )
 inds1<-seq(1,(nl-1),by=2)
 inds2<-inds1+1
@@ -166,7 +164,7 @@ if ( dosvd & ! exists("svmresult") )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
 #    if ( ! exists("fcca1") )
-        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=0, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
+    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, perms=nperm, robust=0, smooth=0.0, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
     if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       vislist<-list()
       for ( j in 1:nccavecs ) {
@@ -186,7 +184,11 @@ if ( docca == T ) {
   } else sccanBdictionary <- fcca1$eig1
 #  }
   decodemat<-as.matrix(sccanBdictionary)
-  
+  if ( FALSE ) {
+    kk<-joinEigenanatomy( ccamats1[[1]], mask=NA, decodemat , 0.1 )
+    decodemat2<-decodemat
+    decodemat<-t( kk$fusedlist )
+  }
   if ( TRUE ) {
   fcca1$eig2<-sccanWdictionary
   pj1<-  ccafeatspace[ redlist[l2]  , ]  %*%  decodemat
