@@ -96,10 +96,8 @@ dmatw<-dmat[,wordinds]
 dmats<-dmat[,sentinds]
 eventss<-apply( dmats, FUN=sum, MARGIN=1 )
 if ( !is.na( removeSentLengthEffects ) ) removeSentLengthEffects<-as.numeric( dmat$nchar )
-if ( !is.na(removeEventOverlap) ) {
-  removeEventOverlap<-eventss	
-  for ( j in 2:responselength) removeEventOverlap<-removeEventOverlap+shift(eventss,j)
-}
+removeEventOverlap<-eventss	
+for ( j in 2:responselength) removeEventOverlap<-removeEventOverlap+shift(eventss,j)
 events1<-apply( dmats     , FUN=sum, MARGIN=1 )
 eventtimes<-which( events1 > 0 )
 words<-colnames(dmatw)

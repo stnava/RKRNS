@@ -1,13 +1,13 @@
 #########################################
 # parameters
 #########################################
-dosvd<-F
+dosvd<-T
 docca<-T
 if ( !exists('nv') ) nv<-25
 its<-3 # cca params
-nvsvm<-8      # svd params
-mysparse<-c(  -1/(nv),  -0.25 )
-cthresh<-50
+nvsvm<-nv    # svd params
+mysparse<-c(  -2.0/(nv),  -0.5 )
+cthresh<-100
 ###########constant params below########
 longc<-0
 nperm<-0
@@ -79,7 +79,7 @@ eventdata<-cbind( eventdata, enouns1=enouns1, enouns1lab=enouns1lab, everbs1=eve
 ################################################################################################################################
 print("FIXME - eventss probably not well defined, might also need eventsw")
 # if ( !exists("ccafeatspace") )
-ccafeatspace<-featspace # residuals(lm(featspace~ 1+as.numeric( nchar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
+ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( removeSentLengthEffects[ events1 > 0 ] ) + as.numeric(removeEventOverlap[ events1 > 0 ])  ))
 nl<-nrow(  ccafeatspace )
 inds1<-seq(1,(nl-1),by=2)
 inds2<-inds1+1
@@ -166,7 +166,7 @@ if ( dosvd & ! exists("svmresult") )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
 #    if ( ! exists("fcca1") )
-        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=0., cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
+        fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=0, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
     if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       vislist<-list()
       for ( j in 1:nccavecs ) {
