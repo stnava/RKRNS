@@ -109,10 +109,10 @@ data(wiki_words,package="RKRNS")
 eigsent<-eigenSentences(wiki_words)
 ```
 
-
 ```{r filtering,echo=TRUE}
 imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
-   removeEventOverlap=removeEventOverlap,removeSentLengthEffects=removeSentLengthEffects )
+   removeEventOverlap=NA, removeSentLengthEffects=removeSentLengthEffects )
+```
 
 ```{r validation,echo=TRUE}
 # in the future these should call the appropriate functions or be embedded here ...

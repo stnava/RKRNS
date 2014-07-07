@@ -79,7 +79,7 @@ eventdata<-cbind( eventdata, enouns1=enouns1, enouns1lab=enouns1lab, everbs1=eve
 ################################################################################################################################
 print("FIXME - eventss probably not well defined, might also need eventsw")
 # if ( !exists("ccafeatspace") )
-ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( removeSentLengthEffects[ events1 > 0 ] ) + as.numeric(removeEventOverlap[ events1 > 0 ])  ))
+ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( removeSentLengthEffects[ events1 > 0 ] ) ) ) # + as.numeric(removeEventOverlap[ events1 > 0 ])  ))
 nl<-nrow(  ccafeatspace )
 inds1<-seq(1,(nl-1),by=2)
 inds2<-inds1+1
