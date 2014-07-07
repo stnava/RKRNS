@@ -158,65 +158,38 @@ if ( dosvd & ! exists("svmresult") )
       }
     }
     ccamats1<-list( ( ccafeatspace[ blulist, ] ) , (classmatrix) )
-#    mysparse<-c(mysparse[1], -1.0/length(wclasslevs))
-#    ccamats1<-list(       ( ccafeatspace[ blulist, ] ) ,       ( sentspace2[ blulist, ] ) )
     antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
 if ( docca == T ) {
     print(paste("CCA",length(wclasslevs)))
-#    if ( ! exists("fcca1") )
     fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, perms=nperm, robust=0, smooth=0.0, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
-    if ( typeof(fcca1$eig1[[1]]) != "double" )  {
-      vislist<-list()
+        if ( typeof(fcca1$eig1[[1]]) != "double" )  {
       for ( j in 1:nccavecs ) {
-        temp<-antsImageClone( fcca1$eig1[[j]] )
-        temp2<-antsImageClone( fcca1$eig1[[j]] )
-        ImageMath(4,temp2,"abs",temp)
-        ImageMath(4,temp2,"Normalize",temp2)
-        viewimg<-projectImageAlongAxis( temp2, subaal, 3 , 0 );
-        vislist<-lappend( vislist, viewimg )
         pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
         pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
         sccanBdictionary[,j]<-pmat[1,]
-#        sccanWdictionary[,wct+(j-1)]<-fcca1$eig2[,j]
       }
-    plotANTsImage( ref, vislist , slices='12x56x2' , thresh="0.9x1", color=rainbow(length(vislist)), outname="eanatviz.jpg" )
     wct<-wct+nccavecs
   } else sccanBdictionary <- fcca1$eig1
-#  }
   decodemat<-as.matrix(sccanBdictionary)
-  if ( FALSE ) {
-    kk<-joinEigenanatomy( ccamats1[[1]], mask=NA, decodemat , 0.1 )
-    decodemat2<-decodemat
-    decodemat<-t( kk$fusedlist )
-  }
   if ( TRUE ) {
   fcca1$eig2<-sccanWdictionary
   pj1<-  ccafeatspace[ redlist[l2]  , ]  %*%  decodemat
   pj2<- sentspace2[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig2)
   par(mfrow=c(2,1))
   brainregionlist<-list()
-  for ( k in 1:ncol(decodemat)) {
-    mm<-matrix(decodemat[,k],nrow=responselength)
-    myestimatedhrf<-rowMeans(mm)
-    whtimes<-which( abs(myestimatedhrf) > 0 )
+    {
+    kk<-spatioTemporalProjectionImage( decodemat[,k], responselength, sum, subaal )
+    myestimatedhrf<-kk$timefunction
     plot(myestimatedhrf,type='l')
-    mmmag<-sqrt( mm^2 )
-    myestimatedbrainregionsval<-apply(mmmag[,],FUN=sum,MARGIN=2)
-    myestimatedbrainregionsval<-myestimatedbrainregionsval/sum(myestimatedbrainregionsval)
-    myccavec<-antsImageClone( subaal )
-    myccavec[ subaal > 0 ]<-myestimatedbrainregionsval
-    antsImageWrite(myccavec,paste('temp',k,'.nii.gz',sep=''))
-    selector<-myestimatedbrainregionsval >  mean(myestimatedbrainregionsval[myestimatedbrainregionsval>0])
-    brainregionlist<-lappend(brainregionlist,colnames(imat)[ selector ])
-#    for ( i in 1:24 ) { plot(mm[i,],type='l'); Sys.sleep(0.5) }
-  }
+    antsImageWrite( kk$spaceimage , paste('temp',k,'.nii.gz',sep=''))
+    }
   }
 }
 
 
 if ( TRUE  ) {
   if ( docca == F ) {
-    eanat1<-sparseDecom(  ( ccafeatspace[ blulist, ] )   , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=1, cthresh = 250 , inmask=mask4d )
+    eanat1<-sparseDecom(  ccamats1[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=1, cthresh = 250 , inmask=mask4d )
     if ( typeof(eanat1$eig[[1]]) == "double" ) decodemat<-as.matrix( eanat1$eig ) else {
         for ( j in 1:nv ) {
           pmat<-timeseries2matrix( eanat1$eig[[j]], subaal )
@@ -224,6 +197,11 @@ if ( TRUE  ) {
           sccanBdictionary[,j]<-pmat[1,]
           decodemat<-as.matrix( sccanBdictionary )
       }}
+  }
+  if ( FALSE ) {
+    kk<-joinEigenanatomy( ccamats1[[1]], mask=NA, decodemat , c(1:20)/100 )
+    decodemat2<-decodemat
+    decodemat<-t( kk$fusedlist )
   }
   mydf <-data.frame( dx=wclassesf[l1],  # sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
                     fsp= (ccafeatspace[ redlist[l1], ]   %*% decodemat  ) )
