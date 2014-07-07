@@ -3,7 +3,7 @@
 #########################################
 dosvd<-F
 docca<-T
-nv<-10; its<-2 # cca params
+nv<-10; its<-1 # cca params
 nvsvm<-nv    # svd params
 mysparse<-c(  -1.0/(nv),  -0.1 )
 cthresh<-50
@@ -16,25 +16,26 @@ myrob<-0
 #########################################
 print("########basic validation########")
 #########################################
-if ( ! exists("eventdata") ) {
-print("########basic speech parts########")
-sentenceids<-1:length(unique(sentences$Sentence))
-sentencedf<-data.frame(  sentences=sentences$Sentence, sentenceids=sentenceids )
-wordids<-1:length(unique(words))
-worddf<-data.frame( words=words, wordids=wordids )
-eventdata<-data.frame(eventtimes=eventtimes,sentences=fspacenames)
-enouns1<-rep(NA,nrow(eventdata))
-enouns1lab<-rep(NA,nrow(eventdata))
-everbs1<-rep(NA,nrow(eventdata))
-everbs1lab<-rep(NA,nrow(eventdata))
-enouns2<-rep(NA,nrow(eventdata))
-enouns2lab<-rep(NA,nrow(eventdata))
-sentlab<-rep(NA,nrow(eventdata))
-sent_token_annotator <- Maxent_Sent_Token_Annotator()
-word_token_annotator <- Maxent_Word_Token_Annotator()
-pos_tag_annotator <- Maxent_POS_Tag_Annotator()
-wordcols<-colnames(dmatw)
-for ( i in 1:nrow(eventdata) ) {
+if ( ! exists("eventdata") )
+  {
+  print("########basic speech parts########")
+  sentenceids<-1:length(unique(sentences$Sentence))
+  sentencedf<-data.frame(  sentences=sentences$Sentence, sentenceids=sentenceids )
+  wordids<-1:length(unique(words))
+  worddf<-data.frame( words=words, wordids=wordids )
+  eventdata<-data.frame(eventtimes=eventtimes,sentences=fspacenames)
+  enouns1<-rep(NA,nrow(eventdata))
+  enouns1lab<-rep(NA,nrow(eventdata))
+  everbs1<-rep(NA,nrow(eventdata))
+  everbs1lab<-rep(NA,nrow(eventdata))
+  enouns2<-rep(NA,nrow(eventdata))
+  enouns2lab<-rep(NA,nrow(eventdata))
+  sentlab<-rep(NA,nrow(eventdata))
+  sent_token_annotator <- Maxent_Sent_Token_Annotator()
+  word_token_annotator <- Maxent_Word_Token_Annotator()
+  pos_tag_annotator <- Maxent_POS_Tag_Annotator()
+  wordcols<-colnames(dmatw)
+  for ( i in 1:nrow(eventdata) ) {
     s<-eventdata$sentences[i]
     s<-gsub('[.]',' ',s)
     realwords<-unlist( strsplit(s,' ') )
@@ -71,13 +72,14 @@ for ( i in 1:nrow(eventdata) ) {
     enouns2[i]<-locwords[nextnoun]
     rpl<-as.character(worddf$words) == enouns2[i]
     if ( sum(rpl) > 0 ) enouns2lab[i]<-worddf$wordids[ rpl ]
-}
+  }
 eventdata<-cbind( eventdata, enouns1=enouns1, enouns1lab=enouns1lab, everbs1=everbs1, everbs1lab=everbs1lab, enouns2=enouns2, enouns2lab=enouns2lab, sentlab=sentlab )
-} # check if data exists
+}
 ################################################################################################################################
 ################################################################################################################################
 print("FIXME - eventss probably not well defined, might also need eventsw")
-ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( nschar[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
+globsigf<-rowMeans( imatf )
+ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( globsigf[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
 nl<-nrow(  ccafeatspace )
 inds1<-seq(1,(nl-1),by=2)
 inds2<-inds1+1
@@ -104,7 +106,7 @@ locwordlist<-c('yellow','white','blue','black','green','red') #
 locwordlist<-c('lake','mountain','stone','beach','river','tree')
 locwordlist<-c('judge','criminal')
 locwordlist<-'coffee'
-####################################  
+####################################
 wordcounts<-rep(0,length(words))
 wct<-1 ; l1<-length(fspacenames)/2
 for ( w in words ) {
@@ -112,7 +114,6 @@ for ( w in words ) {
     wordcounts[wct]<-myct
     wct<-wct+1
 }
-#  locwordlist<-words[ wordcounts > 5 ]
 designmat<-dmats # dmats/w
 redlist<-which( !is.na(eventdata$sentences) )
 wclassesf<-as.factor( eventdata$sentlab[redlist] )
@@ -144,12 +145,10 @@ if ( dosvd & ! exists("svmresult") )
   sccanBdictionary<-matrix( rep(0,ncol(featspace)*perword*nccavecs),nrow=ncol(featspace))
   sccanWdictionary<-matrix( rep(0,ncol(sentspace2)*perword*nccavecs),nrow=ncol(sentspace2))
   wct<-1
-#  for ( myw in locwordlist ) {
-#    blulist<-sort(unique(c(grep(myw, fspacenames[l1] ))))
-    blulist<-redlist[l1]
-    classmatrix<-data.matrix( designmat[ eventtimes , whichcols ] )
-    classmatrix<-classmatrix[ blulist , ]
-    if ( T ) {
+  blulist<-redlist[l1]
+  classmatrix<-data.matrix( designmat[ eventtimes , whichcols ] )
+  classmatrix<-classmatrix[ blulist , ]
+  if ( TRUE ) {
     classmatrix<-interleaveMatrixWithItself( classmatrix, eigsentbasislength )
     for ( i in 1:nrow(classmatrix) )
       {
@@ -157,34 +156,38 @@ if ( dosvd & ! exists("svmresult") )
       classmatrix[i, (classmatrix[i,] > 0 ) ]<-esent
       }
     }
-    ccamats1<-list( ( ccafeatspace[ blulist, ] ) , (classmatrix) )
-    antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
-if ( docca == T ) {
-    print(paste("CCA",length(wclasslevs),its))
-    fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=0.0, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
-    if ( typeof(fcca1$eig1[[1]]) != "double" )  {
-      for ( j in 1:nccavecs ) {
-        pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
-        pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
-        sccanBdictionary[,j]<-pmat[1,]
+  ccamats1<-list( ( ccafeatspace[ blulist, ] ) , (classmatrix) )
+  antsSetSpacing(mask4d, c(rep(0.5,3),0.5) )
+if ( docca == T )
+  {
+  print(paste("CCA",length(wclasslevs),its))
+  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=0.0, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
+  if ( typeof(fcca1$eig1[[1]]) != "double" )
+    {
+    for ( j in 1:nccavecs )
+      {
+      pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
+      pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
+      sccanBdictionary[,j]<-pmat[1,]
       }
     wct<-wct+nccavecs
-  } else sccanBdictionary <- fcca1$eig1
+    } else sccanBdictionary <- fcca1$eig1
   decodemat<-as.matrix(sccanBdictionary)
-  if ( TRUE ) {
-  fcca1$eig2<-sccanWdictionary
-  pj1<-  ccafeatspace[ redlist[l2]  , ]  %*%  decodemat
-  pj2<- sentspace2[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig2)
-  par(mfrow=c(2,1))
-  brainregionlist<-list()
-  for ( k in 1:ncol(decodemat)) {
+  if ( TRUE )
     {
-    kk<-spatioTemporalProjectionImage( decodemat[,k], responselength, sum, subaal )
-    myestimatedhrf<-kk$timefunction
-    plot(myestimatedhrf,type='l')
-    antsImageWrite( kk$spaceimage , paste('temp',k,'.nii.gz',sep=''))
+    fcca1$eig2<-sccanWdictionary
+    pj1<-  ccafeatspace[ redlist[l2]  , ]  %*%  decodemat
+    pj2<- sentspace2[ redlist[l2]  , ]  %*%  as.matrix(fcca1$eig2)
+    par(mfrow=c(2,1))
+    brainregionlist<-list()
+    for ( k in 1:ncol(decodemat)) 
+      {
+      kk<-spatioTemporalProjectionImage( decodemat[,k], responselength, sum, subaal )
+      myestimatedhrf<-kk$timefunction
+      plot(myestimatedhrf,type='l')
+      antsImageWrite( kk$spaceimage , paste('temp',k,'.nii.gz',sep=''))
+      }
     }
-  }
 }
 
 
@@ -230,5 +233,5 @@ if ( TRUE  ) {
                          theme(text = element_text(size=pltsz*2)) +
                      scale_size(range=c(pltsz/2, pltsz))
   ggsave("myqplot.pdf",height=8,width=12)
-
 }
+
