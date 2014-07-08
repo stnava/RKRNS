@@ -21,7 +21,7 @@ annotateEvents <- function( sentencesIn, words, eventtimes, eventnames )
     realwords<-unlist( strsplit(s,' ') )
     rpl<-as.character(sentencedf$sentences) == eventdata$sentences[i]
     if ( sum(rpl) > 0 ) sentlab[i]<-sentencedf$sentenceids[ rpl ]
-    print("THIS IS A HACK THAT SHOULD BE FIXED")
+    if ( i == 1 ) print("THIS IS A HACK THAT SHOULD BE FIXED")
     wordsmod<-paste(words,"ed",sep='')
     wordsmod2<-paste(words,"d",sep='')
     locwords<-realwords[ ( realwords  %in% words) |
