@@ -3,7 +3,8 @@ assembleDesign <- function( blocksCSVlist , datadir, assembledDesignOutPrefix,  
 # blocksCSVlist<-Sys.glob(paste(datadir,"design/*csv",sep=''))   # INPUT csv list
 # dfn<-paste(datadir,"assembly/assembled_design_",labs[1],"_",labs[length(labs)],"test.csv",sep='') # INPUT out csv name
 # afn<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.mha",sep='') # INPUT out img name
-whichblocks2<-unlist( strsplit( blocksCSVlist, "/" ) )[c(1:length(blocksCSVlist))*2]
+testblock<-unlist( strsplit( blocksCSVlist[1], "/" ) )
+whichblocks2<-unlist( strsplit( blocksCSVlist, "/" ) )[ seq( length(testblock), length(testblock)*length(blocksCSVlist), by=length(testblock) ) ]
 whichblocks<-gsub("_design.csv","",whichblocks2)
 dsplits<-paste(datadir,"design/",whichblocks,"_design.csv",sep='')
 imat<-NA
