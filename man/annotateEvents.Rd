@@ -1,0 +1,45 @@
+\name{annotateEvents}
+\alias{annotateEvents}
+
+\title{
+Will match eigensentences to events and given unique labels to words, sentences etc.
+}
+
+\description{
+Returns a dataframe for every event with annotated event times, word categories (V, N,... ), sentence descriptors (labels, other variables) etc.
+}
+
+\usage{
+eventdf<-annotateEvents( sentencesIn, words, eventtimes, eventnames )
+}
+
+\arguments{
+\item{sentencesIn}{
+  the list of possible sentences 
+}
+\item{words}{
+  the list of possible words 
+}
+\item{eventtimes}{
+  the index to the temporal volumes at which events occur
+}
+\item{eventnames}{
+  a name for every event so of equal length to eventtimes
+}
+}
+
+\value{
+returns a data frame
+}
+
+\author{
+Avants BB
+}
+
+\examples{
+  data(reuters_words,package="RKRNS")
+  data(sentences,package="RKRNS")
+  eventtimes<-c(10,25,99)
+  eventnames<-list(sentences$Sentence[1],sentences$Sentence[55],sentences$Sentence[19])
+  eventdf<-annotateEvents( sentences$Sentence, reuters_words$WhichWord, eventtimes, unlist(eventnames) )
+}
