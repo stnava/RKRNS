@@ -76,13 +76,15 @@ l2<-l1+1
     if (!is.na( mask4d ) ) 
       eanat1<-sparseDecom(  ccamats1[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth , inmask=mask4d )
     sccanBdictionary2<-sccanBdictionary*0
-    if ( typeof(eanat1$eig[[1]]) == "double" ) decodemat<-as.matrix( eanat1$eig ) else {
+    if ( typeof(eanat1$eig[[1]]) == "double" ) sccanBdictionary2<-as.matrix( eanat1$eig )
+    if ( typeof(eanat1$eig[[1]]) != "double" ) 
+      {
         for ( j in 1:nv )
           {
           pmat<-timeseries2matrix( eanat1$eig[[j]], subaal )
           pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
           sccanBdictionary2[,j]<-pmat[1,]
-          kk<-spatioTemporalProjectionImage( decodemat[,j], responselength, sum, subaal )
+          kk<-spatioTemporalProjectionImage( sccanBdictionary2[,j], responselength, sum, subaal )
           myestimatedhrf<-kk$timefunction
           plot(myestimatedhrf,type='l'); Sys.sleep(1)
           antsImageWrite( kk$spaceimage , paste('temp',j,'.nii.gz',sep=''))
