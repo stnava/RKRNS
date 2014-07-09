@@ -90,7 +90,7 @@ l2<-l1+1
     }
   decodemat<-cbind( decodemat, as.matrix(sccanBdictionary2) )
   }
-  if ( joinEanat )
+  if ( joinEanat & nvecs > 3 )
     {
     decodemat2<-decodemat
     kk<-joinEigenanatomy( ccamats1[[1]], mask=NA, decodemat2 , c(1:10)/100 )
