@@ -1,4 +1,4 @@
-sccanBasedDecoder <- function( eventdata, designmat, boldFeatureMatrix, sentenceSpace, mysparse=c(-0.1,-0.1), nvecs=5, its=1, smooth=0, cthresh=0, mask4d=NA, strategy=NA, doEanat=F, joinEanat=F, outgraphfile='temp2.html'  )
+sccanBasedDecoder <- function( eventdata, designmat, boldFeatureMatrix, sentenceSpace, mysparse=c(-0.1,-0.1), nvecs=5, its=1, smooth=0, cthresh=0, mask4d=NA, strategy=NA, doEanat=F, joinEanat=F, outputfileprefix='sccanBasedDecoder'  )
 {
 #########################################
 # parameters for dimensionality reduct.
@@ -114,16 +114,16 @@ l2<-l1+1
                            ids=eventdata$sentlab[locsents]  )
   sentencesubset<-sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
   nodedf<-data.frame( nodename=sentencedf$sentences[sentencesubset], nodeid=sentencedf$ids[sentencesubset] )
-  ww<-  classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=outgraphfile, mycharge=-2066,zoom=T)
+  ww<-  classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=paste(outputfileprefix,".html",sep=''), mycharge=-2066,zoom=T)
 
   mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudf$dx,Pred=pred)
   eigSz<-apply(sentspace2[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
-  chart_title<-locwordlist
+  chart_title<-"SCCAN-Decode"
   pltsz<-8
   gpic <-  ggplot(mydata,aes(Real,Pred,size=eigSz,color=group,fill=group))+geom_point()+
       guides(colour = guide_legend(override.aes = list(size = pltsz)))+
                          theme(text = element_text(size=pltsz*2)) +
                      scale_size(range=c(pltsz/2, pltsz))
-  ggsave("myqplot.pdf",height=8,width=12)
+  ggsave(paste(outputfileprefix,".pdf",sep=''),height=8,width=12)
   return( mydata )
 }
