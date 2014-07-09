@@ -158,7 +158,7 @@ rownames(featspace)<-(fspacenames)
 print("FIXME - eventss probably not well defined, might also need eventsw")
 ccafeatspace<-residuals(lm(featspace~ 1 + eventoverlap[ eventsw > 0 ]  ))
 # might pass mask4d below to get other constraints on data
-ccaresults<-sccanBasedDecoder( eventdata, dmats, ccafeatspace , sentspace, nvecs=5, cthresh=0, doEanat=T, joinEanat=T )
+ccaresults<-sccanBasedDecoder( eventdata, dmats, ccafeatspace , sentspace, nvecs=5, cthresh=500, doEanat=F )
 ```
 
 ```{r define variables,echo=TRUE, message=FALSE, warning=FALSE}

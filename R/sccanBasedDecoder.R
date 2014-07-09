@@ -27,8 +27,8 @@ l2<-l1+1
 ###########################################################
 #  Great!  Now do some cca based dimensionality reduction #
 ###########################################################
-#  sentspace2<-cbind(  log( sentspace - min(sentspace) + 1 ) )
-  sentspace2<-sentenceSpace 
+  sentspace2<-cbind(  log( sentenceSpace - min(sentenceSpace) + 1 ) )
+#  sentspace2<-sentenceSpace 
   # multivariate correlation between global bold features and eigensentences
   nccavecs<-nv
   perword<-1 # length(locwordlist)
@@ -117,7 +117,7 @@ l2<-l1+1
   ww<-  classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=paste(outputfileprefix,".html",sep=''), mycharge=-2066,zoom=T)
 
   mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudf$dx,Pred=pred)
-  eigSz<-apply(sentspace2[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
+  eigSz<-apply(sentenceSpace[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
   chart_title<-"SCCAN-Decode"
   pltsz<-8
   gpic <-  ggplot(mydata,aes(Real,Pred,size=eigSz,color=group,fill=group))+geom_point()+
