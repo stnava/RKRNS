@@ -125,5 +125,5 @@ l2<-l1+1
                          theme(text = element_text(size=pltsz*2)) +
                      scale_size(range=c(pltsz/2, pltsz))
   ggsave(paste(outputfileprefix,".pdf",sep=''),height=8,width=12)
-  return( mydata )
+  return( list(ccapredictions=mydata, ccaDictionary=decodemat ) )
 }
