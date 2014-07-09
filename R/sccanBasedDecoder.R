@@ -69,9 +69,12 @@ l2<-l1+1
     Sys.sleep(0.1)
     antsImageWrite( kk$spaceimage , paste('temp',k,'.nii.gz',sep=''))
     }
-  if ( doEanat == T )
+  if ( doEanat  )
     {
-    eanat1<-sparseDecom(  ccamats1[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth, inmask=mask4d )
+    if ( is.na( mask4d ) ) 
+      eanat1<-sparseDecom(  ccamats1[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth  )
+    if (!is.na( mask4d ) ) 
+      eanat1<-sparseDecom(  ccamats1[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth , inmask=mask4d )
     sccanBdictionary2<-sccanBdictionary*0
     if ( typeof(eanat1$eig[[1]]) == "double" ) decodemat<-as.matrix( eanat1$eig ) else {
         for ( j in 1:nv )
@@ -87,7 +90,7 @@ l2<-l1+1
     }
   decodemat<-cbind( decodemat, as.matrix(sccanBdictionary2) )
   }
-  if ( joinEanat==TRUE )
+  if ( joinEanat )
     {
     decodemat2<-decodemat
     kk<-joinEigenanatomy( ccamats1[[1]], mask=NA, decodemat2 , c(1:10)/100 )
