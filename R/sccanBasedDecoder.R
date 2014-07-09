@@ -67,7 +67,7 @@ l2<-l1+1
     myestimatedhrf<-kk$timefunction
     plot(myestimatedhrf,type='l')
     Sys.sleep(0.1)
-    antsImageWrite( kk$spaceimage , paste('temp',k,'.nii.gz',sep=''))
+    antsImageWrite( kk$spaceimage , paste(outputfileprefix,k,'cca.nii.gz',sep=''))
     }
   if ( doEanat  )
     {
@@ -87,7 +87,7 @@ l2<-l1+1
           kk<-spatioTemporalProjectionImage( sccanBdictionary2[,j], responselength, sum, subaal )
           myestimatedhrf<-kk$timefunction
           plot(myestimatedhrf,type='l'); Sys.sleep(1)
-          antsImageWrite( kk$spaceimage , paste('temp',j,'.nii.gz',sep=''))
+          antsImageWrite( kk$spaceimage , paste(outputfileprefix,j,'eanat.nii.gz',sep=''))
           }
     }
   decodemat<-cbind( decodemat, as.matrix(sccanBdictionary2) )
@@ -117,13 +117,15 @@ l2<-l1+1
   ww<-  classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=paste(outputfileprefix,".html",sep=''), mycharge=-2066,zoom=T)
 
   mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudf$dx,Pred=pred)
-  eigSz<-apply(sentenceSpace[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
-  chart_title<-"SCCAN-Decode"
-  pltsz<-8
-  gpic <-  ggplot(mydata,aes(Real,Pred,size=eigSz,color=group,fill=group))+geom_point()+
+  if ( FALSE ) {
+#    eigSz<-apply(sentenceSpace[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
+    chart_title<-"SCCAN-Decode"
+    pltsz<-8
+    gpic <-  ggplot(mydata,aes(Real,Pred,color=group,fill=group))+geom_point()+
       guides(colour = guide_legend(override.aes = list(size = pltsz)))+
                          theme(text = element_text(size=pltsz*2)) +
                      scale_size(range=c(pltsz/2, pltsz))
-  ggsave(paste(outputfileprefix,".pdf",sep=''),height=8,width=12)
+    ggsave(paste(outputfileprefix,".pdf",sep=''),height=8,width=12)
+    }
   return( list(ccapredictions=mydata, ccaDictionary=decodemat ) )
 }
