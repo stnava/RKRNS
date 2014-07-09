@@ -1,11 +1,12 @@
 #########################################
-# parameters
+# parameters for dimensionality reduct.
 #########################################
 dosvd<-F
 docca<-T
-nv<-10; its<-1 # cca params
+nv<-5; its<-1 # cca params
 nvsvm<-nv    # svd params
 mysparse<-c(  -1.0/(nv),  -0.1 )
+mysparse<-c(  -0.1,  -0.5 )
 cthresh<-50
 ###########constant params below########
 longc<-0
@@ -13,107 +14,19 @@ nperm<-0
 myrob<-0
 #########################################
 #########################################
+#  factor out some nuisance signal 
 #########################################
-print("########basic validation########")
-#########################################
-if ( ! exists("eventdata") )
-  {
-  print("########basic speech parts########")
-  sentenceids<-1:length(unique(sentences$Sentence))
-  sentencedf<-data.frame(  sentences=sentences$Sentence, sentenceids=sentenceids )
-  wordids<-1:length(unique(words))
-  worddf<-data.frame( words=words, wordids=wordids )
-  eventdata<-data.frame(eventtimes=eventtimes,sentences=fspacenames)
-  enouns1<-rep(NA,nrow(eventdata))
-  enouns1lab<-rep(NA,nrow(eventdata))
-  everbs1<-rep(NA,nrow(eventdata))
-  everbs1lab<-rep(NA,nrow(eventdata))
-  enouns2<-rep(NA,nrow(eventdata))
-  enouns2lab<-rep(NA,nrow(eventdata))
-  sentlab<-rep(NA,nrow(eventdata))
-  sent_token_annotator <- Maxent_Sent_Token_Annotator()
-  word_token_annotator <- Maxent_Word_Token_Annotator()
-  pos_tag_annotator <- Maxent_POS_Tag_Annotator()
-  wordcols<-colnames(dmatw)
-  for ( i in 1:nrow(eventdata) ) {
-    s<-eventdata$sentences[i]
-    s<-gsub('[.]',' ',s)
-    realwords<-unlist( strsplit(s,' ') )
-    rpl<-as.character(sentencedf$sentences) == eventdata$sentences[i]
-    if ( sum(rpl) > 0 ) sentlab[i]<-sentencedf$sentenceids[ rpl ]
-    locwords<-wordcols[ dmatw[ eventdata$eventtimes[i], ] == 1 ]
-    # find position of locwords in realwords
-    locwordpos<-rep(0,length(locwords))
-    ct<-1
-    for ( k in locwords ) {
-      pos<-1
-      for ( j in realwords ) {
-        if( length( grep(k,j) ) > 0 ) locwordpos[ct]<-pos;
-        pos<-pos+1
-        }
-      ct<-ct+1
-    }
-    a2 <- annotate(s, list(sent_token_annotator, word_token_annotator))
-    a3 <- annotate(s, pos_tag_annotator, a2)
-    a3w <- subset(a3, type == "word")
-    tags <- sapply(a3w$features, `[[`, "POS")
-    grepverb<-grep("V",tags[locwordpos])
-    if (length(grepverb)>0){
-    everbs1[i]<-locwords[grepverb]
-    rpl<-as.character(worddf$words) == everbs1[i]
-    if ( sum(rpl) > 0 ) everbs1lab[i]<-worddf$wordids[ rpl ]
-    }
-    grepnouns<-grep("NN",tags[locwordpos])
-    enouns1[i]<-locwords[grepnouns[1]]
-    rpl<-as.character(worddf$words) == enouns1[i]
-    if ( sum(rpl) > 0 ) enouns1lab[i]<-worddf$wordids[ rpl ]
-    nextnoun<-grepnouns[1]
-    if ( length(grepnouns) > 1 ) nextnoun<-grepnouns[2]
-    enouns2[i]<-locwords[nextnoun]
-    rpl<-as.character(worddf$words) == enouns2[i]
-    if ( sum(rpl) > 0 ) enouns2lab[i]<-worddf$wordids[ rpl ]
-  }
-eventdata<-cbind( eventdata, enouns1=enouns1, enouns1lab=enouns1lab, everbs1=everbs1, everbs1lab=everbs1lab, enouns2=enouns2, enouns2lab=enouns2lab, sentlab=sentlab )
-}
-################################################################################################################################
-################################################################################################################################
 print("FIXME - eventss probably not well defined, might also need eventsw")
-globsigf<-rowMeans( imatf )
-ccafeatspace<-residuals(lm(featspace~ 1+as.numeric( globsigf[ eventsw > 0 ] ) + eventss[ eventsw > 0 ]  ))
+ccafeatspace<-residuals(lm(featspace~ 1 + eventoverlap[ eventsw > 0 ]  ))
+################################################################################################################################
+# train / test split
+################################################################################################################################
 nl<-nrow(  ccafeatspace )
 inds1<-seq(1,(nl-1),by=2)
 inds2<-inds1+1
 inds1<-c(inds1,inds2[1:(length(inds2)*5/6)])
 inds2<-inds2[(length(inds2)*5/6):length(inds2)]
 redlist<-c()
-locwordlist<-'.red.'
-locwordlist<-c('tree','bird','green','red') #
-locwordlist<-c('politician','scientist')
-locwordlist<-c('lake','mountain','stone','beach','river')
-locwordlist<-c('criminal','terrorist','doctor','artist')
-locwordlist<-c('child')   #
-locwordlist<-c('green','red') #
-locwordlist<-c('cross','lake') 
-locwordlist<-c("young","yellow")
-locwordlist<-c('dime' ,'green','red') #
-locwordlist<-c('bird','duck')
-locwordlist<-c('child','woman','man','boy','girl')   #
-locwordlist<-c('summer','winter')
-locwordlist<-c('eat','drink')
-locwordlist<-c('fish','bird','dog')
-locwordlist<-c('politician','scientist','judge','doctor','artist')
-locwordlist<-c('yellow','white','blue','black','green','red') #
-locwordlist<-c('lake','mountain','stone','beach','river','tree')
-locwordlist<-c('judge','criminal')
-locwordlist<-'coffee'
-####################################
-wordcounts<-rep(0,length(words))
-wct<-1 ; l1<-length(fspacenames)/2
-for ( w in words ) {
-    myct<-length( unique( grep(w,unique(fspacenames[1:l1])) ) )
-    wordcounts[wct]<-myct
-    wct<-wct+1
-}
 designmat<-dmats # dmats/w
 redlist<-which( !is.na(eventdata$sentences) )
 wclassesf<-as.factor( eventdata$sentlab[redlist] )
@@ -161,7 +74,7 @@ if ( dosvd & ! exists("svmresult") )
 if ( docca == T )
   {
   print(paste("CCA",length(wclasslevs),its))
-  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=0.0, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1 ) #, nboot=50 )  # subaal mask4d
+  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=0.5, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1, z=-1 ) #, nboot=50 )  # subaal mask4d
   if ( typeof(fcca1$eig1[[1]]) != "double" )
     {
     for ( j in 1:nccavecs )
@@ -185,6 +98,7 @@ if ( docca == T )
       kk<-spatioTemporalProjectionImage( decodemat[,k], responselength, sum, subaal )
       myestimatedhrf<-kk$timefunction
       plot(myestimatedhrf,type='l')
+      Sys.sleep(1)
       antsImageWrite( kk$spaceimage , paste('temp',k,'.nii.gz',sep=''))
       }
     }
@@ -193,13 +107,17 @@ if ( docca == T )
 
 if ( TRUE  ) {
   if ( docca == F ) {
-    eanat1<-sparseDecom(  ccamats1[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=1, cthresh = 250 , inmask=mask4d )
+    eanat1<-sparseDecom(  ccamats1[[1]] , sparseness=mysparse[1], nvecs=10, its=1, mycoption=1, cthresh = 500 , smooth=1.0, inmask=mask4d )
     if ( typeof(eanat1$eig[[1]]) == "double" ) decodemat<-as.matrix( eanat1$eig ) else {
         for ( j in 1:nv ) {
           pmat<-timeseries2matrix( eanat1$eig[[j]], subaal )
           pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
           sccanBdictionary[,j]<-pmat[1,]
           decodemat<-as.matrix( sccanBdictionary )
+          kk<-spatioTemporalProjectionImage( decodemat[,j], responselength, sum, subaal )
+          myestimatedhrf<-kk$timefunction
+          plot(myestimatedhrf,type='l'); Sys.sleep(1)
+          antsImageWrite( kk$spaceimage , paste('temp',j,'.nii.gz',sep=''))
       }}
   }
   if ( FALSE ) {

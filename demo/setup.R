@@ -6,16 +6,14 @@ datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
 tr<-as.numeric(0.5)
 responselength<-8/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
-labs<-as.numeric( c(13,79,89) ) # lang network
+labs<-as.numeric( c(13,79,81,89) ) # lang network
 throwaway<-8
-ncompcor<-5
+ncompcor<-10
 compcorvarval<-0.95
 filterlowfrequency<-0.1 # 0.05 if you multiply by TR
-filterhighfrequency<-1.0 # 0.4 # because of expected bold response < 25secs, > 5 seconds
+filterhighfrequency<-0.5 # 0.4 # because of expected bold response < 25secs, > 5 seconds
 trendfrequency<-3
 winsorval<-0.01
-removeSentLengthEffects<-TRUE
-removeEventOverlap<-FALSE # dont do it
 eigsentbasislength<-100
 aalfn<-paste(datadir,"aal/",subject,"_aal2.nii.gz",sep='')
 if ( file.exists(aalfn) ) aalimg<-antsImageRead( aalfn , 3 )

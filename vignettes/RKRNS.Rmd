@@ -96,37 +96,68 @@ dmatw<-dmat[,wordinds]
 dmats<-dmat[,sentinds]
 eventss<-apply( dmats, FUN=sum, MARGIN=1 )
 nschar<-as.numeric( dmat$nchar )
+eventoverlap<-as.numeric( eventss )
 dmatsblock<-dmats
-for ( i in 1:responselength ) {
+for ( i in 1:(responselength) ) {
     dmatsblock<-dmatsblock+ashift(dmats,c(i,0))
+    eventoverlap<-eventoverlap+shift(eventoverlap,1)
     nschar<-nschar+shift(nschar,1)
 }
-if ( !is.na( removeSentLengthEffects ) ) removeSentLengthEffects<-as.numeric( nschar )
-removeEventOverlap<-eventss	
-for ( j in 2:responselength) removeEventOverlap<-removeEventOverlap+shift(eventss,j)
 events1<-apply( dmats     , FUN=sum, MARGIN=1 )
 eventss<-apply( dmatsblock, FUN=sum, MARGIN=1 )
 eventtimes<-which( events1 > 0 )
 eventsw<-apply( dmatw, FUN=sum, MARGIN=1 )
 words<-colnames(dmatw)
+data(sentences, package = "RKRNS")
+nsentences<-nrow(sentences)
+fspacenames<-rep("", length(eventtimes) )
+dmatsnames<-colnames(dmats)
+for ( i in 1:length( eventtimes ) ) {
+  fspacenames[i]<-dmatsnames[ which( dmats[eventtimes[i],  ] == 1  ) ]
+}
+if ( ! exists("eventdata") )
+  {
+  eventdata<-annotateEvents( sentences$Sentence, wiki_words$WhichWord, eventtimes, fspacenames )
+  }
 ```
-
 
 ```{r eigensentences,echo=TRUE, message=FALSE, warning=FALSE}
 data(wiki_words,package="RKRNS")
-eigsent<-eigenSentences(wiki_words)
+eigsent<-eigenSentences( wiki_words, normalize=T )
+# map them to the event space
+sentspace<-matrix(rep(NA, length(eventtimes)*ncol(eigsent) ),nrow=length(eventtimes))
+for ( i in 1:length( eventtimes ) )   
+  {
+  sentspace[i,]<-eigsent[  which(rownames(eigsent) == fspacenames[i]  ), ]    
+  }
 ```
 
 ```{r filtering,echo=TRUE, message=FALSE, warning=FALSE}
 imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
-   removeEventOverlap=NA, removeSentLengthEffects=NA )
-imatf<-residuals(lm(imatf~0+rowMeans(data.matrix(imatf))))
+   filterlowfrequency=filterlowfrequency,
+   filterhighfrequency=filterhighfrequency,
+   removeEventOverlap=eventoverlap, removeSentLengthEffects=nschar )
 ```
+
+```{r makeboldfeaturespace,echo=TRUE, message=FALSE, warning=FALSE}
+# convertTimeSeriesToSpatiotemporalFeatureSpace
+# 1. for each event, extract submatrix of bold, then vectorize that matrix
+eventshift<-4
+featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes+eventshift, responselength, 0, rep(0.5,4) )
+featspace<-featspaceOrg$eventmatrix
+mask4d<-featspaceOrg$mask4d
+rownames(featspace)<-(fspacenames)
+```
+
 
 ```{r validation,echo=TRUE, message=FALSE, warning=FALSE}
 # in the future these should call the appropriate functions or be embedded here ...
-source( system.file( paste("demo/","boldbasedSentenceMap.R",sep=''), package="RKRNS") )
-source( system.file( paste("demo/","basicValidation.R",sep='')     , package="RKRNS") )
+#########################################
+#  factor out some nuisance signal 
+#########################################
+print("FIXME - eventss probably not well defined, might also need eventsw")
+ccafeatspace<-residuals(lm(featspace~ 1 + eventoverlap[ eventsw > 0 ]  ))
+ccaresults<-sccanBasedDecoder( eventdata, dmats, ccafeatspace , sentspace )
 ```
 
 ```{r define variables,echo=TRUE, message=FALSE, warning=FALSE}
