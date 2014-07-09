@@ -104,8 +104,11 @@ l2<-l1+1
   randerr<-1.0/length(wclasslevs)
   ccaresult<-paste("CCA-PredErr:",ccaerr*100,"%, vs random",randerr*100,"%")
   print(ccaresult)
-  sentencesubset<- sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
-  nodedf<-data.frame( nodename=sentencedf[sentencesubset,1], nodeid=sentencedf[sentencesubset,2] )
+  locsents<-which( duplicated( eventdata$sentences ) == FALSE )
+  sentencedf<-data.frame( sentences=eventdata$sentences[locsents],
+                           ids=eventdata$sentlab[locsents]  )
+  sentencesubset<-sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
+  nodedf<-data.frame( nodename=sentencedf$sentences[sentencesubset], nodeid=sentencedf$ids[sentencesubset] )
   ww<-  classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=outgraphfile, mycharge=-2066,zoom=T)
 
   mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudf$dx,Pred=pred)

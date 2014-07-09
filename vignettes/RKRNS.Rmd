@@ -109,6 +109,7 @@ eventtimes<-which( events1 > 0 )
 eventsw<-apply( dmatw, FUN=sum, MARGIN=1 )
 words<-colnames(dmatw)
 data(sentences, package = "RKRNS")
+data(wiki_words,package="RKRNS")
 nsentences<-nrow(sentences)
 fspacenames<-rep("", length(eventtimes) )
 dmatsnames<-colnames(dmats)
@@ -122,7 +123,6 @@ if ( ! exists("eventdata") )
 ```
 
 ```{r eigensentences,echo=TRUE, message=FALSE, warning=FALSE}
-data(wiki_words,package="RKRNS")
 eigsent<-eigenSentences( wiki_words, normalize=T )
 # map them to the event space
 sentspace<-matrix(rep(NA, length(eventtimes)*ncol(eigsent) ),nrow=length(eventtimes))
@@ -157,7 +157,7 @@ rownames(featspace)<-(fspacenames)
 #########################################
 print("FIXME - eventss probably not well defined, might also need eventsw")
 ccafeatspace<-residuals(lm(featspace~ 1 + eventoverlap[ eventsw > 0 ]  ))
-ccaresults<-sccanBasedDecoder( eventdata, dmats, ccafeatspace , sentspace )
+ccaresults<-sccanBasedDecoder( eventdata, dmats, ccafeatspace , sentspace, cthresh=200, doEanat=T, joinEanat=T )
 ```
 
 ```{r define variables,echo=TRUE, message=FALSE, warning=FALSE}
