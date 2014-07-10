@@ -10,15 +10,12 @@ Applies a summary function to a spatiotemporal matrix to get lower dimensional r
 }
 
 \usage{
-wmat<-spatioTemporalProjectionImage( spacetimevec, timelength, summaryFUN=mean, nDminus1ref=NA ) 
+wmat<-spatioTemporalProjectionImage( spacetimematrix, summaryFUN=mean, nDminus1ref=NA ) 
 }
 
 \arguments{
 \item{spacetimevec}{
-  input space time vector of length equal to nvoxels in a mask times the number of time points
-}
-\item{timelength}{
-  the number of time points
+  input space time matrix or antsImage of length equal to nvoxels in a mask times the number of time points
 }
 \item{summaryFUN}{
   how to summarize the spatial part across time
@@ -38,11 +35,8 @@ Avants BB
 
 \examples{
 \dontrun{
-# img<-antsImageRead("TEST0View1vec000.nii.gz",4)
-# stvec<-timeserieswindow2matrix(eventlist=1,timewindow=16,
-#    mask=subaal,timeseriesmatrix=timeseries2matrix(img,subaal))$eventmatrix
-stvec<-read.csv("TEST0_Variate_View1vec.csv")[,3]
-ff<-spatioTemporalProjectionImage( stvec, 16, sum, subaal )
+img<-antsImageRead("TEST0View1vec000.nii.gz",4)
+ff<-spatioTemporalProjectionImage( img, sum, mask )
 antsImageWrite(ff$spaceimage,'temp.nii.gz')
 plot(ff$timefunction,type='l')
 }

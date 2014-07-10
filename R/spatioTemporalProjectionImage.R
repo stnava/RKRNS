@@ -1,5 +1,8 @@
-spatioTemporalProjectionImage <- function( spacetimevec, timelength, summaryFUN=mean, nDminus1ref=NA ) {
-  mm<-matrix(spacetimevec,nrow=timelength)
+spatioTemporalProjectionImage <- function( spacetimematrixIn, summaryFUN=mean, nDminus1ref=NA ) {
+  if ( class(spacetimematrixIn)[[1]] == "antsImage" )
+    {
+    mm<-timeseries2matrix( spacetimematrixIn, nDminus1ref )
+    } else mm<-spacetimematrixIn
   myestimatedhrf<-apply(mm,FUN=summaryFUN,MARGIN=1)
   mmmag<-sqrt( mm^2 )
   myestimatedbrainregionsval<-apply(mmmag,FUN=summaryFUN,MARGIN=2)

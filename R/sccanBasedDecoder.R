@@ -1,4 +1,4 @@
-sccanBasedDecoder <- function( eventdata, designmat, boldFeatureMatrix, sentenceSpace, mysparse=c(-0.1,-0.1), nvecs=5, its=1, smooth=0, cthresh=0, mask4d=NA, strategy=NA, doEanat=F, joinEanat=F, outputfileprefix='sccanBasedDecoder'  )
+sccanBasedDecoder <- function( eventdata, designmat, boldFeatureMatrix, sentenceSpace, mysparse=c(-0.1,-0.1), nvecs=5, its=1, smooth=0, cthresh=0, mask=NA, strategy=NA, doEanat=F, joinEanat=F, outputfileprefix='sccanBasedDecoder', interleave=FALSE  )
 {
 #########################################
 # parameters for dimensionality reduct.
@@ -24,6 +24,9 @@ whichcols<- colnames(designmat) %in%  eventdata$sentences[redlist]
 wclasslevs<-( levels( wclassesf ) )
 l1<-seq(1,length(redlist)-1,2)
 l2<-l1+1
+l1<-seq(1,length(redlist)/2,1)
+l2<-c( (max(l1)+1):length(redlist) )
+fcca1<-0
 ###########################################################
 #  Great!  Now do some cca based dimensionality reduction #
 ###########################################################
@@ -34,11 +37,10 @@ l2<-l1+1
   perword<-1 # length(locwordlist)
   sccanBdictionary<-matrix( rep(0,ncol(featspace)*perword*nccavecs),nrow=ncol(featspace))
   sccanWdictionary<-matrix( rep(0,ncol(sentspace2)*perword*nccavecs),nrow=ncol(sentspace2))
-  wct<-1
   blulist<-redlist[l1]
   classmatrix<-data.matrix( designmat[ eventtimes , whichcols ] )
   classmatrix<-classmatrix[ blulist , ]
-  if ( TRUE ) {
+  if ( interleave ) {
     classmatrix<-interleaveMatrixWithItself( classmatrix, ncol(sentenceSpace) )
     for ( i in 1:nrow(classmatrix) )
       {
@@ -46,47 +48,48 @@ l2<-l1+1
       classmatrix[i, (classmatrix[i,] > 0 ) ]<-esent
       }
     }
-  ccamats1<-list( ( ccafeatspace[ blulist, ] ) , (classmatrix) )
+  ccamatsTrain<-list( ( ccafeatspace[ blulist, ] ) , (classmatrix) )
+  ccamatsTest<-list( ( ccafeatspace[ redlist[l2], ] ) , (classmatrix) )
   print(paste("CCA",length(wclasslevs),its))
-  fcca1<-sparseDecom2( inmatrix=ccamats1, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=smooth, cthresh = c(cthresh, 0) ,  inmask = c(mask4d, NA), ell1=0.1, z=-1 ) #, nboot=50 )  # subaal mask4d
+  fcca1<-sparseDecom2( inmatrix=ccamatsTrain, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=smooth, cthresh = c(cthresh, 0) ,  inmask = c(mask, NA), ell1=0.1, z=-1 ) #, nboot=50 )
   if ( typeof(fcca1$eig1[[1]]) != "double" )
     {
     for ( j in 1:nccavecs )
       {
-      pmat<-timeseries2matrix( fcca1$eig1[[j]], subaal )
-      pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
+      img<-fcca1$eig1[[j]]
+      kk<-spatioTemporalProjectionImage( img, sum, mask )
+      myestimatedhrf<-kk$timefunction
+      plot(myestimatedhrf,type='l')
+      Sys.sleep( 0.25 )
+      antsImageWrite( kk$spaceimage , paste(outputfileprefix,k,'cca.nii.gz',sep=''))
+      pmat<-timeseries2matrix( img , mask )
+      pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=mask, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
       sccanBdictionary[,j]<-pmat[1,]
       }
-    wct<-wct+nccavecs
     } else sccanBdictionary <- fcca1$eig1
   decodemat<-as.matrix(sccanBdictionary)
   fcca1$eig2<-sccanWdictionary
-  for ( k in 1:ncol(decodemat)) 
-    {
-    kk<-spatioTemporalProjectionImage( decodemat[,k], responselength, sum, subaal )
-    myestimatedhrf<-kk$timefunction
-    plot(myestimatedhrf,type='l')
-    Sys.sleep(0.1)
-    antsImageWrite( kk$spaceimage , paste(outputfileprefix,k,'cca.nii.gz',sep=''))
-    }
   if ( doEanat  )
     {
     if ( is.na( mask4d ) ) 
-      eanat1<-sparseDecom(  ccamats1[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth  )
+      eanat1<-sparseDecom(  ccamatsTrain[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth  )
     if (!is.na( mask4d ) ) 
-      eanat1<-sparseDecom(  ccamats1[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth , inmask=mask4d )
+      eanat1<-sparseDecom(  ccamatsTrain[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth , inmask=mask4d )
     sccanBdictionary2<-sccanBdictionary*0
     if ( typeof(eanat1$eig[[1]]) == "double" ) sccanBdictionary2<-as.matrix( eanat1$eig )
     if ( typeof(eanat1$eig[[1]]) != "double" ) 
       {
         for ( j in 1:nv )
           {
-          pmat<-timeseries2matrix( eanat1$eig[[j]], subaal )
-          pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=subaal, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
-          sccanBdictionary2[,j]<-pmat[1,]
-          kk<-spatioTemporalProjectionImage( sccanBdictionary2[,j], responselength, sum, subaal )
+          img<-eanat1$eig[[j]]
+          kk<-spatioTemporalProjectionImage( img, sum, mask )
           myestimatedhrf<-kk$timefunction
-          plot(myestimatedhrf,type='l'); Sys.sleep(1)
+          plot(myestimatedhrf,type='l')
+          Sys.sleep( 0.25 )
+          antsImageWrite( kk$spaceimage , paste(outputfileprefix,k,'cca.nii.gz',sep=''))
+          pmat<-timeseries2matrix( img , mask )
+          pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=mask, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
+          sccanBdictionary2[,j]<-pmat[1,]
           antsImageWrite( kk$spaceimage , paste(outputfileprefix,j,'eanat.nii.gz',sep=''))
           }
     }
@@ -95,7 +98,7 @@ l2<-l1+1
   if ( joinEanat & nvecs > 3 )
     {
     decodemat2<-decodemat
-    kk<-joinEigenanatomy( ccamats1[[1]], mask=NA, decodemat2 , c(1:10)/100 )
+    kk<-joinEigenanatomy( ccamatsTrain[[1]], mask=NA, decodemat2 , c(1:10)/100 )
     decodemat<-t( kk$fusedlist )
     }
   mydf <-data.frame( dx=wclassesf[l1],  # sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
@@ -127,5 +130,5 @@ l2<-l1+1
                      scale_size(range=c(pltsz/2, pltsz))
     ggsave(paste(outputfileprefix,".pdf",sep=''),height=8,width=12)
     }
-  return( list(ccapredictions=mydata, ccaDictionary=decodemat ) )
+  return( list(ccapredictions=mydata, ccaDictionary=decodemat,  ccaobject=fcca1 ) )
 }

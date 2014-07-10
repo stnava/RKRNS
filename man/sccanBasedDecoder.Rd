@@ -10,7 +10,7 @@ Applies a function to a matrix representation of a sentence to get an eigensente
 }
 
 \usage{
-sccanBasedDecoder( eventdata, designmat, boldFeatureMatrix, sentenceSpace, mysparse=c(-0.1,-0.1), nvecs=5, its=1, smooth=0, cthresh=0, mask4d=NA, strategy=NA, doEanat=F, joinEanat=F, outgraphfile='temp2.html'  )
+sccanBasedDecoder( eventdata, designmat, boldFeatureMatrix, sentenceSpace, mysparse=c(-0.1,-0.1), nvecs=5, its=1, smooth=0, cthresh=0, mask=NA, strategy=NA, doEanat=F, joinEanat=F, outgraphfile='temp2.html'  )
 }
 
 \arguments{
@@ -25,6 +25,9 @@ sccanBasedDecoder( eventdata, designmat, boldFeatureMatrix, sentenceSpace, myspa
 }
 \item{sentenceSpace}{
   the sentence feature space
+}
+\item{mask}{
+  a 4D mask 
 }
 \item{doEanat}{
   also run a sparse PCA on the data
