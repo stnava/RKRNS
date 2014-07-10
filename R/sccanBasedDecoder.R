@@ -8,6 +8,15 @@ nv<-nvecs
 longc<-0
 nperm<-0
 myrob<-0
+if ( ! is.na( mask ) )
+  {
+  if ( mask@dimension == 4 )
+    {
+    myarr<-as.array( mask )
+    arr3d<-myarr[,,,1]
+    mask3d<-as.antsImage( arr3d )
+    }
+  }
 #########################################
 ################################################################################################################################
 # train / test split
@@ -57,13 +66,13 @@ fcca1<-0
     for ( j in 1:nccavecs )
       {
       img<-fcca1$eig1[[j]]
-      kk<-spatioTemporalProjectionImage( img, sum, mask )
+      kk<-spatioTemporalProjectionImage( img, sum, mask3d )
       myestimatedhrf<-kk$timefunction
       plot(myestimatedhrf,type='l')
       Sys.sleep( 0.25 )
-      antsImageWrite( kk$spaceimage , paste(outputfileprefix,k,'cca.nii.gz',sep=''))
-      pmat<-timeseries2matrix( img , mask )
-      pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=mask, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
+      antsImageWrite( kk$spaceimage , paste(outputfileprefix,j,'cca.nii.gz',sep=''))
+      pmat<-timeseries2matrix( img , mask3d )
+      pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=mask3d, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
       sccanBdictionary[,j]<-pmat[1,]
       }
     } else sccanBdictionary <- fcca1$eig1
@@ -71,10 +80,10 @@ fcca1<-0
   fcca1$eig2<-sccanWdictionary
   if ( doEanat  )
     {
-    if ( is.na( mask4d ) ) 
+    if ( is.na( mask ) ) 
       eanat1<-sparseDecom(  ccamatsTrain[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth  )
-    if (!is.na( mask4d ) ) 
-      eanat1<-sparseDecom(  ccamatsTrain[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth , inmask=mask4d )
+    if (!is.na( mask ) ) 
+      eanat1<-sparseDecom(  ccamatsTrain[[1]] , sparseness=mysparse[1], nvecs=nv, its=1, mycoption=0, cthresh = cthresh , smooth=smooth , inmask=mask )
     sccanBdictionary2<-sccanBdictionary*0
     if ( typeof(eanat1$eig[[1]]) == "double" ) sccanBdictionary2<-as.matrix( eanat1$eig )
     if ( typeof(eanat1$eig[[1]]) != "double" ) 
@@ -86,9 +95,9 @@ fcca1<-0
           myestimatedhrf<-kk$timefunction
           plot(myestimatedhrf,type='l')
           Sys.sleep( 0.25 )
-          antsImageWrite( kk$spaceimage , paste(outputfileprefix,k,'cca.nii.gz',sep=''))
-          pmat<-timeseries2matrix( img , mask )
-          pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=mask, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
+          antsImageWrite( kk$spaceimage , paste(outputfileprefix,j,'cca.nii.gz',sep=''))
+          pmat<-timeseries2matrix( img , mask3d )
+          pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=mask3d, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
           sccanBdictionary2[,j]<-pmat[1,]
           antsImageWrite( kk$spaceimage , paste(outputfileprefix,j,'eanat.nii.gz',sep=''))
           }
