@@ -1,4 +1,4 @@
-sccanBasedDecoder <- function( eventdata, designmat, boldFeatureMatrix, sentenceSpace, mysparse=c(-0.1,-0.1), nvecs=5, its=1, smooth=0, cthresh=0, mask=NA, strategy=NA, doEanat=F, joinEanat=F, outputfileprefix='sccanBasedDecoder', interleave=FALSE  )
+sccanBasedDecoder <- function( eventdata, designmat, boldFeatureMatrix, sentenceSpace, mysparse=c(-0.1,-0.1), nvecs=5, its=1, smooth=0, cthresh=0, mask=NA, strategy=NA, doEanat=F, joinEanat=F, outputfileprefix='sccanBasedDecoder', interleave=FALSE , sentenceTransformation="none" )
 {
 #########################################
 # parameters for dimensionality reduct.
@@ -39,8 +39,12 @@ fcca1<-0
 ###########################################################
 #  Great!  Now do some cca based dimensionality reduction #
 ###########################################################
+sentspace2<-sentenceSpace 
+if ( sentenceTransformation == "log" ) 
   sentspace2<-cbind(  log( sentenceSpace - min(sentenceSpace) + 1 ) )
-#  sentspace2<-sentenceSpace 
+if ( sentenceTransformation == "sim" )
+    {
+    }
   # multivariate correlation between global bold features and eigensentences
   nccavecs<-nv
   perword<-1 # length(locwordlist)
@@ -48,19 +52,19 @@ fcca1<-0
   sccanWdictionary<-matrix( rep(0,ncol(sentspace2)*perword*nccavecs),nrow=ncol(sentspace2))
   blulist<-redlist[l1]
   classmatrix<-data.matrix( designmat[ eventtimes , whichcols ] )
-  classmatrix<-classmatrix[ blulist , ]
+  classmatrixTrain<-classmatrix[  blulist , ]
   if ( interleave ) {
-    classmatrix<-interleaveMatrixWithItself( classmatrix, ncol(sentenceSpace) )
+    classmatrixTrain<-interleaveMatrixWithItself( classmatrixTrain, ncol(sentenceSpace) )
     for ( i in 1:nrow(classmatrix) )
       {
       esent<-sentenceSpace[blulist[i],]
-      classmatrix[i, (classmatrix[i,] > 0 ) ]<-esent
+      classmatrixTrain[i, (classmatrixTrain[i,] > 0 ) ]<-esent
       }
     }
-  ccamatsTrain<-list( ( ccafeatspace[ blulist, ] ) , (classmatrix) )
-  ccamatsTest<-list( ( ccafeatspace[ redlist[l2], ] ) , (classmatrix) )
+  ccamatsTrain<-list( ( ccafeatspace[ blulist, ] ) , classmatrixTrain )
+  ccamatsTrain<-list( ( ccafeatspace[ blulist, ] ) , sentenceSpace[blulist,] )
   print(paste("CCA",length(wclasslevs),its))
-  fcca1<-sparseDecom2( inmatrix=ccamatsTrain, nvecs=nv, sparseness=mysparse, its=its, mycoption=2, perms=nperm, robust=0, smooth=smooth, cthresh = c(cthresh, 0) ,  inmask = c(mask, NA), ell1=0.1, z=-1 ) #, nboot=50 )
+  fcca1<-sparseDecom2( inmatrix=ccamatsTrain, nvecs=nv, sparseness=mysparse, its=its, mycoption=0, perms=nperm, robust=0, smooth=smooth, cthresh = c(cthresh, 0) ,  inmask = c(mask, NA), ell1=0.1, z=-1 ) #, nboot=50 )
   if ( typeof(fcca1$eig1[[1]]) != "double" )
     {
     for ( j in 1:nccavecs )
