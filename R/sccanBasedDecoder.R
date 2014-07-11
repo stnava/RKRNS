@@ -125,14 +125,14 @@ if ( sentenceTransformation == "sim" )
   randerr<-1.0/length(wclasslevs)
   ccaresult<-paste("CCA-PredErr:",ccaerr*100,"%, vs random",randerr*100,"%")
   print(ccaresult)
-  mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudf$dx,Pred=pred)
-  return( list(ccaresult=ccaresult,ccapredictions=mydata, ccaDictionary=decodemat,  ccaobject=fcca1 ) )
+  mydata <- data.frame(group=eventdata$sentences[redlist[l2]], Real=myudf$dx,Pred=pred)
   locsents<-which( duplicated( eventdata$sentences ) == FALSE )
   sentencedf<-data.frame( sentences=eventdata$sentences[locsents],
                            ids=eventdata$sentlab[locsents]  )
-  sentencesubset<-sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
+  sentencesubset<-sentencedf$sentences %in% unique(eventdata$sentences[redlist[l2]])
   nodedf<-data.frame( nodename=sentencedf$sentences[sentencesubset], nodeid=sentencedf$ids[sentencesubset] )
-  ww<-  classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=paste(outputfileprefix,".html",sep=''), mycharge=-2066,zoom=T)
+  ww<-  classificationNetwork( nodesIn=nodedf, mydata$Real, mydata$Pred ,outfile=paste(outputfileprefix,".html",sep=''), mycharge=-2066,zoom=T)
+  return( list(ccaresult=ccaresult,ccapredictions=mydata, ccaDictionary=decodemat,  ccaobject=fcca1 ) )
 
   if ( FALSE ) {
 #    eigSz<-apply(sentenceSpace[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
