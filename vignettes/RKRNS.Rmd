@@ -286,8 +286,8 @@ that is, learning a (sentence) label function from the BOLD data.
 
 ## Decoding targets
 
-We decode all `r nrow(sentencedf)` sentences.  Preliminarily, we find SVD-SVM `r svmresult` and
-CCA-SVM results `r ccaresult`.  The SVD-SVM uses the SVD of the matrix
+We decode all `r nrow(eigsent)` sentences.  Preliminarily, we find SVD-SVM `r svmresult` and
+CCA-SVM results `r ccaresult$ccaresult`.  The SVD-SVM uses the SVD of the matrix
 $X$ as predictors.
 
 A simple example

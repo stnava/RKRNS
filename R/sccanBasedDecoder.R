@@ -143,5 +143,5 @@ if ( sentenceTransformation == "sim" )
                      scale_size(range=c(pltsz/2, pltsz))
     ggsave(paste(outputfileprefix,".pdf",sep=''),height=8,width=12)
     }
-  return( list(ccapredictions=mydata, ccaDictionary=decodemat,  ccaobject=fcca1 ) )
+  return( list(ccaresult=ccaresult,ccapredictions=mydata, ccaDictionary=decodemat,  ccaobject=fcca1 ) )
 }
