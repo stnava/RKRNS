@@ -64,7 +64,7 @@ if ( sentenceTransformation == "sim" )
   ccamatsTrain<-list( ( ccafeatspace[ blulist, ] ) , classmatrixTrain )
   ccamatsTrain<-list( ( ccafeatspace[ blulist, ] ) , sentenceSpace[blulist,] )
   print(paste("CCA",length(wclasslevs),its))
-  fcca1<-sparseDecom2( inmatrix=ccamatsTrain, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, perms=nperm, robust=0, smooth=smooth, cthresh = c(cthresh, 0) ,  inmask = c(mask, NA), ell1=0.001 ) #, nboot=50 )
+  fcca1<-sparseDecom2( inmatrix=ccamatsTrain, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, perms=nperm, robust=0, smooth=smooth, cthresh = c(cthresh, 0) ,  inmask = c(mask, NA), ell1=0.1 ) #, nboot=50 )
   if ( typeof(fcca1$eig1[[1]]) != "double" )
     {
     for ( j in 1:nccavecs )
@@ -132,6 +132,7 @@ if ( sentenceTransformation == "sim" )
   sentencesubset<-sentencedf$sentences %in% unique(eventdata$sentences[redlist[l2]])
   nodedf<-data.frame( nodename=sentencedf$sentences[sentencesubset], nodeid=sentencedf$ids[sentencesubset] )
   ww<-  classificationNetwork( nodesIn=nodedf, mydata$Real, mydata$Pred ,outfile=paste(outputfileprefix,".html",sep=''), mycharge=-2066,zoom=T)
+  mydata<-cbind( mydata, nodedf )
   return( list(ccaresult=ccaresult,ccapredictions=mydata, ccaDictionary=decodemat,  ccaobject=fcca1 ) )
 
   if ( FALSE ) {

@@ -197,9 +197,9 @@ rownames(featspace)<-(fspacenames)
 ccafeatspace<-residuals(lm(featspace~ 1 + eventoverlap[ eventsw > 0 ]  ))
 # might pass mask4d below to get other constraints on data
 ssubset<-( grep( "judge", eventdata$sentences ) )
-ccaresults<-sccanBasedDecoder( eventdata[ssubset,], dmats, ccafeatspace[ssubset,] , sentspaceSim[ssubset,], mysparse = c( -0.05, -0.05 ), nvecs=5, cthresh=50, doEanat=F, mask=mask4d, smooth=0.0 , its=5 )
+ccaresults<-sccanBasedDecoder( eventdata[ssubset,], dmats, ccafeatspace[ssubset,] , sentspaceSim[ssubset,], mysparse = c( -0.05, -0.05 ), nvecs=12, cthresh=0, doEanat=F, mask=mask4d, smooth=0.0 , its=15 )
 vislist<-list()
-for ( k in 1:2 ) {
+for ( k in 1:length(ccaresults$ccaobject$eig1) ) {
   ccaimg<-ccaresults$ccaobject$eig1[[k]]
   kk<-spatioTemporalProjectionImage( ccaimg, sum, subaal )
   ImageMath(3,kk$spaceimage,"Normalize",kk$spaceimage)
@@ -338,7 +338,8 @@ classification cases.  You can zoom and click on the graph to get an
 idea of what sentences are well-classified.
 
 ```{r d3,results='asis',iframe = TRUE,fig.cap='A (mis)-classification network',echo=FALSE, message=FALSE, warning=FALSE}
-  ww <- classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=T) 
+print("TODO")
+#  ww <- classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=T) 
 ```
 
 ## Temporal dynamics 
