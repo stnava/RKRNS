@@ -51,7 +51,7 @@ if ( sentenceTransformation == "sim" )
   sccanBdictionary<-matrix( rep(0,ncol(featspace)*perword*nccavecs),nrow=ncol(featspace))
   sccanWdictionary<-matrix( rep(0,ncol(sentspace2)*perword*nccavecs),nrow=ncol(sentspace2))
   blulist<-redlist[l1]
-  classmatrix<-data.matrix( designmat[ eventtimes , whichcols ] )
+  classmatrix<-data.matrix( designmat[ eventdata$eventtimes , whichcols ] )
   classmatrixTrain<-classmatrix[  blulist , ]
   if ( interleave ) {
     classmatrixTrain<-interleaveMatrixWithItself( classmatrixTrain, ncol(sentenceSpace) )
@@ -125,6 +125,8 @@ if ( sentenceTransformation == "sim" )
   randerr<-1.0/length(wclasslevs)
   ccaresult<-paste("CCA-PredErr:",ccaerr*100,"%, vs random",randerr*100,"%")
   print(ccaresult)
+  mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudf$dx,Pred=pred)
+  return( list(ccaresult=ccaresult,ccapredictions=mydata, ccaDictionary=decodemat,  ccaobject=fcca1 ) )
   locsents<-which( duplicated( eventdata$sentences ) == FALSE )
   sentencedf<-data.frame( sentences=eventdata$sentences[locsents],
                            ids=eventdata$sentlab[locsents]  )
@@ -132,7 +134,6 @@ if ( sentenceTransformation == "sim" )
   nodedf<-data.frame( nodename=sentencedf$sentences[sentencesubset], nodeid=sentencedf$ids[sentencesubset] )
   ww<-  classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=paste(outputfileprefix,".html",sep=''), mycharge=-2066,zoom=T)
 
-  mydata <- data.frame(group=fspacenames[redlist[l2]], Real=myudf$dx,Pred=pred)
   if ( FALSE ) {
 #    eigSz<-apply(sentenceSpace[ redlist[l2]  , ],FUN=max,MARGIN=1)*1.5
     chart_title<-"SCCAN-Decode"
@@ -143,5 +144,4 @@ if ( sentenceTransformation == "sim" )
                      scale_size(range=c(pltsz/2, pltsz))
     ggsave(paste(outputfileprefix,".pdf",sep=''),height=8,width=12)
     }
-  return( list(ccaresult=ccaresult,ccapredictions=mydata, ccaDictionary=decodemat,  ccaobject=fcca1 ) )
 }
