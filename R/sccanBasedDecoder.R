@@ -64,7 +64,7 @@ if ( sentenceTransformation == "sim" )
   ccamatsTrain<-list( ( ccafeatspace[ blulist, ] ) , classmatrixTrain )
   ccamatsTrain<-list( ( ccafeatspace[ blulist, ] ) , sentenceSpace[blulist,] )
   print(paste("CCA",length(wclasslevs),its))
-  fcca1<-sparseDecom2( inmatrix=ccamatsTrain, nvecs=nv, sparseness=mysparse, its=its, mycoption=0, perms=nperm, robust=0, smooth=smooth, cthresh = c(cthresh, 0) ,  inmask = c(mask, NA), ell1=0.1, z=-1 ) #, nboot=50 )
+  fcca1<-sparseDecom2( inmatrix=ccamatsTrain, nvecs=nv, sparseness=mysparse, its=its, mycoption=1, perms=nperm, robust=0, smooth=smooth, cthresh = c(cthresh, 0) ,  inmask = c(mask, NA), ell1=0.001 ) #, nboot=50 )
   if ( typeof(fcca1$eig1[[1]]) != "double" )
     {
     for ( j in 1:nccavecs )

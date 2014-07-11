@@ -75,8 +75,36 @@ boldhours<-nvol*TR/3600
 # The basic design
 
 ```{r setup,echo=TRUE, message=FALSE, warning=FALSE}
-setupfile<-paste("demo/",c("setup.R"),sep='')
-source(system.file( setupfile, package="RKRNS"))
+# setupfile<-paste("demo/",c("setup.R"),sep='')
+# source(system.file( setupfile, package="RKRNS"))
+print("#########setup#########TODO: need to incorporate motion parameters!")
+istest<-FALSE
+subject<-"111157"
+datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
+tr<-as.numeric(0.5)
+responselength<-8/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
+labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
+labs<-as.numeric( c(13,79,81,89) ) # lang network
+throwaway<-8
+ncompcor<-10
+compcorvarval<-0.95
+filterlowfrequency<-0.05 # 0.05 if you multiply by TR
+filterhighfrequency<-1.0 # 0.4 # because of expected bold response < 25secs, > 5 seconds
+trendfrequency<-3
+winsorval<-0.01
+eigsentbasislength<-100
+aalfn<-paste(datadir,"aal/",subject,"_aal2.nii.gz",sep='')
+if ( file.exists(aalfn) ) aalimg<-antsImageRead( aalfn , 3 )
+bmaskfn<-paste(datadir,"ref/",subject,"_mask.nii.gz",sep='')
+if ( file.exists(bmaskfn) ) bmask<-antsImageRead( bmaskfn , 3 )
+reffn<-paste(datadir,"ref/",subject,"_mocoref.nii.gz",sep='')
+if ( file.exists(reffn) ) ref<-antsImageRead( reffn , 3 )
+imagedir<-paste(datadir,"moco/",sep='')
+imagepostfix<-"_moco.nii.gz"
+data("aal",package="ANTsR")
+blocksCSVlist<-Sys.glob(paste(datadir,"design/*csv",sep=''))   # INPUT csv list
+dfn<-paste(datadir,"assembly/assembled_design_",labs[1],"_",labs[length(labs)],"test.csv",sep='') # INPUT out csv name
+afn<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.mha",sep='') # INPUT out img na
 ```
 
 ```{r assembledesign,echo=TRUE, message=FALSE, warning=FALSE}
@@ -147,14 +175,13 @@ for ( i in 1:length( eventtimes ) )
 imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
    filterlowfrequency=filterlowfrequency,
    filterhighfrequency=filterhighfrequency,
-   removeEventOverlap=eventoverlap, removeSentLengthEffects=NA )
-imatf<-imat
+   removeEventOverlap=NA, removeSentLengthEffects=NA )
 ```
 
 ```{r makeboldfeaturespace,echo=TRUE, message=FALSE, warning=FALSE}
 # convertTimeSeriesToSpatiotemporalFeatureSpace
 # 1. for each event, extract submatrix of bold, then vectorize that matrix
-eventshift<-0
+eventshift<-6
 featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes+eventshift, responselength, 0, rep(0.5,4) )
 featspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d
@@ -167,10 +194,18 @@ rownames(featspace)<-(fspacenames)
 #########################################
 #  factor out some nuisance signal 
 #########################################
-ccafeatspace<-featspace # residuals(lm(featspace~ 1 + eventoverlap[ eventsw > 0 ]  ))
+ccafeatspace<-residuals(lm(featspace~ 1 + eventoverlap[ eventsw > 0 ]  ))
 # might pass mask4d below to get other constraints on data
-ssubset<-( grep( "coffee", eventdata$sentences ) )
-ccaresults<-sccanBasedDecoder( eventdata[ssubset,], dmats, ccafeatspace[ssubset,] , sentspaceSim[ssubset,], mysparse = c(-0.2, -0.9 ), nvecs=4, cthresh=1000, doEanat=F, mask=mask4d, smooth=0.1 , its=1 )
+ssubset<-( grep( "judge", eventdata$sentences ) )
+ccaresults<-sccanBasedDecoder( eventdata[ssubset,], dmats, ccafeatspace[ssubset,] , sentspaceSim[ssubset,], mysparse = c( -0.05, -0.05 ), nvecs=5, cthresh=50, doEanat=F, mask=mask4d, smooth=0.0 , its=5 )
+vislist<-list()
+for ( k in 1:2 ) {
+  ccaimg<-ccaresults$ccaobject$eig1[[k]]
+  kk<-spatioTemporalProjectionImage( ccaimg, sum, subaal )
+  ImageMath(3,kk$spaceimage,"Normalize",kk$spaceimage)
+  vislist<-lappend( vislist, kk$spaceimage )
+}
+plotANTsImage( ref, vislist, slices='12x56x2' , thresh='0.25x1', color=rainbow( length(vislist) ) )
 # compare to
 # tcca<-sparseDecom2( inmatrix=list( data.matrix(imat)[1000:10000,] , data.matrix(dmatsblock)[1000:10000,] ), nvecs=20, sparseness=c(-0.1,0.1), its=5, mycoption=2, perms=0, smooth=0.5, cthresh=c(200,0), inmask=c(subaal,NA) )
 # purely spatial ... 
