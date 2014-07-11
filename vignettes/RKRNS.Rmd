@@ -63,6 +63,14 @@ integrating these in a predictive model. We implement the analysis in
 `R` with `ANTsR` for imaging-specific tasks and SCCAN dimensionality
 reduction.
 
+```{r define variables,echo=TRUE, message=FALSE, warning=FALSE}
+svmresult<-0
+TR<-0.5
+blocklength<-450*TR
+if ( exists("imat") ) nvol<-nrow(imat) else nvol<-57600
+boldhours<-nvol*TR/3600
+```
+
 
 # The basic design
 
@@ -139,13 +147,14 @@ for ( i in 1:length( eventtimes ) )
 imatf<-filterfMRI4KRNS( imat, tr=tr, responselength=responselength, 
    filterlowfrequency=filterlowfrequency,
    filterhighfrequency=filterhighfrequency,
-   removeEventOverlap=eventoverlap, removeSentLengthEffects=nschar )
+   removeEventOverlap=eventoverlap, removeSentLengthEffects=NA )
+imatf<-imat
 ```
 
 ```{r makeboldfeaturespace,echo=TRUE, message=FALSE, warning=FALSE}
 # convertTimeSeriesToSpatiotemporalFeatureSpace
 # 1. for each event, extract submatrix of bold, then vectorize that matrix
-eventshift<-4
+eventshift<-0
 featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes+eventshift, responselength, 0, rep(0.5,4) )
 featspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d
@@ -158,22 +167,15 @@ rownames(featspace)<-(fspacenames)
 #########################################
 #  factor out some nuisance signal 
 #########################################
-print("FIXME - eventss probably not well defined, might also need eventsw")
-ccafeatspace<-residuals(lm(featspace~ 1 + eventoverlap[ eventsw > 0 ]  ))
+ccafeatspace<-featspace # residuals(lm(featspace~ 1 + eventoverlap[ eventsw > 0 ]  ))
 # might pass mask4d below to get other constraints on data
-ccaresults<-sccanBasedDecoder( eventdata, dmats, ccafeatspace , sentspaceSim, mysparse = c(-0.05, -0.1 ), nvecs=4, cthresh=100, doEanat=F, mask=mask4d, smooth=0.1 , its=1 )
+ssubset<-( grep( "coffee", eventdata$sentences ) )
+ccaresults<-sccanBasedDecoder( eventdata[ssubset,], dmats, ccafeatspace[ssubset,] , sentspaceSim[ssubset,], mysparse = c(-0.2, -0.9 ), nvecs=4, cthresh=1000, doEanat=F, mask=mask4d, smooth=0.1 , its=1 )
 # compare to
 # tcca<-sparseDecom2( inmatrix=list( data.matrix(imat)[1000:10000,] , data.matrix(dmatsblock)[1000:10000,] ), nvecs=20, sparseness=c(-0.1,0.1), its=5, mycoption=2, perms=0, smooth=0.5, cthresh=c(200,0), inmask=c(subaal,NA) )
 # purely spatial ... 
 ```
 
-```{r define variables,echo=TRUE, message=FALSE, warning=FALSE}
-TR<-0.5
-blocklength<-450*TR
-throwaway<-8
-if ( exists("imat") ) nvol<-nrow(imat) else nvol<-57600
-boldhours<-nvol*TR/3600
-```
 ## BOLD Mechanics
 
 The full experiment employs randomized sentence presentation in an event-related design with 
@@ -287,7 +289,7 @@ that is, learning a (sentence) label function from the BOLD data.
 ## Decoding targets
 
 We decode all `r nrow(eigsent)` sentences.  Preliminarily, we find SVD-SVM `r svmresult` and
-CCA-SVM results `r ccaresult$ccaresult`.  The SVD-SVM uses the SVD of the matrix
+CCA-SVM results `r ccaresults$ccaresult`.  The SVD-SVM uses the SVD of the matrix
 $X$ as predictors.
 
 A simple example
