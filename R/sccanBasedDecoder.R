@@ -95,7 +95,7 @@ if ( sentenceTransformation == "sim" )
         for ( j in 1:nv )
           {
           img<-eanat1$eig[[j]]
-          kk<-spatioTemporalProjectionImage( img, sum, mask )
+          kk<-spatioTemporalProjectionImage( img, sum, mask3d )
           myestimatedhrf<-kk$timefunction
           plot(myestimatedhrf,type='l')
           Sys.sleep( 0.25 )
