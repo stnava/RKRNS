@@ -1,4 +1,4 @@
-eigenSentences <- function(  wordembed, functiontoapply = mean , normalize=F, eigsentbasislength = NA, sentencesIn=NA ) {
+eigenSentences <- function(  wordembed, functiontoapply = sum , normalize=F, eigsentbasislength = NA, sentencesIn=NA ) {
 ######## build the average eigenword for each sentence #########
 if ( is.na(sentencesIn) )
   {

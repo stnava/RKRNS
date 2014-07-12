@@ -1,6 +1,5 @@
 filterfMRI4KRNS <- function( imat,
     tr=as.numeric(0.5),
-    responselength=16, # e.g. 15 seconds div by 0.5 tr => 30 volumes
     filterlowfrequency=0.1, # 0.05 if you multiply by TR
     filterhighfrequency=1.0, # 0.4 # because of expected bold response < 25secs, > 5 seconds
     trendfrequency=3,
