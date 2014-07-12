@@ -193,8 +193,7 @@ rownames(featspace)<-(fspacenames)
 #########################################
 ccafeatspace<-residuals(lm(featspace~ 1+ eventss[ eventsw > 0 ]  ))
 # might pass mask4d below to get other constraints on data
-source("~/code/RKRNS/R/sccanBasedDecoder.R")
-ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspaceSim[,], mysparse = c( -0.01, -0.9 ), nvecs=5, cthresh=0, doEanat=F, mask=mask4d, smooth=0.0 , its=11,  interleave=T ,  locwordlist=c('red','blue') )
+ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspaceSim[,], mysparse = c( -0.01, -0.9 ), nvecs=5, cthresh=0, doEanat=F, mask=mask4d, smooth=0.0 , its=11,  interleave=T ,  locwordlist=c('judge','blue') )
 # residfeats<-ccafeatspace[ssubset,] %*% data.matrix(ccaresults$ccaDictionary )
 # residfeats<-residuals(lm( ccafeatspace[ssubset,] ~ residfeats ) )
 # ccaresults2<-sccanBasedDecoder( eventdata[ssubset,], dmats, residfeats , sentspaceSim[ssubset,], mysparse = c( -0.15, -0.5 ), nvecs=12, cthresh=550, doEanat=F, mask=mask4d, smooth=0.0 , its=4 )
