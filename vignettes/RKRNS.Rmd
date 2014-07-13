@@ -201,6 +201,8 @@ ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspace[
 # residfeats<-residuals(lm( ccafeatspace[ssubset,] ~ residfeats ) )
 # ccaresults2<-sccanBasedDecoder( eventdata[ssubset,], dmats, residfeats , sentspaceSim[ssubset,], mysparse = c( -0.15, -0.5 ), nvecs=12, cthresh=0, doEanat=F, mask=mask4d, smooth=0.0 , its=22 )
 #
+n<-round(sqrt(length(ccaresults$ccaobject$eig1)))+1
+par(mfrow=c(n-1,n) )
 vislist<-list()
 for ( k in 1:length(ccaresults$ccaobject$eig1) ) {
   ccaimg<-ccaresults$ccaobject$eig1[[k]]
@@ -209,9 +211,9 @@ for ( k in 1:length(ccaresults$ccaobject$eig1) ) {
   ImageMath(3,kk$spaceimage,"Normalize",kk$spaceimage)
   vislist<-lappend( vislist, kk$spaceimage )
   if ( k == 1 ) myestimatedhrf<-kk$timefunction
-  plot(kk$timefunction,type='l'); Sys.sleep( 1.25 )
+  plot(kk$timefunction,type='l')
 }
-plotANTsImage( ref, vislist, slices='12x56x2' , thresh='0.05x1', color=rainbow( length(vislist) ) )
+plotANTsImage( ref, vislist, slices='12x56x1' , thresh='0.1x1', color=rainbow( length(vislist) ) )
 # compare to
 # tcca<-sparseDecom2( inmatrix=list( data.matrix(imat)[1000:10000,] , data.matrix(dmatsblock)[1000:10000,] ), nvecs=20, sparseness=c(-0.1,0.1), its=5, mycoption=2, perms=0, smooth=0.5, cthresh=c(200,0), inmask=c(subaal,NA) )
 # purely spatial ... 
