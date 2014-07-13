@@ -82,8 +82,8 @@ istest<-FALSE
 subject<-"111157"
 datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
 tr<-as.numeric(0.5)
-eventshift<-8
-responselength<-8/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
+eventshift<-6
+responselength<-6/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
 labs<-as.numeric( c(13,79,81,89) ) # lang network
 throwaway<-8
@@ -157,7 +157,10 @@ if ( ! exists("eventdata") )
 ```
 
 ```{r eigensentences,echo=TRUE, message=FALSE, warning=FALSE}
-eigsent<-eigenSentences( wiki_words, normalize=F )
+eigsent<-eigenSentences( wiki_words, normalize=T, functiontoapply = "svd" )
+weigsent<-whiten(eigsent)
+rownames(weigsent )<-rownames(eigsent)
+# eigsent<-weigsent
 # map them to the event space
 sentspace<-matrix(rep(NA, length(eventtimes)*ncol(eigsent) ),nrow=length(eventtimes))
 # compute correlations between all sentences
@@ -170,13 +173,11 @@ for ( i in 1:length( eventtimes ) )
 ```
 
 ```{r filtering,echo=TRUE, message=FALSE, warning=FALSE}
+gbold<-rowMeans(imat)
 imatf<-filterfMRI4KRNS( imat, tr=tr,  
    filterlowfrequency=filterlowfrequency,
    filterhighfrequency=filterhighfrequency,
    removeEventOverlap=NA, removeSentLengthEffects=nschar )
-```
-
-```{r makeboldfeaturespace,echo=TRUE, message=FALSE, warning=FALSE}
 # convertTimeSeriesToSpatiotemporalFeatureSpace
 # 1. for each event, extract submatrix of bold, then vectorize that matrix
 featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes+eventshift, responselength, 0, rep(0.5,4) )
@@ -191,23 +192,26 @@ rownames(featspace)<-(fspacenames)
 #########################################
 #  factor out some nuisance signal 
 #########################################
-ccafeatspace<-residuals(lm(featspace~ 1+ eventss[ eventsw > 0 ]  ))
+gg<-rowMeans(featspace)
+ccafeatspace<-residuals(lm(featspace~ 1 + eventss[ eventsw > 0 ] ))
 # might pass mask4d below to get other constraints on data
-ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspaceSim[,], mysparse = c( -0.01, -0.9 ), nvecs=5, cthresh=0, doEanat=F, mask=mask4d, smooth=0.0 , its=11,  interleave=T ,  locwordlist=c('judge','blue') )
+ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspace[,], mysparse = c( 0.01, 1/20 ), nvecs=20, cthresh=250, doEanat=F, mask=mask4d, smooth=0.1 , its=1,  interleave=T ,  locwordlist=c('coffee','dog','bird','lake','mountain' ) )
+#c('blue','red','yellow','green')
 # residfeats<-ccafeatspace[ssubset,] %*% data.matrix(ccaresults$ccaDictionary )
 # residfeats<-residuals(lm( ccafeatspace[ssubset,] ~ residfeats ) )
-# ccaresults2<-sccanBasedDecoder( eventdata[ssubset,], dmats, residfeats , sentspaceSim[ssubset,], mysparse = c( -0.15, -0.5 ), nvecs=12, cthresh=550, doEanat=F, mask=mask4d, smooth=0.0 , its=4 )
+# ccaresults2<-sccanBasedDecoder( eventdata[ssubset,], dmats, residfeats , sentspaceSim[ssubset,], mysparse = c( -0.15, -0.5 ), nvecs=12, cthresh=0, doEanat=F, mask=mask4d, smooth=0.0 , its=22 )
+#
 vislist<-list()
 for ( k in 1:length(ccaresults$ccaobject$eig1) ) {
   ccaimg<-ccaresults$ccaobject$eig1[[k]]
-  ImageMath(4,ccaimg,"Normalize",ccaimg)
   kk<-spatioTemporalProjectionImage( ccaimg, sum, subaal )
+  antsCopyImageInfo( subaal, kk$spaceimage )
   ImageMath(3,kk$spaceimage,"Normalize",kk$spaceimage)
   vislist<-lappend( vislist, kk$spaceimage )
   if ( k == 1 ) myestimatedhrf<-kk$timefunction
   plot(kk$timefunction,type='l'); Sys.sleep( 1.25 )
 }
-plotANTsImage( ref, vislist, slices='12x56x2' , thresh='0.25x1', color=rainbow( length(vislist) ) )
+plotANTsImage( ref, vislist, slices='12x56x2' , thresh='0.05x1', color=rainbow( length(vislist) ) )
 # compare to
 # tcca<-sparseDecom2( inmatrix=list( data.matrix(imat)[1000:10000,] , data.matrix(dmatsblock)[1000:10000,] ), nvecs=20, sparseness=c(-0.1,0.1), its=5, mycoption=2, perms=0, smooth=0.5, cthresh=c(200,0), inmask=c(subaal,NA) )
 # purely spatial ... 

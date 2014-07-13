@@ -10,7 +10,9 @@ nwords<-length(words)
 nsentencesIn<-length(sentencesIn$Sentence)
 if ( is.na(eigsentbasislength) ) eigsentbasislength<-ncol( wordembed ) - 1
 if ( eigsentbasislength > (ncol( wordembed ) - 1) ) eigsentbasislength<-ncol( wordembed ) - 1
-eigsent<-matrix( rep( 0, (nsentencesIn) * eigsentbasislength ) ,  nrow=nsentencesIn )
+sclfactor<-1
+if ( functiontoapply  == "svd" ) sclfactor<-2
+eigsent<-matrix( rep( 0, (nsentencesIn) * eigsentbasislength * sclfactor ) ,  nrow=nsentencesIn )
 rownames( eigsent )<-sentencesIn$Sentence
 sentct<-0 # should = nsentencesIn
 for ( i in 1:nsentencesIn )
@@ -29,7 +31,13 @@ for ( i in 1:nsentencesIn )
       sentmat[j,]<-wvec
       }
     sentmat<-antsrimpute( sentmat )
-    eigsent[sentct,]<-apply(sentmat,FUN=functiontoapply,MARGIN=2)
+    if ( functiontoapply  == "svd" )
+      {
+      pj<-svd(sentmat)$u %*% sentmat
+      if ( dim(pj)[1] == 1 ) pj<-rbind(pj,pj)
+      eigsent[sentct,]<-as.numeric(pj[1:2,])
+      }
+    else eigsent[sentct,]<-apply(sentmat,FUN=functiontoapply,MARGIN=2)
     }
   }
 if ( normalize )

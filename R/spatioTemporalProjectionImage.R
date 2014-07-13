@@ -10,6 +10,7 @@ spatioTemporalProjectionImage <- function( spacetimematrixIn, summaryFUN=mean, n
   if ( !is.na(nDminus1ref) )
     {
     spaceimage<-antsImageClone( nDminus1ref )
+    spaceimage[ spaceimage < 0 ]<-0
     indexvec<-spaceimage > 0
     if ( sum(indexvec) == length( myestimatedbrainregionsval) )
       {
