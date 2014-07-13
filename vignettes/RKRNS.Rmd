@@ -77,6 +77,7 @@ boldhours<-nvol*TR/3600
 ```{r setup,echo=TRUE, message=FALSE, warning=FALSE}
 # setupfile<-paste("demo/",c("setup.R"),sep='')
 # source(system.file( setupfile, package="RKRNS"))
+opts_chunk$set(dev = 'pdf')
 print("#########setup#########TODO: need to incorporate motion parameters!")
 istest<-FALSE
 subject<-"111157"
@@ -195,12 +196,15 @@ rownames(featspace)<-(fspacenames)
 gg<-rowMeans(featspace)
 ccafeatspace<-residuals(lm(featspace~ 1 + eventss[ eventsw > 0 ] ))
 # might pass mask4d below to get other constraints on data
-ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspace[,], mysparse = c( 0.01, 1/20 ), nvecs=20, cthresh=250, doEanat=F, mask=mask4d, smooth=0.1 , its=1,  interleave=T ,  locwordlist=c('coffee','dog','bird','lake','mountain' ) )
+ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspace[,], mysparse = c( 0.05, 1/20 ), nvecs=20, cthresh=250, doEanat=F, mask=mask4d, smooth=0.1 , its=1,  interleave=T ,  locwordlist=c('coffee','dog','bird','lake','mountain' ) )
 #c('blue','red','yellow','green')
 # residfeats<-ccafeatspace[ssubset,] %*% data.matrix(ccaresults$ccaDictionary )
 # residfeats<-residuals(lm( ccafeatspace[ssubset,] ~ residfeats ) )
 # ccaresults2<-sccanBasedDecoder( eventdata[ssubset,], dmats, residfeats , sentspaceSim[ssubset,], mysparse = c( -0.15, -0.5 ), nvecs=12, cthresh=0, doEanat=F, mask=mask4d, smooth=0.0 , its=22 )
 #
+```
+
+```{r validationviz,echo=TRUE, message=FALSE, warning=FALSE,fig.width=8, fig.height=6}
 n<-round(sqrt(length(ccaresults$ccaobject$eig1)))+1
 par(mfrow=c(n-1,n) )
 vislist<-list()
@@ -213,7 +217,7 @@ for ( k in 1:length(ccaresults$ccaobject$eig1) ) {
   if ( k == 1 ) myestimatedhrf<-kk$timefunction
   plot(kk$timefunction,type='l')
 }
-plotANTsImage( ref, vislist, slices='12x56x1' , thresh='0.1x1', color=rainbow( length(vislist) ) )
+plotANTsImage( ref, vislist, slices='12x56x1' , thresh='0.1x1', color=rainbow( length(vislist) ) , outname="sccanBasedDecoderSliceViz.png")
 # compare to
 # tcca<-sparseDecom2( inmatrix=list( data.matrix(imat)[1000:10000,] , data.matrix(dmatsblock)[1000:10000,] ), nvecs=20, sparseness=c(-0.1,0.1), its=5, mycoption=2, perms=0, smooth=0.5, cthresh=c(200,0), inmask=c(subaal,NA) )
 # purely spatial ... 
