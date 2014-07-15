@@ -31,14 +31,19 @@ for ( i in 1:nsentencesIn )
       sentmat[j,]<-wvec
       }
     sentmat<-antsrimpute( sentmat )
-    if ( typeof(functiontoapply) == "character" ) 
-    if ( functiontoapply  == "svd" )
+    if ( typeof(functiontoapply) == "character" )
       {
-      pj<-svd(sentmat)$u %*% sentmat
-      if ( dim(pj)[1] == 1 ) pj<-rbind(pj,pj)
-      eigsent[sentct,]<-as.numeric(pj[1:2,])
+      if ( functiontoapply  == "svd" )
+        {
+        pj<-svd(sentmat)$u %*% sentmat
+        if ( dim(pj)[1] == 1 ) pj<-rbind(pj,pj)
+        eigsent[sentct,]<-as.numeric(pj[1:2,])
+        }
       }
-    else eigsent[sentct,]<-apply(sentmat,FUN=functiontoapply,MARGIN=2)
+    else
+      {
+      eigsent[sentct,]<-apply(sentmat,FUN=functiontoapply,MARGIN=2)
+      }
     }
   }
 if ( normalize )
