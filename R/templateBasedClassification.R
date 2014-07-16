@@ -75,7 +75,7 @@ if ( method == "sccan" & !is.na(eigsents) )
     maskmat[1,]<-1
     mask<-as.antsImage( maskmat )
   }
-  nreps<-2
+  nreps<-1
   eanatnames<-rep(as.character("A"),nclasses*nreps)
   ct<-1
   for ( i in 1:nclasses ) {
@@ -90,11 +90,11 @@ if ( method == "sccan" & !is.na(eigsents) )
   }
   # build eigsent maps
   
-  eanat<-sparseDecom2(list(exemplarmat,log(eigsents-min(eigsents)+0.01)),
+  eanat<-sparseDecom2(list(exemplarmat,eigsents),
                       inmask=c(mask,NA),
                       nvecs=length(initlist),
-                      sparseness=c( 0.01,-0.9 ),  mycoption=1,
-                      smooth=0.0, cthresh=c(0,0), its=12,
+                      sparseness=c( 0.01,-0.99 ),  mycoption=1,
+                      smooth=0.0, cthresh=c(0,0), its=4,
                       initializationList=initlist, ell1=10 )
   eanatmat<-imageListToMatrix( eanat$eig1, mask )
   rownames(eanatmat)<-eanatnames
@@ -106,8 +106,8 @@ if ( method == "sccan" & !is.na(eigsents) )
 #    ww<-which( x != 0 & y!= 0 )
 #    mycor[i]<-cor.test( x, y , method="spearman" )$est
 #    mycor[i]<-sqrt( sum( ( x[ww] - y[ww] )^2 ) )*(-1)
-#        mycor[i]<- tempclassrobcor( x, y )
-    mycor[i]<-robcosineSim( x, y )
+    mycor[i]<- tempclassrobcor( x, y )
+#    mycor[i]<-robcosineSim( x, y )
     }
   names(mycor)<-eanatnames
   print(mycor)
