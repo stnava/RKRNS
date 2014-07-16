@@ -28,28 +28,43 @@ if ( method == "eanat" )
     maskmat[1,]<-1
     mask<-as.antsImage( maskmat )
   }
-  eanatnames<-rep(as.character("A"),nclasses*2)
+  nreps<-2
+  eanatnames<-rep(as.character("A"),nclasses*nreps)
   ct<-1
   for ( i in 1:nclasses ) {
     vecimg<-antsImageClone( mask )
     vecimg[ mask == 1 ]<-featuretemplate[i,]
-    initlist<-lappend(initlist,vecimg)
-    initlist<-lappend(initlist,vecimg)
-    eanatnames[ct]<-toString(classlabels[i])
-    eanatnames[ct+1]<-eanatnames[ct]
-    ct<-ct+2
+    for (  nr in 1:nreps )
+      {
+      initlist<-lappend(initlist,vecimg)
+      eanatnames[ct+nr-1]<-toString(classlabels[i])
+      }
+    ct<-ct+nreps
   }
   eanat<-sparseDecom(exemplarmat,inmask=mask, nvecs=length(initlist),
-                     sparseness=0.01,  mycoption=0, z=0.5, smooth=0.1,
-                     initializationList=initlist, cthresh=250, its=1 )
+                     sparseness=0.01,  mycoption=1,  smooth=0.0, z=1/nclasses,
+                     initializationList=initlist, cthresh=0, its=5 )
+  print(eanatnames)
   eanatmat<-imageListToMatrix( eanat$eigenanatomyimages, mask )
+  print(dim(eanatmat))
   rownames(eanatmat)<-eanatnames
-  mycor<-cor( t(newmat) , t(eanatmat))
-  print(mycor[1,])
-  pheatmap( rbind(mycor[1,],mycor[1,]))
-  fclass<-which.max(abs(mycor[1,]))
-  mycor[1,fclass]<-0
-  sclass<-which.max(abs(mycor[1,]))
+  mycor<-rep(0,length(initlist))
+  for ( i in 1:length(initlist) )
+    {
+    x<-newmat[1,]
+    y<-eanatmat[i,]
+#    ww<-which( x != 0 & y!= 0 )
+#    mycor[i]<-cor.test( x, y , method="spearman" )$est
+#    mycor[i]<-sqrt( sum( ( x[ww] - y[ww] )^2 ) )*(-1)
+        mycor[i]<- tempclassrobcor( x, y )
+#    mycor[i]<-robcosineSim( x, y )
+    }
+  names(mycor)<-eanatnames
+  print(mycor)
+#  pheatmap( rbind(mycor,mycor))
+  fclass<-which.max(abs(mycor))
+  mycor[fclass]<-0
+  sclass<-which.max(abs(mycor))
   return(paste(eanatnames[c(fclass,sclass)]))
   }
 testmat<-exemplarmat
@@ -72,4 +87,21 @@ return(list(votes=votes, featuretemplate=featuretemplate ) )
 # rownames(featuretemplate)<-sentsoi
 # pheatmap(cor( t(ccafeatspace[grep(wordoi,eventdata$sentences),]), t(featuretemplate )))
 # j<-44; i<-grep(wordoi,eventdata$sentences)[j]; print( summary( lm( ccafeatspace[i,] ~ t(featuretemplate) ) ) ); eventdata$sentences[i]
+}
+
+
+robcosineSim<-function (xin, yin) 
+{
+    ww<-which( xin != 0 & yin!= 0 )
+    x <- t(as.matrix(xin[ww]))
+    y <- t(as.matrix(yin[ww]))
+    return(as.numeric(1 - x %*% t(y)/(sqrt(rowSums(x^2) %*% t(rowSums(y^2))))))
+}
+
+
+tempclassrobcor <-function(  x, y )
+{
+ww<-which( x != 0 & y!= 0 )
+# plot( x[ww] , y[ww] )
+return( cor( x[ww] , y[ww] ) )
 }

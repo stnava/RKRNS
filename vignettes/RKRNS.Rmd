@@ -207,17 +207,24 @@ ccafeatspace<-featspace
 ```
 
 ```{r buildfeattemplate,echo=TRUE, message=FALSE, warning=FALSE}
-wordoi<-'dog'
+score<-0
+nleaveout<-2
+wordoi<-'coffee'
 selector<-grep(wordoi,eventdata$sentences)
-nleaveout<-10
-randsubset<-sample(c(  rep(TRUE,(length(selector)-nleaveout)),rep(FALSE,nleaveout)) )
-selectorTrain<-selector[ randsubset ]
-selectorTest<-selector[ which(!randsubset) ]
-featsoi<-ccafeatspace[  selectorTrain, ]
-featste<-ccafeatspace[  selectorTest, ]
-labels<-eventdata$sentences[ selectorTrain ]
-myclass<-templateBasedClassification( featsoi, sample(labels), featste, method="eanat" , mask=mask4d )
-print(paste(myclass,rownames(featste)[1]))
+for ( k in 1:20 ) {
+  randsubset<-sample(c(  rep(TRUE,(length(selector)-nleaveout)),rep(FALSE,nleaveout)) )
+  selectorTrain<-selector[ randsubset ]
+  selectorTest<-selector[ which(!randsubset) ]
+  featsoi<-ccafeatspace[  selectorTrain, ]
+  featste<-ccafeatspace[  selectorTest, ]
+  labels<-eventdata$sentences[ selectorTrain ]
+  myclass<-templateBasedClassification( featsoi, (labels), featste, method="eanat" , mask=mask4d )
+  print(paste(myclass,rownames(featste)[1]))
+  locscore<-0
+  if ( sum((myclass == rownames(featste)[1])[1]) == 1 ) locscore<-1 else if ( sum((myclass == rownames(featste)[1])[2]) == 1 ) locscore<-0.5
+  score<-score+locscore
+  print(paste(k,score,score/k))
+}
 ```
 
 
