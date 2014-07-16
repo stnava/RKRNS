@@ -218,10 +218,11 @@ for ( k in 1:20 ) {
   featsoi<-ccafeatspace[  selectorTrain, ]
   featste<-ccafeatspace[  selectorTest, ]
   labels<-eventdata$sentences[ selectorTrain ]
-  es<-sentspace[ selectorTrain , ]
+  es<-sentspaceSim[ selectorTrain , ]
   whichcols<- colnames(dmats) %in% eventdata$sentences[selectorTrain]
   classmatrix<-data.matrix( designmat[ eventdata$eventtimes , whichcols ] )[selectorTrain,]
-  myclass<-templateBasedClassification( featsoi, (labels), featste, method="sccan" , mask=mask4d,eigsents=classmatrix )
+#  myclass<-templateBasedClassification( featsoi, (labels), featste, method="sccan" , mask=mask4d,eigsents=classmatrix )
+  myclass<-templateBasedClassification( featsoi, (labels), featste, method="eanat" , mask=mask4d,eigsents=es )
   print(paste(myclass,rownames(featste)[1]))
   locscore<-0
   if ( sum((myclass == rownames(featste)[1])[1]) == 1 ) locscore<-1 else if ( sum((myclass == rownames(featste)[1])[2]) == 1 ) locscore<-0.5
