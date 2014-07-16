@@ -24,9 +24,21 @@ if ( ! is.na( mask ) )
 redlist<-c()
 for ( w in locwordlist ) redlist<-sort(unique(c(redlist,grep(w, fspacenames ))))
 wclassesf<-as.factor( eventdata$sentlab[redlist] )
+print(table(wclassesf))
+if ( length(locwordlist) == 2 ) # recode to binary
+  {
+  lab1<-grep( locwordlist[1] , eventdata$sentences[redlist]  ) 
+  lab2<-grep( locwordlist[2] , eventdata$sentences[redlist]  )
+  newclasses<-rep(NA,length(redlist))
+  newclasses[ lab1 ]<-1
+  newclasses[ lab2 ]<-2
+  wclassesf<-as.factor( newclasses )
+  print(paste("Special 2-class case b/c you passed 2 words into locwordlist:",length(lab1),' in class1 ',length(lab2),'in class 2'))
+  }
 whichcols<- colnames(designmat) %in%  eventdata$sentences[redlist]
 wclasslevs<-( levels( wclassesf ) )
-if ( identical(trainset,rep(NA,length(trainset))) ) l1<-seq(1,length(redlist)-1,2) 
+if ( identical(trainset,rep(NA,length(trainset))) ) l1<-seq(1,length(redlist)-1,2)
+randchance<-max(table(wclassesf[-l1])/sum(table(wclassesf[-l1])))
 fcca1<-0
 ###########################################################
 #  Great!  Now do some cca based dimensionality reduction #
@@ -62,9 +74,9 @@ if ( sentenceTransformation == "sim" )
       {
       img<-fcca1$eig1[[j]]
       kk<-spatioTemporalProjectionImage( img, sum, mask3d )
-      myestimatedhrf<-kk$timefunction
-      plot(myestimatedhrf,type='l')
-      Sys.sleep( 0.25 )
+#      myestimatedhrf<-kk$timefunction
+#      plot(myestimatedhrf,type='l')
+#      Sys.sleep( 0.25 )
       antsImageWrite( kk$spaceimage , paste(outputfileprefix,j,'cca.nii.gz',sep=''))
       pmat<-timeseries2matrix( img , mask3d )
       pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=mask3d, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
@@ -87,14 +99,14 @@ if ( sentenceTransformation == "sim" )
           {
           img<-eanat1$eig[[j]]
           kk<-spatioTemporalProjectionImage( img, sum, mask3d )
-          myestimatedhrf<-kk$timefunction
-          plot(myestimatedhrf,type='l')
-          Sys.sleep( 0.25 )
+#          myestimatedhrf<-kk$timefunction
+#          plot(myestimatedhrf,type='l')
+#          Sys.sleep( 0.25 )
           antsImageWrite( kk$spaceimage , paste(outputfileprefix,j,'cca.nii.gz',sep=''))
           pmat<-timeseries2matrix( img , mask3d )
           pmat<-timeserieswindow2matrix( data.matrix( pmat ), mask=mask3d, eventlist=1, timewindow=responselength, zeropadvalue=0 )$eventmatrix
           sccanBdictionary2[,j]<-pmat[1,]
-          antsImageWrite( kk$spaceimage , paste(outputfileprefix,j,'eanat.nii.gz',sep=''))
+#          antsImageWrite( kk$spaceimage , paste(outputfileprefix,j,'eanat.nii.gz',sep=''))
           }
     }
   decodemat<-cbind( decodemat, as.matrix(sccanBdictionary2) )
@@ -106,15 +118,14 @@ if ( sentenceTransformation == "sim" )
     decodemat<-t( kk$fusedlist )
     }
   mydf <-data.frame( dx=wclassesf[l1],  # sentspace2[ redlist[l1]  , ] %*% decodemat2[,1],
-                    fsp= scale(ccafeatspace[ redlist[l1], ]   %*% decodemat  ) )
+                    fsp= (ccafeatspace[ redlist[l1], ]   %*% decodemat  ) )
   myudf<-data.frame( dx=wclassesf[-l1], # sentspace2[ redlist[l2]  , ] %*% decodemat2[,1],
-                    fsp= scale( ccafeatspace[ redlist[-l1], ]   %*% decodemat ) )
+                    fsp= ( ccafeatspace[ redlist[-l1], ]   %*% decodemat ) )
   myrf<-svm(dx ~ . ,mydf , kernel='linear',type='C-classification',probability=TRUE)
-#  myrf<-RRF( dx ~ . ,  mydf  ,  ntree=5000 )
+#  myrf<-RRF( dx ~ . ,  mydf   )
   pred<-predict( myrf, newdata=myudf )
   ccaerr<-sum(wclassesf[-l1]==pred)/length(pred)
-  randerr<-1.0/length(wclasslevs)
-  ccaresult<-paste("CCA-PredErr:",ccaerr*100,"%, vs random",randerr*100,"%")
+  ccaresult<-paste("CCA-PredErr:",ccaerr*100,"%, vs random",randchance*100,"%")
   print(ccaresult)
   mydata <- data.frame(group=eventdata$sentences[redlist[-l1]], Real=myudf$dx,Pred=pred)
   locsents<-which( duplicated( eventdata$sentences ) == FALSE )

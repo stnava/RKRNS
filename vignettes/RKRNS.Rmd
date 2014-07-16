@@ -64,6 +64,7 @@ integrating these in a predictive model. We implement the analysis in
 reduction.
 
 ```{r define variables,echo=TRUE, message=FALSE, warning=FALSE}
+library(pdist)
 svmresult<-0
 TR<-0.5
 blocklength<-450*TR
@@ -88,25 +89,28 @@ responselength<-6/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
 labs<-as.numeric( c(13,79,81,89) ) # lang network
 throwaway<-8
-ncompcor<-10
+ncompcor<-6
 compcorvarval<-0.95
-filterlowfrequency<-0.1 # 0.05 if you multiply by TR
-filterhighfrequency<-1.0 # 0.4 # because of expected bold response < 25secs, > 5 seconds
+filterlowfrequency<-0.05 # 0.05 if you multiply by TR
+filterhighfrequency<-0.5 # 0.4 # because of expected bold response < 25secs, > 5 seconds
 trendfrequency<-3
 winsorval<-0.01
 eigsentbasislength<-100
-aalfn<-paste(datadir,"aal/",subject,"_aal2.nii.gz",sep='')
-if ( file.exists(aalfn) ) aalimg<-antsImageRead( aalfn , 3 )
+aalfn<-paste(datadir,"aal/",subject,"_aal-mocoref.nii.gz",sep='')
+if ( file.exists(aalfn) ) aalimg<-antsImageRead( aalfn , 3 ) else stop(paste("No aalfn",aalfn))
 bmaskfn<-paste(datadir,"ref/",subject,"_mask.nii.gz",sep='')
 if ( file.exists(bmaskfn) ) bmask<-antsImageRead( bmaskfn , 3 )
 reffn<-paste(datadir,"ref/",subject,"_mocoref.nii.gz",sep='')
+reffn<-paste(datadir,"aal/",subject,"_mocoref_masked.nii.gz",sep='')
 if ( file.exists(reffn) ) ref<-antsImageRead( reffn , 3 )
 imagedir<-paste(datadir,"moco/",sep='')
 imagepostfix<-"_moco.nii.gz"
 data("aal",package="ANTsR")
 blocksCSVlist<-Sys.glob(paste(datadir,"design/*csv",sep=''))   # INPUT csv list
+# blocksCSVlist<-blocksCSVlist[1:20] # for testing
 dfn<-paste(datadir,"assembly/assembled_design_",labs[1],"_",labs[length(labs)],"test.csv",sep='') # INPUT out csv name
 afn<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.mha",sep='') # INPUT out img na
+filtfn<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"testfilt.mha",sep='') # INPUT out img na
 ```
 
 ```{r assembledesign,echo=TRUE, message=FALSE, warning=FALSE}
@@ -132,13 +136,17 @@ wordinds<-39:280
 sentinds<-281:ncol(dmat)
 dmatw<-dmat[,wordinds]
 dmats<-dmat[,sentinds]
+events1<-apply( dmats     , FUN=sum, MARGIN=1 )
 nschar<-as.numeric( dmat$nchar )
+nevents<-events1
 dmatsblock<-dmats
 for ( i in 1:(responselength) ) {
     dmatsblock<-dmatsblock+ashift(dmats,c(i,0))
     nschar<-nschar+shift(nschar,1)
 }
-events1<-apply( dmats     , FUN=sum, MARGIN=1 )
+for ( i in 1:(16) ) {
+    nevents<-nevents+shift(nevents,1)
+}
 eventss<-apply( dmatsblock, FUN=sum, MARGIN=1 )
 eventtimes<-which( events1 > 0 )
 eventsw<-apply( dmatw, FUN=sum, MARGIN=1 )
@@ -158,7 +166,7 @@ if ( ! exists("eventdata") )
 ```
 
 ```{r eigensentences,echo=TRUE, message=FALSE, warning=FALSE}
-eigsent<-eigenSentences( wiki_words, normalize=T, functiontoapply = "svd" )
+eigsent<-eigenSentences( wiki_words, normalize=F, functiontoapply = sum )
 weigsent<-whiten(eigsent)
 rownames(weigsent )<-rownames(eigsent)
 # eigsent<-weigsent
@@ -174,17 +182,42 @@ for ( i in 1:length( eventtimes ) )
 ```
 
 ```{r filtering,echo=TRUE, message=FALSE, warning=FALSE}
-gbold<-rowMeans(imat)
-imatf<-filterfMRI4KRNS( imat, tr=tr,  
-   filterlowfrequency=filterlowfrequency,
-   filterhighfrequency=filterhighfrequency,
-   removeEventOverlap=NA, removeSentLengthEffects=nschar )
+gbold<-ts(rowMeans(imat))
+# if ( ! file.exists(filtfn) ) 
+{
+  imatf<-filterfMRI4KRNS( imat, tr=tr,  
+    filterlowfrequency=NA,
+    filterhighfrequency=NA,
+    trendfrequency=4,
+    trendfrequency2=20,
+    removeEventOverlap=NA, removeSentLengthEffects=NA )
+  antsImageWrite( as.antsImage(data.matrix(imatf)), filtfn )
+} # else imatf<-as.matrix( antsImageRead( filtfn, 2 ) )
+gbold2<-ts(rowMeans(imatf))
+
 # convertTimeSeriesToSpatiotemporalFeatureSpace
 # 1. for each event, extract submatrix of bold, then vectorize that matrix
 featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes+eventshift, responselength, 0, rep(0.5,4) )
 featspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d
 rownames(featspace)<-(fspacenames)
+gg<-rowMeans(featspace)
+ccafeatspace<-residuals(lm(featspace~ gg ) )  #  + eventss[ eventsw > 0 ] ))
+ccafeatspace<-featspace
+```
+
+```{r buildfeattemplate,echo=TRUE, message=FALSE, warning=FALSE}
+wordoi<-'dog'
+selector<-grep(wordoi,eventdata$sentences)
+nleaveout<-10
+randsubset<-sample(c(  rep(TRUE,(length(selector)-nleaveout)),rep(FALSE,nleaveout)) )
+selectorTrain<-selector[ randsubset ]
+selectorTest<-selector[ which(!randsubset) ]
+featsoi<-ccafeatspace[  selectorTrain, ]
+featste<-ccafeatspace[  selectorTest, ]
+labels<-eventdata$sentences[ selectorTrain ]
+myclass<-templateBasedClassification( featsoi, sample(labels), featste, method="eanat" , mask=mask4d )
+print(paste(myclass,rownames(featste)[1]))
 ```
 
 
@@ -193,10 +226,11 @@ rownames(featspace)<-(fspacenames)
 #########################################
 #  factor out some nuisance signal 
 #########################################
-gg<-rowMeans(featspace)
-ccafeatspace<-residuals(lm(featspace~ 1 + eventss[ eventsw > 0 ] ))
 # might pass mask4d below to get other constraints on data
-ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspace[,], mysparse = c( 0.05, 1/20 ), nvecs=20, cthresh=250, doEanat=F, mask=mask4d, smooth=0.1 , its=1,  interleave=T ,  locwordlist=c('coffee','dog','bird','lake','mountain' ) )
+ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspaceSim[,], 
+   mysparse = c( -0.001, -0.9 ), nvecs=15, cthresh=250, doEanat=F, mask=mask4d, 
+   smooth=0.1 , its=5,  interleave=T ,  locwordlist=c("coffee")  )
+
 #c('blue','red','yellow','green')
 # residfeats<-ccafeatspace[ssubset,] %*% data.matrix(ccaresults$ccaDictionary )
 # residfeats<-residuals(lm( ccafeatspace[ssubset,] ~ residfeats ) )
@@ -215,7 +249,8 @@ for ( k in 1:length(ccaresults$ccaobject$eig1) ) {
   ImageMath(3,kk$spaceimage,"Normalize",kk$spaceimage)
   vislist<-lappend( vislist, kk$spaceimage )
   if ( k == 1 ) myestimatedhrf<-kk$timefunction
-  plot(kk$timefunction,type='l')
+  if (mean(kk$timefunction)<0) kk$timefunction<-kk$timefunction*(-1)
+  plot((kk$timefunction),type='l')
 }
 plotANTsImage( ref, vislist, slices='12x56x1' , thresh='0.1x1', color=rainbow( length(vislist) ) , outname="sccanBasedDecoderSliceViz.png")
 # compare to
