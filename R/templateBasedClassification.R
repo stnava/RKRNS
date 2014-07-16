@@ -93,8 +93,8 @@ if ( method == "sccan" & !is.na(eigsents) )
   eanat<-sparseDecom2(list(exemplarmat,eigsents),
                       inmask=c(mask,NA),
                       nvecs=length(initlist),
-                      sparseness=c( 0.01,-0.99 ),  mycoption=1,
-                      smooth=0.0, cthresh=c(0,0), its=4,
+                      sparseness=c( 0.01,-1/nclasses ),  mycoption=1,
+                      smooth=0.0, cthresh=c(50,0), its=4,
                       initializationList=initlist, ell1=10 )
   eanatmat<-imageListToMatrix( eanat$eig1, mask )
   rownames(eanatmat)<-eanatnames
