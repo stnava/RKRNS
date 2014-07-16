@@ -1,5 +1,5 @@
 templateBasedClassification <- function( exemplarmat, labels, newmat,
-                                        method="corr", mask=NA  )
+                                        method="corr", mask=NA, eigsents=NA  )
 {
 # create the dictionary
 classlabels<-sort(unique(labels))
@@ -47,6 +47,55 @@ if ( method == "eanat" )
   print(eanatnames)
   eanatmat<-imageListToMatrix( eanat$eigenanatomyimages, mask )
   print(dim(eanatmat))
+  rownames(eanatmat)<-eanatnames
+  mycor<-rep(0,length(initlist))
+  for ( i in 1:length(initlist) )
+    {
+    x<-newmat[1,]
+    y<-eanatmat[i,]
+#    ww<-which( x != 0 & y!= 0 )
+#    mycor[i]<-cor.test( x, y , method="spearman" )$est
+#    mycor[i]<-sqrt( sum( ( x[ww] - y[ww] )^2 ) )*(-1)
+        mycor[i]<- tempclassrobcor( x, y )
+#    mycor[i]<-robcosineSim( x, y )
+    }
+  names(mycor)<-eanatnames
+  print(mycor)
+#  pheatmap( rbind(mycor,mycor))
+  fclass<-which.max(abs(mycor))
+  mycor[fclass]<-0
+  sclass<-which.max(abs(mycor))
+  return(paste(eanatnames[c(fclass,sclass)]))
+  }
+if ( method == "sccan" & !is.na(eigsents) )
+  {
+  initlist<-list()
+  if ( is.na(mask) ) {
+    maskmat<-newmat*0
+    maskmat[1,]<-1
+    mask<-as.antsImage( maskmat )
+  }
+  nreps<-2
+  eanatnames<-rep(as.character("A"),nclasses*nreps)
+  ct<-1
+  for ( i in 1:nclasses ) {
+    vecimg<-antsImageClone( mask )
+    vecimg[ mask == 1 ]<-featuretemplate[i,]
+    for (  nr in 1:nreps )
+      {
+      initlist<-lappend(initlist,vecimg)
+      eanatnames[ct+nr-1]<-toString(classlabels[i])
+      }
+    ct<-ct+nreps
+  }
+  # build eigsent maps
+  
+  eanat<-sparseDecom2(list(exemplarmat,eigsents),inmask=c(mask,NA),
+                      nvecs=length(initlist),
+                      sparseness=c(-0.01,-0.9),  mycoption=1,
+                      smooth=0.0, cthresh=c(50,0), its=25,
+                      initializationList=initlist, ell1=10 )
+  eanatmat<-imageListToMatrix( eanat$eig1, mask )
   rownames(eanatmat)<-eanatnames
   mycor<-rep(0,length(initlist))
   for ( i in 1:length(initlist) )
