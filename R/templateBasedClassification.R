@@ -1,6 +1,9 @@
 templateBasedClassification <- function( exemplarmat, labels, newmat,
                                         method="corr", mask=NA, eigsents=NA  )
 {
+mylocaldistfun <- robcosineSim
+mylocaldistfun <- tempclassrobcor
+
 # create the dictionary
 classlabels<-sort(unique(labels))
 nclasses<-length(classlabels)
@@ -42,11 +45,10 @@ if ( method == "eanat" )
     ct<-ct+nreps
   }
   eanat<-sparseDecom(exemplarmat,inmask=mask, nvecs=length(initlist),
-                     sparseness=0.01,  mycoption=1,  smooth=0.0, z=1/nclasses,
-                     initializationList=initlist, cthresh=0, its=5 )
-  print(eanatnames)
+                     sparseness=0.01,  mycoption=1,  smooth=0.0,# z=-1/nclasses,
+                     cthresh=0, its=3 ) #, nsamp=1 )
+#                     initializationList=initlist, cthresh=250, its=3 ) #, nsamp=1 )
   eanatmat<-imageListToMatrix( eanat$eigenanatomyimages, mask )
-  print(dim(eanatmat))
   rownames(eanatmat)<-eanatnames
   mycor<-rep(0,length(initlist))
   for ( i in 1:length(initlist) )
@@ -56,7 +58,7 @@ if ( method == "eanat" )
 #    ww<-which( x != 0 & y!= 0 )
 #    mycor[i]<-cor.test( x, y , method="spearman" )$est
 #    mycor[i]<-sqrt( sum( ( x[ww] - y[ww] )^2 ) )*(-1)
-        mycor[i]<- tempclassrobcor( x, y )
+        mycor[i]<- mylocaldistfun( x, y )
 #    mycor[i]<-robcosineSim( x, y )
     }
   names(mycor)<-eanatnames
@@ -65,7 +67,10 @@ if ( method == "eanat" )
   fclass<-which.max(abs(mycor))
   mycor[fclass]<-0
   sclass<-which.max(abs(mycor))
-  return(paste(eanatnames[c(fclass,sclass)]))
+  return( list(class=paste(eanatnames[c(fclass,sclass)]),
+               patternimages=list(eanat$eig[[fclass]], eanat$eig[[sclass]]),
+               featuretemplate=featuretemplate,
+               eanatmat=eanatmat ) )
   }
 if ( method == "sccan" & !is.na(eigsents) )
   {
@@ -75,7 +80,7 @@ if ( method == "sccan" & !is.na(eigsents) )
     maskmat[1,]<-1
     mask<-as.antsImage( maskmat )
   }
-  nreps<-1
+  nreps<-2
   eanatnames<-rep(as.character("A"),nclasses*nreps)
   ct<-1
   for ( i in 1:nclasses ) {
@@ -91,11 +96,11 @@ if ( method == "sccan" & !is.na(eigsents) )
   # build eigsent maps
   
   eanat<-sparseDecom2(list(exemplarmat,eigsents),
-                      inmask=c(mask,NA),
+                      inmask=c(mask,NA), # z=-1/nclasses, 
                       nvecs=length(initlist),
-                      sparseness=c( 0.01, -0.5/nclasses ),  mycoption=1,
-                      smooth=0.0, cthresh=c(0,0), its=11, ell1=10)
-#                      initializationList=initlist, ell1=10 )
+                      sparseness=c( 0.01, -1.1/nclasses ),  mycoption=1,
+                      smooth=0.0, cthresh=c(250,0), its=5, ell1=10,
+                      initializationList=initlist )
   eanatmat<-imageListToMatrix( eanat$eig1, mask )
   rownames(eanatmat)<-eanatnames
   mycor<-rep(0,length(initlist))
@@ -106,8 +111,7 @@ if ( method == "sccan" & !is.na(eigsents) )
 #    ww<-which( x != 0 & y!= 0 )
 #    mycor[i]<-cor.test( x, y , method="spearman" )$est
 #    mycor[i]<-sqrt( sum( ( x[ww] - y[ww] )^2 ) )*(-1)
-#    mycor[i]<- tempclassrobcor( x, y )
-    mycor[i]<-robcosineSim( x, y )
+    mycor[i] <- mylocaldistfun( x, y )
     }
   names(mycor)<-eanatnames
   print(mycor)
@@ -115,7 +119,10 @@ if ( method == "sccan" & !is.na(eigsents) )
   fclass<-which.max(abs(mycor))
   mycor[fclass]<-0
   sclass<-which.max(abs(mycor))
-  return(paste(eanatnames[c(fclass,sclass)]))
+  return( list(class=paste(eanatnames[c(fclass,sclass)]),
+               patternimages=list(eanat$eig1[[fclass]], eanat$eig1[[sclass]]),
+               featuretemplate=featuretemplate,
+               eanatmat=eanatmat ) )
   }
 testmat<-exemplarmat
 votes<-rep(0,nclasses)
