@@ -84,11 +84,15 @@ istest<-FALSE
 subject<-"111157"
 datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
 tr<-as.numeric(0.5)
-eventshift<-6
-responselength<-6/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
+eventshift<-4
+responselength<-8/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
-labs<-as.numeric( c(13,79,81,89) ) # lang network
+labs<-as.numeric( c(1,13,55:57,79,81,89) ) # lang network + HAA
 # HAAs # precent; postcent gyrus ; ang gyr; ATL ...
+# prefrontal: BA 9-10, 45-47 anterior 11-12, anterior 8 
+# posterior parietal: posterior 7 39-40
+# lateral temporal BA37, BA21 
+# parahipp BA36,37 
 throwaway<-8
 ncompcor<-6
 compcorvarval<-0.95
@@ -183,21 +187,25 @@ for ( i in 1:length( eventtimes ) )
 ```
 
 ```{r filtering,echo=TRUE, message=FALSE, warning=FALSE}
-gbold<-ts(rowMeans(imat))
+rm(assembly,assembly2) # reclaim some memory
+for (i in 1:3) gc()
+# gbold<-ts(rowMeans(imat))
 if ( ! file.exists(filtfn) ) 
 {
-  imatf<-filterfMRI4KRNS( imat, tr=tr,  
+  imat<-filterfMRI4KRNS( imat, tr=tr,  
     filterlowfrequency=NA,
     filterhighfrequency=NA,
     trendfrequency=filterlowfrequency,
     trendfrequency2=filterhighfrequency,
     removeEventOverlap=NA, removeSentLengthEffects=NA )
-  antsImageWrite( as.antsImage(data.matrix(imatf)), filtfn )
-} else imatf<-as.matrix( antsImageRead( filtfn, 2 ) )
-gbold2<-ts(rowMeans(imatf))
+  antsImageWrite( as.antsImage(data.matrix(imat)), filtfn )
+} else { print(paste("read",filtfn)); imat<-as.matrix( antsImageRead( filtfn, 2 ) ) }
+# gbold2<-ts(rowMeans(imat))
 # convertTimeSeriesToSpatiotemporalFeatureSpace
 # 1. for each event, extract submatrix of bold, then vectorize that matrix
-featspaceOrg<-timeserieswindow2matrix( data.matrix( imatf ), subaal, eventtimes+eventshift, responselength, 0, rep(0.5,4) )
+featspaceOrg<-timeserieswindow2matrix( data.matrix( imat ), subaal, eventtimes+eventshift, responselength, 0, rep(0.5,4) )
+# rm(imat)
+# for (i in 1:3) gc()
 featspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d
 rownames(featspace)<-(fspacenames)
@@ -213,13 +221,13 @@ ccafeatspace<-featspace
 ```
 
 ```{r buildfeattemplate,echo=TRUE, message=FALSE, warning=FALSE}
-score<-0
-nleaveout<-1
+nleaveout<-2
 wordoi<-'sick.child'
 wordoi2<-'liked.coffee'
 selector1<-grep(wordoi,eventdata$sentences)
 selector2<-grep(wordoi2,eventdata$sentences)
 selector<-c( selector1 , selector2 ) 
+score<-0
 for ( k in 1:20 ) {
   randsubset<-sample(c(  rep(TRUE,(length(selector)-nleaveout)),rep(FALSE,nleaveout)) )
   selectorTrain<-selector[ randsubset ]
@@ -231,14 +239,13 @@ for ( k in 1:20 ) {
   classmatrix<-data.matrix( dmats[ eventdata$eventtimes , whichcols ] )[selectorTrain,]
   inds1<-1:(length(selector1)-sum(!randsubset[1:length(selector1)] ))
   inds2<-1:(length(selector2)-sum(!randsubset[(length(selector1)+1):length(randsubset)] ))
-  es1<-sentspaceSim[ selectorTrain , ] 
+  es1<-sentspace[ selectorTrain , ] 
   es1[ inds1 , ]<-0
-  es2<-sentspaceSim[ selectorTrain , ] 
+  es2<-sentspace[ selectorTrain , ] 
   es2[ inds2 , ]<-0
   es<-cbind(es1,es2)
 
   myclass<-templateBasedClassification( featsoi, (labels), featste, method="sccan" , mask=mask4d, eigsents=es )
-  print(paste(myclass$class,rownames(featste)[1]))
 #  myclass<-templateBasedClassification( featsoi, (labels), featste, method="eanat" , mask=mask4d,eigsents=classmatrix )
   print(paste(myclass$class,rownames(featste)[1]))
   pheatmap( cor( t(myclass$eanatmat), t(myclass$featuretemplate )) , cluster_rows = F, cluster_cols = F)
@@ -252,7 +259,7 @@ d<-1; ww<-( myclass$eanatmat[d,] != 0 & myclass$featuretemplate[d,] != 0  ) ; pl
   plotANTsImage( ref, list(kk$spaceimage), slices='12x56x1' , thresh='0.1x1', color="red" , outname="sccanBasedDecoderSliceVizD.png")
 
   locscore<-0
-  if ( sum((myclass$class == rownames(featste)[1])[1]) == 1 ) locscore<-1 # else if ( sum((myclass$class == rownames(featste)[1])[2]) == 1 ) locscore<-0.5
+  if ( sum((myclass$class[1] == rownames(featste)[1])[1]) == 1 ) locscore<-1 # else if ( sum((myclass$class[2] == rownames(featste)[1])[2]) == 1 ) locscore<-0.5
   score<-score+locscore
   print(paste(k,score,score/k))
 }
