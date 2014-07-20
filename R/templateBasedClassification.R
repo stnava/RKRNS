@@ -1,8 +1,9 @@
 templateBasedClassification <- function( exemplarmat, labels, newmat,
                                         method="corr", mask=NA, eigsents=NA  )
 {
-mylocaldistfun <- robcosineSim
 mylocaldistfun <- tempclassrobcor
+mylocaldistfun <- robcosineSim
+mylocaldistfun <- overlapper
 
 # create the dictionary
 classlabels<-sort(unique(labels))
@@ -45,9 +46,9 @@ if ( method == "eanat" )
     ct<-ct+nreps
   }
   eanat<-sparseDecom(exemplarmat,inmask=mask, nvecs=length(initlist),
-                     sparseness=0.01,  mycoption=1,  smooth=0.0,# z=-1/nclasses,
-                     cthresh=0, its=3 ) #, nsamp=1 )
-#                     initializationList=initlist, cthresh=250, its=3 ) #, nsamp=1 )
+                     sparseness=-0.1,  mycoption=1,  smooth=0.0, #z=-1/nclasses,
+                     cthresh=250, its=3, #, nsamp=1 )
+                     initializationList=initlist ) #, nsamp=1 )
   eanatmat<-imageListToMatrix( eanat$eigenanatomyimages, mask )
   rownames(eanatmat)<-eanatnames
   mycor<-rep(0,length(initlist))
@@ -80,12 +81,12 @@ if ( method == "sccan" & !is.na(eigsents) )
     maskmat[1,]<-1
     mask<-as.antsImage( maskmat )
   }
-  nreps<-2
+  nreps<-1
   eanatnames<-rep(as.character("A"),nclasses*nreps)
   ct<-1
   for ( i in 1:nclasses ) {
     vecimg<-antsImageClone( mask )
-    vecimg[ mask == 1 ]<-featuretemplate[i,]
+    vecimg[ mask == 1 ]<-eanatsparsify( featuretemplate[i,], -0.1 )
     for (  nr in 1:nreps )
       {
       initlist<-lappend(initlist,vecimg)
@@ -98,8 +99,8 @@ if ( method == "sccan" & !is.na(eigsents) )
   eanat<-sparseDecom2(list(exemplarmat,eigsents),
                       inmask=c(mask,NA), # z=-1/nclasses, 
                       nvecs=length(initlist),
-                      sparseness=c( 0.01, -1.1/nclasses ),  mycoption=1,
-                      smooth=0.0, cthresh=c(250,0), its=5, ell1=10,
+                      sparseness=c( -0.1, -0.5 ),  mycoption=1,
+                      smooth=0.0, cthresh=c(500,0), its=4, ell1=1,
                       initializationList=initlist )
   eanatmat<-imageListToMatrix( eanat$eig1, mask )
   rownames(eanatmat)<-eanatnames
@@ -116,9 +117,9 @@ if ( method == "sccan" & !is.na(eigsents) )
   names(mycor)<-eanatnames
   print(mycor)
 #  pheatmap( rbind(mycor,mycor))
-  fclass<-which.max(abs(mycor))
+  fclass<-which.max((mycor))
   mycor[fclass]<-0
-  sclass<-which.max(abs(mycor))
+  sclass<-which.max((mycor))
   return( list(class=paste(eanatnames[c(fclass,sclass)]),
                patternimages=list(eanat$eig1[[fclass]], eanat$eig1[[sclass]]),
                featuretemplate=featuretemplate,
@@ -146,19 +147,24 @@ return(list(votes=votes, featuretemplate=featuretemplate ) )
 # j<-44; i<-grep(wordoi,eventdata$sentences)[j]; print( summary( lm( ccafeatspace[i,] ~ t(featuretemplate) ) ) ); eventdata$sentences[i]
 }
 
-
-robcosineSim<-function (xin, yin) 
+robcosineSim<-function (xin, yin, eps=0) 
 {
     ww<-which( xin != 0 & yin!= 0 )
+    ww<-which( abs(xin) > eps & abs(yin) > eps )
     x <- t(as.matrix(xin[ww]))
     y <- t(as.matrix(yin[ww]))
     return(as.numeric(1 - x %*% t(y)/(sqrt(rowSums(x^2) %*% t(rowSums(y^2))))))
 }
 
-
 tempclassrobcor <-function(  x, y )
+  {
+  ww<-which( x != 0 & y!= 0 )
+  return( cor( x[ww] , y[ww] ) )
+  }
+
+overlapper <-function(  x, y , eps=1.e-2 )
 {
-ww<-which( x != 0 & y!= 0 )
-# plot( x[ww] , y[ww] )
-return( cor( x[ww] , y[ww] ) )
+ww<-which( abs(x)/max(abs(x)) > eps & abs(y)/max(abs(y)) > eps )
+ww<-abs(cor( rank(x[ww]), rank(y[ww]) )) # ( abs(x) > eps & abs(y) > eps )
+return( (ww) )
 }
