@@ -80,6 +80,7 @@ boldhours<-nvol*TR/3600
 # source(system.file( setupfile, package="RKRNS"))
 opts_chunk$set(dev = 'pdf')
 print("#########setup#########TODO: need to incorporate motion parameters!")
+cleanup<-TRUE
 istest<-FALSE
 subject<-"111157"
 datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
@@ -88,6 +89,7 @@ eventshift<-4
 responselength<-8/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
 labs<-as.numeric( c(1,13,55:57,79,81,89) ) # lang network + HAA
+labs<-as.numeric( c(  9,10,45,46,47,11,12,8,7,39,40,37,21,36 ) )
 # HAAs # precent; postcent gyrus ; ang gyr; ATL ...
 # prefrontal: BA 9-10, 45-47 anterior 11-12, anterior 8 
 # posterior parietal: posterior 7 39-40
@@ -102,6 +104,7 @@ trendfrequency<-3
 winsorval<-0.01
 eigsentbasislength<-100
 aalfn<-paste(datadir,"aal/",subject,"_aal-mocoref.nii.gz",sep='')
+aalfn<-paste(datadir,"aal/",subject,"_Brodmann-mocoref.nii.gz",sep='')
 if ( file.exists(aalfn) ) aalimg<-antsImageRead( aalfn , 3 ) else stop(paste("No aalfn",aalfn))
 bmaskfn<-paste(datadir,"ref/",subject,"_mask.nii.gz",sep='')
 if ( file.exists(bmaskfn) ) bmask<-antsImageRead( bmaskfn , 3 )
@@ -188,7 +191,6 @@ for ( i in 1:length( eventtimes ) )
 
 ```{r filtering,echo=TRUE, message=FALSE, warning=FALSE}
 rm(assembly,assembly2) # reclaim some memory
-for (i in 1:3) gc()
 # gbold<-ts(rowMeans(imat))
 if ( ! file.exists(filtfn) ) 
 {
@@ -203,15 +205,17 @@ if ( ! file.exists(filtfn) )
 # gbold2<-ts(rowMeans(imat))
 # convertTimeSeriesToSpatiotemporalFeatureSpace
 # 1. for each event, extract submatrix of bold, then vectorize that matrix
+eventshift<-6
+responselength<-6/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 featspaceOrg<-timeserieswindow2matrix( data.matrix( imat ), subaal, eventtimes+eventshift, responselength, 0, rep(0.5,4) )
-# rm(imat)
-# for (i in 1:3) gc()
-featspace<-featspaceOrg$eventmatrix
+if ( cleanup ) rm(imat)
+ccafeatspace<-featspaceOrg$eventmatrix
 mask4d<-featspaceOrg$mask4d
-rownames(featspace)<-(fspacenames)
-gg<-rowMeans(featspace)
-# ccafeatspace<-residuals(lm(featspace~ gg ) )  #  + eventss[ eventsw > 0 ] ))
-ccafeatspace<-featspace
+rownames(ccafeatspace)<-(fspacenames)
+gg<-rowMeans(ccafeatspace)
+if ( cleanup ) rm(featspaceOrg)
+# ccafeatspace<-residuals(lm(ccafeatspace ~ gg ) )  #  + eventss[ eventsw > 0 ] ))
+for (i in 1:3) gc()
 ```
 
 ```{r eigsenttest,echo=TRUE, message=FALSE, warning=FALSE}
@@ -229,7 +233,7 @@ selector2<-grep(wordoi2,eventdata$sentences)
 selector<-c( selector1 , selector2 ) 
 score<-0
 for ( k in 1:20 ) {
-  randsubset<-sample(c(  rep(TRUE,(length(selector)-nleaveout)),rep(FALSE,nleaveout)) )
+  randsubset<-sample(c(  rep(TRUE,(length(selector)-nleaveout)),rep(FALSE,nleaveout)) , replace=FALSE )
   selectorTrain<-selector[ randsubset ]
   selectorTest<-selector[ c(which(!randsubset),which(!randsubset)) ]
   featsoi<-ccafeatspace[  selectorTrain, ]

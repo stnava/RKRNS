@@ -100,7 +100,7 @@ if ( method == "sccan" & !is.na(eigsents) )
                       inmask=c(mask,NA), # z=-1/nclasses, 
                       nvecs=length(initlist),
                       sparseness=c( -0.1, -0.9 ),  mycoption=1,
-                      smooth=0.0, cthresh=c(250,0), its=10, ell1=1,
+                      smooth=0.0, cthresh=c(500,0), its=10, ell1=1,
                       initializationList=initlist )
   eanatmat<-imageListToMatrix( eanat$eig1, mask )
   rownames(eanatmat)<-eanatnames

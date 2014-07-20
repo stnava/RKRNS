@@ -1,4 +1,4 @@
-showMemoryUse <- function(sort="size", decreasing=FALSE, limit) {
+showMemoryUse <- function(sort="size", decreasing=TRUE, limit=5) {
 # from http://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
   objectList <- ls(parent.frame())
 
