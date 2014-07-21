@@ -86,8 +86,8 @@ if ( method == "sccan" & !is.na(eigsents) )
   ct<-1
   for ( i in 1:nclasses ) {
     vecimg<-antsImageClone( mask )
-    vecimg[ mask == 1 ]<-featuretemplate[i,]
-    vecimg[ mask == 1 ]<-eanatsparsify( featuretemplate[i,] , -0.25 )
+    initf<-featuretemplate[i,] + rnorm( length(featuretemplate[i,]), mean=0, sd=sd(featuretemplate[i,]) )*0.1
+    vecimg[ mask == 1 ]<-eanatsparsify( initf , sparval[1] )
     for (  nr in 1:nreps )
       {
       initlist<-lappend(initlist,vecimg)
