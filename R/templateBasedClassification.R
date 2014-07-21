@@ -1,8 +1,8 @@
 templateBasedClassification <- function( exemplarmat, labels, newmat,
-                                        method="corr", mask=NA, eigsents=NA  )
+                                        method="corr", mask=NA, eigsents=NA , sparval=c(-0.2,-0.9) )
 {
-mylocaldistfun <- tempclassrobcor
 mylocaldistfun <- robcosineSim
+mylocaldistfun <- tempclassrobcor
 mylocaldistfun <- overlapper
 
 # create the dictionary
@@ -46,7 +46,7 @@ if ( method == "eanat" )
     ct<-ct+nreps
   }
   eanat<-sparseDecom(exemplarmat,inmask=mask, nvecs=length(initlist),
-                     sparseness=-0.1,  mycoption=1,  smooth=0.0, #z=-1/nclasses,
+                     sparseness=sparval[1],  mycoption=1,  smooth=0.0, #z=-1/nclasses,
                      cthresh=250, its=3, #, nsamp=1 )
                      initializationList=initlist ) #, nsamp=1 )
   eanatmat<-imageListToMatrix( eanat$eigenanatomyimages, mask )
@@ -86,7 +86,8 @@ if ( method == "sccan" & !is.na(eigsents) )
   ct<-1
   for ( i in 1:nclasses ) {
     vecimg<-antsImageClone( mask )
-    vecimg[ mask == 1 ]<-eanatsparsify( featuretemplate[i,], -0.1 )
+    vecimg[ mask == 1 ]<-featuretemplate[i,]
+    vecimg[ mask == 1 ]<-eanatsparsify( featuretemplate[i,] , -0.25 )
     for (  nr in 1:nreps )
       {
       initlist<-lappend(initlist,vecimg)
@@ -99,8 +100,8 @@ if ( method == "sccan" & !is.na(eigsents) )
   eanat<-sparseDecom2(list(exemplarmat,eigsents),
                       inmask=c(mask,NA), # z=-1/nclasses, 
                       nvecs=length(initlist),
-                      sparseness=c( -0.1, -0.9 ),  mycoption=1,
-                      smooth=0.0, cthresh=c(500,0), its=10, ell1=1,
+                      sparseness=sparval,  mycoption=1,
+                      smooth=0.0, cthresh=c(250,0), its=10, ell1=1.0,
                       initializationList=initlist )
   eanatmat<-imageListToMatrix( eanat$eig1, mask )
   rownames(eanatmat)<-eanatnames
@@ -111,8 +112,9 @@ if ( method == "sccan" & !is.na(eigsents) )
     y<-eanatmat[i,]
 #    ww<-which( x != 0 & y!= 0 )
 #    mycor[i]<-cor.test( x, y , method="spearman" )$est
-#    mycor[i]<-sqrt( sum( ( x[ww] - y[ww] )^2 ) )*(-1)
-    mycor[i] <- mylocaldistfun( x, y )
+    ww<-which( abs(x)/max(abs(x)) > 1.e-6 & abs(y)/max(abs(y)) > 1.e-6 )
+    mycor[i]<-sqrt( sum( ( x[ww] - y[ww] )^2 ) )*(-1)
+#    mycor[i] <- mylocaldistfun( x, y )
     }
   names(mycor)<-eanatnames
   print(mycor)
@@ -162,9 +164,9 @@ tempclassrobcor <-function(  x, y )
   return( cor( x[ww] , y[ww] ) )
   }
 
-overlapper <-function(  x, y , eps=1.e-2 )
+overlapper <-function(  x, y , eps=0.1 )
 {
 ww<-which( abs(x)/max(abs(x)) > eps & abs(y)/max(abs(y)) > eps )
-ww<-abs(cor( rank(x[ww]), rank(y[ww]) )) # ( abs(x) > eps & abs(y) > eps )
-return( (ww) )
+ww<-(cor( rank(x[ww]), rank(y[ww]) )) # ( abs(x) > eps & abs(y) > eps )
+return( ww )
 }
