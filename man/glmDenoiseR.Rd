@@ -2,10 +2,14 @@
 \alias{glmDenoiseR}
 \title{Optimize a regression model for BOLD based on cross-validated model fitting}
 \usage{
-  glmDenoiseR( boldmatrix, designmatrix )
+  glmDenoiseR( boldmatrix, designmatrix , hrfbasislength=50, kfolds=10, whichbase = NA, pvalthresh=0.25, maxnoisepreds=6 )
 }
 \description{
 Inspired by discussion with Kendrick Kay regarding his glm denoise tool.
+ 1. regressors include - design + trends + noise-pool
+ 2. need to find noise-pool by looking at high p-value voxels
+ 3. cross-validate predictions using different numbers of noise regressors
+ 4. select best n for predictors from noise pool
 }
 
 \usage{
