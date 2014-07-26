@@ -149,7 +149,7 @@ scl<-0.95
 if (max(R2summary)<0) scl<-1.05
 bestn<-which( R2summary > scl*max(R2summary) )[1]
 hrfdesignmat<-designmatrixIn
-for ( i in 1:ncol(designmat) )
+for ( i in 1:ncol(hrfdesignmat) )
   {
   hrfdesignmat[,i]<-conv( hrfdesignmat[,i]  , hrf )[1:nrow(hrfdesignmat)]
   }

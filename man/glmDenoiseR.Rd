@@ -38,10 +38,19 @@ Avants BB
 
 \examples{
 mat<-replicate(250, rnorm(1000)) 
-dmat<-mat[,1:8]*0
+dmat<-mat[,1:2]*0
 for ( i in 1:ncol(dmat) ) dmat[,i]<-as.numeric( mat[ ,i] > 0.9*max(mat[,i]))
 regressionmodeldataframe<-glmDenoiseR( mat , dmat )
 dd<-glmDenoiseR( mat, dmat, whichbase=c(1:2) , kfolds=4 , maxnoisepreds=10 , selectionthresh=0.1 ,collapsedesign=T, reestimatenoisepool=F )
 # note - this may not be stable b/c the designmatrix is ill-conditioned
-dd<-glmDenoiseR( mat, dmat, whichbase=c(1:2) , kfolds=4 , maxnoisepreds=10 , selectionthresh=0.1 ,collapsedesign=F, reestimatenoisepool=F )
+# dd<-glmDenoiseR( mat, dmat, whichbase=c(1:2) , kfolds=4 , maxnoisepreds=10 , selectionthresh=0.1 ,collapsedesign=F, reestimatenoisepool=F )
+# now use its results in regression
+glmdf<-data.frame( dd$hrfdesignmat, noiseu=dd$noiseu, polys=dd$polys )
+mylm<-lm(  data.matrix(mat) ~ . , data=glmdf )
+mylm<-bigLMStats( mylm , 0.001 )
+rownames(mylm$beta.pval)
+min(p.adjust(mylm$beta.pval[1,],method='n'))
+min(p.adjust(mylm$beta.pval[2,],method='n'))
+min(p.adjust(mylm$beta.pval[1,],method='BH'))
+min(p.adjust(mylm$beta.pval[2,],method='BH'))
 }
