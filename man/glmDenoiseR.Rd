@@ -1,9 +1,6 @@
 \name{glmDenoiseR}
 \alias{glmDenoiseR}
 \title{Optimize a regression model for BOLD based on cross-validated model fitting}
-\usage{
-  glmDenoiseR( boldmatrix, designmatrix , hrfbasislength=50, kfolds=10, whichbase = NA, pvalthresh=0.25, maxnoisepreds=6 )
-}
 \description{
 Inspired by discussion with Kendrick Kay regarding his glm denoise tool 
 http://journal.frontiersin.org/Journal/10.3389/fnins.2013.00247/abstract
@@ -14,9 +11,8 @@ http://journal.frontiersin.org/Journal/10.3389/fnins.2013.00247/abstract
  4. select best n for predictors from noise pool
  5. return the noise mask and the value for n
 }
-
 \usage{
-regressionmodeldataframe<-glmDenoiseR( boldmatrix , designmatrix )
+  regressionmodeldataframe<-glmDenoiseR( boldmatrix, designmatrix , hrfbasislength=50, kfolds=10, whichbase = NA, selectionthresh=0.1, maxnoisepreds=6 )
 }
 
 \arguments{

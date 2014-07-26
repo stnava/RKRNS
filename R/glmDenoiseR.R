@@ -1,4 +1,4 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, kfolds=4, whichbase = NA, selectionthresh=0.25, maxnoisepreds=12, collapsedesign=FALSE , reestimatenoisepool=FALSE, debug=FALSE )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, kfolds=4, whichbase = NA, selectionthresh=0.25, maxnoisepreds=12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-designmatrixIn[,colMeans(designmatrixIn)>0 ]
