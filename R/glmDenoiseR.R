@@ -1,7 +1,7 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, kfolds=4, whichbase = NA, selectionthresh=0.25, maxnoisepreds=12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, kfolds=4, whichbase = NA, selectionthresh=0.25, maxnoisepreds=12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 )
 {
 nvox<-ncol(boldmatrix)
-designmatrix<-designmatrixIn[,colMeans(designmatrixIn)>0 ]
+designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
 groups<-c()
 grouplength<-round(nrow(boldmatrix)/kfolds)-1
 for ( k in 1:kfolds ) groups<-c(groups,rep(k,grouplength))
@@ -62,7 +62,11 @@ basismat<-as.matrix( basismat )
 #################################################
 ####### convolutions on basis image matrix ######
 nbase<-ncol(basismat) # number of basis functions
-designmatrixext<-interleaveMatrixWithItself( designmatrix, nbase )
+if ( ncol(designmatrix) == 1 ) {
+  designmatrix<-rep( designmatrix, nbase )
+  designmatrix<-t(matrix( designmatrix, nrow=nbase ))
+}
+if ( ncol(designmatrix) > 1 ) designmatrixext<-interleaveMatrixWithItself( designmatrix, nbase )
 k<-1
 if (debug) print('init conv')
 for ( i in 1:ncol(designmatrixext) )
@@ -81,7 +85,7 @@ if (debug) print('init conv done')
 # 4. select best n for predictors from noise pool
 # 5. return the noise mask and the value for n
 # make regressors
-p<-stats::poly( 1:nrow(designmatrixext) ,degree=4)
+p<-stats::poly( 1:nrow(designmatrixext) ,degree=polydegree )
 rawboldmat<-data.matrix(boldmatrix)
 svdboldmat<-residuals(lm(rawboldmat~p))
 if (debug) print('lm')
