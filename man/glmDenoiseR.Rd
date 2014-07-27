@@ -12,7 +12,7 @@ http://journal.frontiersin.org/Journal/10.3389/fnins.2013.00247/abstract
  5. return the noise mask and the value for n
 }
 \usage{
-  regressionmodeldataframe<-glmDenoiseR( boldmatrix, designmatrix , hrfbasislength=50, kfolds=10, whichbase = NA, selectionthresh=0.1, maxnoisepreds=6 )
+  regressionmodeldataframe<-glmDenoiseR( boldmatrix, designmatrix , hrfbasislength=50, crossvalidationgroups=4, whichbase = NA, selectionthresh=0.1, maxnoisepreds=6 )
 }
 
 \arguments{

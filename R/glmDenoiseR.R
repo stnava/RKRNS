@@ -1,10 +1,14 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, kfolds=4, whichbase = NA, selectionthresh=0.25, maxnoisepreds=12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, whichbase = NA, selectionthresh=0.25, maxnoisepreds=12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
-groups<-c()
-grouplength<-round(nrow(boldmatrix)/kfolds)-1
-for ( k in 1:kfolds ) groups<-c(groups,rep(k,grouplength))
+groups<-crossvalidationgroups
+if ( length(groups) == 1 ) {
+  kfolds<-groups
+  groups<-c()
+  grouplength<-round(nrow(boldmatrix)/kfolds)-1
+  for ( k in 1:kfolds ) groups<-c(groups,rep(k,grouplength))
+}
 
 getnoisepool<-function( x, frac = selectionthresh ) {
   xord<-sort(x)
@@ -85,7 +89,8 @@ if (debug) print('init conv done')
 # 4. select best n for predictors from noise pool
 # 5. return the noise mask and the value for n
 # make regressors
-p<-stats::poly( 1:nrow(designmatrixext) ,degree=polydegree )
+if ( is.na(timevals) ) timevals<-1:nrow(designmatrixext)
+p<-stats::poly( timevals ,degree=polydegree )
 rawboldmat<-data.matrix(boldmatrix)
 svdboldmat<-residuals(lm(rawboldmat~p))
 if (debug) print('lm')
@@ -145,7 +150,7 @@ for ( i in 1:maxnoisepreds )
   R2<-apply(R2,FUN=min,MARGIN=2)
   if ( reestimatenoisepool ) noisepool<-getnoisepool( R2 )
   if ( i == 1 ) R2perNoiseLevel<-R2 else R2perNoiseLevel<-cbind(R2perNoiseLevel,R2)
-  print(paste("Noise pool has nvoxels=",sum(noisepool)))
+  # print(paste("Noise pool has nvoxels=",sum(noisepool)))
   R2summary[i]<-mean(R2)
   print(paste("NoiseU:",i,"MeanRSqrd",  R2summary[i] ))
   }
