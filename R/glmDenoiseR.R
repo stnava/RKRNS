@@ -89,7 +89,7 @@ if (debug) print('init conv done')
 # 4. select best n for predictors from noise pool
 # 5. return the noise mask and the value for n
 # make regressors
-if ( is.na(timevals) ) timevals<-1:nrow(designmatrixext)
+if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrixext)
 p<-stats::poly( timevals ,degree=polydegree )
 rawboldmat<-data.matrix(boldmatrix)
 svdboldmat<-residuals(lm(rawboldmat~p))
