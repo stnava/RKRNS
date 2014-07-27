@@ -164,7 +164,7 @@ for ( i in 1:ncol(hrfdesignmat) )
   }
 # glmdenoisedataframe<-data.frame(  hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p )
 # return( glmdenoisedataframe )
-return(list( n=bestn, hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel, hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p ))
+return(list( n=bestn, R2atBestN=R2summary[bestn], hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel, hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p ))
 }
 
 
