@@ -3,7 +3,7 @@ bold2betas <- function( boldmatrix, designmatrix, blockNumb, maxnoisepreds, poly
 fulleventbetas<-matrix(c(NA,NA),nrow=2)
 rct<-1
 allruns<-unique( blockNumb ) 
-for ( runs in allruns[1] ) 
+for ( runs in allruns ) 
   {
   print(paste("ct",rct,"run",runs,":",rct/length(allruns)*100,"%"))
   kkt<-which( blockNumb == runs )
