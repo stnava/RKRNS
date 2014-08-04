@@ -50,6 +50,7 @@ for ( runs in allruns )
   mylm<-lm(  data.matrix(submat) ~ . , data=glmdf )
   mylm<-bigLMStats( mylm , 0.001 )
   eventbetas[rct,]<-mylm$beta.t[1,]
+  rownames(eventbetas)[rct]<-paste(runs,sep='.')
   rct<-rct+1
   }
 return(eventbetas)
