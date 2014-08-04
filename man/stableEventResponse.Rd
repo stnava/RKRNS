@@ -50,8 +50,22 @@ Avants BB
 
 \examples{
 ff<-stableEventResponse(imat,dmats, dmat$blockNumb, 
-  eventselect='coffee.was.hot',maxnoisepreds=14)
-ff<-stableEventResponse(imat,dmats, dmat$blockNumb, 
   eventselect=grep('coffee.was.hot',colnames(dmats)),
   maxnoisepreds=14)
+ff<-stableEventResponse(imat,dmats, dmat$blockNumb, 
+  eventselect='mob.was.dangerous',maxnoisepreds=14)
+dmf<-data.matrix(ff)
+eanat<-sparseDecom( inmatrix=dmf, inmask=subaal, 
+  sparseness=0.02, 10, cthresh=10, its=5 )
+eanatmat<-imageListToMatrix( eanat$eig, subaal )
+for ( k in 1:10) 
+  {
+  whichvox<-( abs(eanatmat[k,])>1.e-2 )
+  locor<-cor(t(ff[,whichvox]))
+  mm<-apply(ff[,whichvox],FUN=mean,MARGIN=2)
+  ms<-apply(ff[,whichvox],FUN=sd,MARGIN=2)
+  effsz<-mean( mm/ms )
+  print(paste(k,":",sum(whichvox),mean(locor),effsz))
+#  pheatmap(locor)
+  }
 }
