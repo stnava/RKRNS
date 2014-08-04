@@ -1,4 +1,4 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, whichbase = NA, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, whichbase = NA, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
@@ -70,7 +70,7 @@ if ( ncol(designmatrix) == 1 ) {
   designmatrix<-rep( designmatrix, nbase )
   designmatrix<-t(matrix( designmatrix, nrow=nbase ))
 }
-if ( ncol(designmatrix) > 1 ) designmatrixext<-interleaveMatrixWithItself( designmatrix, nbase )
+if ( ncol(designmatrix) > 1 ) designmatrixext<-interleaveMatrixWithItself( designmatrix, nbase ) else designmatrixext<-designmatrix
 k<-1
 if (debug) print('init conv')
 for ( i in 1:ncol(designmatrixext) )
@@ -91,6 +91,7 @@ if (debug) print('init conv done')
 # make regressors
 if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrixext)
 p<-stats::poly( timevals ,degree=polydegree )
+if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
 rawboldmat<-data.matrix(boldmatrix)
 svdboldmat<-residuals(lm(rawboldmat~p))
 if (debug) print('lm')
