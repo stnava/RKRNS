@@ -45,4 +45,9 @@ Avants BB
  mysp<-c(-0.01,0.9) 
  samp1<-1:1000
  ee1<-bold2betasCCA( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=12, baseshift=5, sparseness=mysp, bestvoxnum=50, mask=subaal ) 
+
+mysp<-c(-0.02,-0.9) 
+whichcols<-grep("coffe",colnames(dmats))
+samp1<-1000:11000
+ee1<-bold2betasCCA( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=12, baseshift=4, sparseness=mysp, bestvoxnum=10, mask=subaal, polydegree=4, whichcols=whichcols ) 
 }

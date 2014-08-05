@@ -1,22 +1,34 @@
-bold2betasCCA <- function( boldmatrix, designmatrix, blockNumb, bl=12, baseshift=5, mask=NA, sparseness=c(0,0), multievents=FALSE, polydegree=10, bestvoxnum=50, uselm=FALSE , nvecs=5 )
+bold2betasCCA <- function( boldmatrix, designmatrix, blockNumb, bl=12, baseshift=5, mask=NA, sparseness=c(0,0), multievents=FALSE, polydegree=10, bestvoxnum=50, uselm=FALSE , nvecs=5, whichcols=NA )
 {
 par(mfrow=c(1,2))
-fulleventbetas<-matrix(c(NA,NA),nrow=2)
 rct<-1
+if ( all(is.na( whichcols )) ) whichcols<-1:ncol(designmatrix)
 allruns<-unique( blockNumb )
+neventstot<-0
 for ( runs in allruns ) 
   {
-  print(paste("ct",rct,"run",runs,":",rct/length(allruns)*100,"%"))
+  kkt<-which( blockNumb == runs )
+  neventstot<-neventstot+sum(designmatrix[kkt,whichcols])
+  }
+designnames<-colnames(designmatrix)[whichcols]
+print(designnames)
+eventhrfs<-data.frame(matrix( rep(0,neventstot*bl), ncol=bl))
+eventrows<-rep(0,neventstot)
+eventbetas<-data.frame(matrix( rep(0,neventstot*ncol(boldmatrix)), ncol=ncol(boldmatrix)))
+ct<-1
+for ( runs in allruns ) 
+  {
+  print(paste("run%:",rct/length(allruns),"event%:",(ct-1)/neventstot*100,"..."))
   kkt<-which( blockNumb == runs )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
-  nevents<-sum(denoisedes)
-  eventbetas<-data.frame(matrix( rep(0,nevents*ncol(boldmatrix)), ncol=ncol(boldmatrix)))
-  ct<-1
+  nevents<-sum(denoisedes[,whichcols])
+  if ( nevents > 0 )
+  {
   for ( row in 1:nrow(denoisedes) ) {
-      if ( sum( denoisedes[row,] ) > 0 )
+      if ( sum( denoisedes[row,whichcols] ) > 0 )
           {
-          col<-which( denoisedes[row,] > 0 )
+          col<-which( denoisedes[row,whichcols] > 0 )
           denoisematmod1<-denoisedes*0
           denoisematmod2<-denoisedes
           denoisematmod1[row,col]<-1
@@ -44,9 +56,14 @@ for ( runs in allruns )
             bestvoxels<-which( temp > tempord[bestvoxnum]  )
             myhrf<-rowSums( (betablock[,bestvoxels] ) )
           } else { # cca
-            mycca<-sparseDecom2( inmatrix=list(  data.matrix(submat) , data.matrix(glmdf)  ),
+            locdes<-data.matrix(glmdf)
+            mycca<-sparseDecom2( inmatrix=list(  data.matrix(submat) , locdes  ),
                                 sparseness=sparseness, nvecs=nvecs, its=11, cthresh=c(bestvoxnum,0),
-                                uselong=0, smooth=0, mycoption=2, inmask=c(mask,NA) )
+                                uselong=0, smooth=0, mycoption=1, inmask=c(mask,NA) )
+#            locdes[,1:bl]<-locdes[sample(1:nrow(submat)),1:bl] 
+#            permcca<-sparseDecom2( inmatrix=list(  data.matrix(submat) , locdes ),
+#                                sparseness=sparseness, nvecs=nvecs, its=5, cthresh=c(bestvoxnum,0),
+#                                uselong=0, smooth=0, mycoption=0, inmask=c(mask,NA) )
             mytype<-typeof( mycca$eig1[[1]] )
             if ( mytype == "double" ) ccamat<-t(mycca$eig1) else ccamat<-imageListToMatrix( mycca$eig1, mask )
             if ( mean( data.matrix(mycca$eig2) ) < 0 ) mycca$eig2<-mycca$eig2*(-1)
@@ -61,23 +78,29 @@ for ( runs in allruns )
                 bestv<-nv
               }
             }
-            print(paste("best",bestval,bestv))
+            p1<-( data.matrix(submat) %*% t(ccamat) )[,bestv]
+            p2<-( data.matrix(glmdf)  %*% data.matrix(mycca$eig2) )[,bestv]
+            eps<-1.e-4
+            ww<-( abs(p1) >= eps & abs(p2) >= eps )
+            locor<-cor.test( p1[ww], p2[ww] )$est
+            plot( p1[ww], p2[ww] )
+            print(paste("best",bestval,bestv,'cor',locor))
             betablock<-mycca$eig2[1:bl,bestv]
             myhrf<-( (betablock ) )
             if ( mean(myhrf) < 0 ) myhrf<-myhrf*(-1)
             eventbetas[ct,]<-ccamat[bestv,]/max(abs(ccamat[bestv,]))
-            plot( mycca$projections[,bestv], mycca$projections2[,bestv] )
             temp<-(as.numeric(eventbetas[ct,]))
           }
+          eventhrfs[ct,]<-myhrf
+          eventrows[ct]<-kkt[row]
+          rownames(eventbetas)[ct]<-paste(designnames[col],eventrows[ct],sep='.')
           plot(ts( myhrf ) )
-#          rownames(eventbetas)[ct]<-paste(colnames(denoisedes)[col],".",rownames(boldmatrix)[row],sep='')
-#          print(paste(rownames(eventbetas)[ct],"Mx",max(abs(mylm$beta.t[1,])),"Me",mean(abs(mylm$beta.t[1,])) ))
-          print(paste(ct/nevents*100,"% Mx",max(temp),"Me",mean(temp) ))
+          print(paste(rownames(eventbetas)[ct],"ct:",ct,'...',ct/neventstot*100,"% Mx",max(temp),"Me",mean(temp) ))
           ct<-ct+1
       }  
     }
-  if ( is.na( fulleventbetas[1,1] ) ) fulleventbetas<-eventbetas else fulleventbetas<-rbind(fulleventbetas,eventbetas)
+  }
   rct<-rct+1
   }# runs
-return(fulleventbetas)
+return(list(eventbetas=eventbetas,eventhrfs=eventhrfs,eventrows=eventrows))
 }

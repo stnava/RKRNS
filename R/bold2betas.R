@@ -1,27 +1,38 @@
-bold2betas <- function( boldmatrix, designmatrix, blockNumb, maxnoisepreds, polydegree=10, bl=50, crossvalidationgroups=4, selectionthresh=0.1, multievents=FALSE )
+bold2betas <- function( boldmatrix, designmatrix, blockNumb, maxnoisepreds=2, polydegree=10, bl=50, crossvalidationgroups=4, selectionthresh=0.1, multievents=FALSE, whichcols=NA )
 {
+allruns<-unique( blockNumb )
+if ( all(is.na( whichcols )) ) whichcols<-1:ncol(designmatrix)
 fulleventbetas<-matrix(c(NA,NA),nrow=2)
 rct<-1
-allruns<-unique( blockNumb )
+neventstot<-0
 for ( runs in allruns ) 
   {
-  print(paste("ct",rct,"run",runs,":",rct/length(allruns)*100,"%"))
+  kkt<-which( blockNumb == runs )
+  neventstot<-neventstot+sum(designmatrix[kkt,whichcols])
+  }
+designnames<-colnames(designmatrix)[whichcols]
+print(designnames)
+eventhrfs<-data.frame(matrix( rep(0,neventstot*bl), ncol=bl))
+eventrows<-rep(0,neventstot)
+eventbetas<-data.frame(matrix( rep(0,neventstot*ncol(boldmatrix)), ncol=ncol(boldmatrix)))
+ct<-1
+for ( runs in allruns ) 
+  {
+  print(paste("run%:",rct/length(allruns),"event%:",(ct-1)/neventstot*100,"..."))
   kkt<-which( blockNumb == runs )
   denoisedes<-designmatrix[kkt,]
-  denoisedes<-as.matrix( denoisedes[,colMeans(denoisedes)>0 ] )
   submat<-boldmatrix[kkt,]
   dd<-glmDenoiseR( submat, denoisedes, whichbase=3:3, selectionthresh=selectionthresh,
     crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfbasislength=bl,
     collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree ) 
   glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
   glmdf<-data.frame( dd$hrfdesignmat, glmdfnuis )
-  nevents<-sum(denoisedes)
-  eventbetas<-data.frame(matrix( rep(0,nevents*ncol(boldmatrix)), ncol=ncol(boldmatrix)))
-  ct<-1
+  nevents<-sum(denoisedes[,whichcols])
+  if ( nevents > 0 ) {
   for ( row in 1:nrow(denoisedes) ) {
-      if ( sum( denoisedes[row,] ) > 0 )
+      if ( sum( denoisedes[row,whichcols] ) > 0 )
           {
-          col<-which( denoisedes[row,] > 0 )
+          col<-which( denoisedes[row,whichcols] > 0 )
           denoisematmod1<-denoisedes*0
           denoisematmod2<-denoisedes
           denoisematmod1[row,col]<-1
@@ -40,14 +51,16 @@ for ( runs in allruns )
           mylm<-lm(  data.matrix(submat) ~ . , data=glmdf )
           mylm<-bigLMStats( mylm , 0.001 )
           eventbetas[ct,]<-mylm$beta.t[1,]
-#          rownames(eventbetas)[ct]<-paste(colnames(denoisedes)[col],".",rownames(boldmatrix)[row],sep='')
-#          print(paste(rownames(eventbetas)[ct],"Mx",max(abs(mylm$beta.t[1,])),"Me",mean(abs(mylm$beta.t[1,])) ))
-          print(paste(ct/nevents*100,"Mx",max(abs(mylm$beta.t[1,])),"Me",mean(abs(mylm$beta.t[1,])) ))
+          eventrows[ct]<-row
+          eventhrfs[ct,]<-dd$hrf
+          eventrows[ct]<-kkt[row]
+          rownames(eventbetas)[ct]<-paste(designnames[col],eventrows[ct],sep='.')
+          print(paste(rownames(eventbetas)[ct],"ct:",ct,'...',ct/neventstot*100,"%...Mx",max(abs(mylm$beta.t[1,])),"Me",mean(abs(mylm$beta.t[1,])) ))
           ct<-ct+1
       }  
     }
-  if ( is.na( fulleventbetas[1,1] ) ) fulleventbetas<-eventbetas else fulleventbetas<-rbind(fulleventbetas,eventbetas)
+  } # nevents > 0 
   rct<-rct+1
   }# runs
-return(fulleventbetas)
+return(list(eventbetas=eventbetas,eventhrfs=eventhrfs,eventrows=eventrows))
 }
