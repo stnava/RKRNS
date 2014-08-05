@@ -53,7 +53,7 @@ for ( runs in allruns )
   rownames(eventbetas)[rct]<-paste(runs,sep='.')
   rct<-rct+1
   }
-return(eventbetas)
+return( list(cveventbetas=eventbetas, glmdenoiz=dd ) )
 #betas<-bold2betas( boldmatrix[whtimes,], des, blockNumb[whtimes], 
 #                  maxnoisepreds=12, polydegree=4 )
 # return(betas)

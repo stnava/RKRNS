@@ -2,7 +2,7 @@
 \alias{stableEventResponse}
 \title{Denoise and estimate response variability across runs}
 \description{
-Use extended glmdenoise and cross-validation to summarize 
+Use extended glmdenoise and leave-a-run-out to summarize 
 response variability across runs for an event.  Returns a
 matrix of betas where there is a beta vector for each left 
 out run.  The betas are t-tstats for the selected event.
@@ -49,23 +49,61 @@ Avants BB
 }
 
 \examples{
-ff<-stableEventResponse(imat,dmats, dmat$blockNumb, 
-  eventselect=grep('coffee.was.hot',colnames(dmats)),
-  maxnoisepreds=14)
-ff<-stableEventResponse(imat,dmats, dmat$blockNumb, 
-  eventselect='mob.was.dangerous',maxnoisepreds=14)
-dmf<-data.matrix(ff)
+nrows<-nrow(imat)
+samp1<-1:round(nrows*0.6)
+samp2<-(max(samp1)+1):nrows
+soldier<-grep('soldier.kicked',colnames(dmats))
+imatd<-data.matrix(imat)
+rm(imat)
+imatd<-winsor(imatd,0.01)
+imatd<-imatd/colMeans(imatd)*100.0-100.0
+i1<-imatd[samp1,] # now % signal change
+i2<-imatd[samp2,] # now % signal change
+rm(imatd)
+ee1<-stableEventResponse(i1,dmats[samp1,], dmat$blockNumb[samp1], 
+  eventselect=soldier,
+  maxnoisepreds=0, polydegree=4 )
+ee2<-stableEventResponse(i2,dmats[samp2,], dmat$blockNumb[samp2], 
+  eventselect=soldier,
+  maxnoisepreds=0, polydegree=4 )
+eeb<-rbind(ee1$cveventbetas,ee2$cveventbetas)
+dmf<-data.matrix(ee1)
 eanat<-sparseDecom( inmatrix=dmf, inmask=subaal, 
-  sparseness=0.02, 10, cthresh=10, its=5 )
+  sparseness=0.01, nv, cthresh=20, its=5 )
 eanatmat<-imageListToMatrix( eanat$eig, subaal )
-for ( k in 1:10) 
+for ( k in 1:nv) 
   {
-  whichvox<-( abs(eanatmat[k,])>1.e-2 )
-  locor<-cor(t(ff[,whichvox]))
-  mm<-apply(ff[,whichvox],FUN=mean,MARGIN=2)
-  ms<-apply(ff[,whichvox],FUN=sd,MARGIN=2)
+  whichvox<-( abs(eanatmat[k,])>1.e-4 )
+  locor<-cor(t(dmf[,whichvox]))
+  mm<-apply(dmf[,whichvox],FUN=mean,MARGIN=2)
+  ms<-apply(dmf[,whichvox],FUN=sd,MARGIN=2)
+  mn<-apply(abs(dmf[,whichvox]),FUN=min,MARGIN=2)
   effsz<-mean( mm/ms )
-  print(paste(k,":",sum(whichvox),mean(locor),effsz))
-#  pheatmap(locor)
+  print(paste(k,":",sum(whichvox),mean(locor),'e:',effsz,'t:',mean(mm),'min:',mean(mn)))
+#  pheatmap(cor(t(dmf[,whichvox])))
+  }
+
+ee<-stableEventResponse(imat,dmats, dmat$blockNumb, 
+  eventselect=soldier,
+  maxnoisepreds=14, polydegree=4 )
+ff<-stableEventResponse(imat,dmats, dmat$blockNumb, 
+  eventselect='coffee.was.hot',
+  maxnoisepreds=14, polydegree=4 )
+nv<-20
+eanatf<-sparseDecom( inmatrix=data.matrix(ff), inmask=subaal, 
+  sparseness=0.01, nv, cthresh=20, its=5 )
+eanatg<-sparseDecom( inmatrix=data.matrix(ee), inmask=subaal, 
+  sparseness=0.01, nv, cthresh=20, its=5 )
+eanatmatf<-imageListToMatrix( eanatf$eig, subaal )
+eanatmatg<-imageListToMatrix( eanatg$eig, subaal )
+for ( k in 1:nv) 
+  {
+  whichvox<-( abs(eanatmat[k,])>1.e-4 )
+  locor<-cor(t(dmf[,whichvox]))
+  mm<-apply(dmf[,whichvox],FUN=mean,MARGIN=2)
+  ms<-apply(dmf[,whichvox],FUN=sd,MARGIN=2)
+  mn<-apply(abs(dmf[,whichvox]),FUN=min,MARGIN=2)
+  effsz<-mean( mm/ms )
+  print(paste(k,":",sum(whichvox),mean(locor),'e:',effsz,'t:',mean(mm),'min:',mean(mn)))
   }
 }

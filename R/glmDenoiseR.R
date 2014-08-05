@@ -121,9 +121,18 @@ for ( i in 1:ncol(designmatrixext) )
   {
   designmatrixext[,i]<-conv( designmatrix[,i]  , hrf )[1:nrow(designmatrix)]
   }
+hrfdesignmat<-designmatrixIn
+for ( i in 1:ncol(hrfdesignmat) )
+  {
+  hrfdesignmat[,i]<-conv( hrfdesignmat[,i]  , hrf )[1:nrow(hrfdesignmat)]
+  }
 R2base<-crossvalidatedR2(  svdboldmat, designmatrixext, groups , p=NA )
 R2base<-apply(R2base,FUN=min,MARGIN=2)
 noisepool<-getnoisepool( R2base )
+if ( max(maxnoisepreds) == 0 )
+  {
+  return(list( n=0, R2atBestN=NA, hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=NA, hrfdesignmat=hrfdesignmat, noiseu=rep(1,nrow(hrfdesignmat)), polys=p ))
+  }
 if ( all( noisepool==TRUE ) )
   {
   print("all voxels meet your pvalthresh - try increasing the value")
@@ -160,11 +169,6 @@ for ( i in maxnoisepreds )
 scl<-0.95
 if (max(R2summary)<0) scl<-1.05
 bestn<-maxnoisepreds[which( R2summary > scl*max(R2summary) )[1]]
-hrfdesignmat<-designmatrixIn
-for ( i in 1:ncol(hrfdesignmat) )
-  {
-  hrfdesignmat[,i]<-conv( hrfdesignmat[,i]  , hrf )[1:nrow(hrfdesignmat)]
-  }
 # glmdenoisedataframe<-data.frame(  hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p )
 # return( glmdenoisedataframe )
 return(list( n=bestn, R2atBestN=R2summary[bestn], hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel, hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p ))
