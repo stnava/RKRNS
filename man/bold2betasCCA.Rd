@@ -41,7 +41,8 @@ Avants BB
 }
 
 \examples{
- subaal<-NA
+ subaal<-antsImageRead("subaal.nii.gz",3)
  mysp<-c(-0.01,0.9) 
- ee1<-bold2betasCCA( i1 , dmats[samp1,], dmat$blockNumb[samp1], bl=12, baseshift=5, sparseness=mysp, bestvoxnum=50, mask=subaal ) 
+ samp1<-1:1000
+ ee1<-bold2betasCCA( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=12, baseshift=5, sparseness=mysp, bestvoxnum=50, mask=subaal ) 
 }

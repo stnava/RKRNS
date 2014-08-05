@@ -4,7 +4,7 @@ par(mfrow=c(1,2))
 fulleventbetas<-matrix(c(NA,NA),nrow=2)
 rct<-1
 allruns<-unique( blockNumb )
-for ( runs in allruns[1] ) 
+for ( runs in allruns ) 
   {
   print(paste("ct",rct,"run",runs,":",rct/length(allruns)*100,"%"))
   kkt<-which( blockNumb == runs )
@@ -46,7 +46,7 @@ for ( runs in allruns[1] )
           } else { # cca
             mycca<-sparseDecom2( inmatrix=list(  data.matrix(submat) , data.matrix(glmdf)  ),
                                 sparseness=sparseness, nvecs=nvecs, its=11, cthresh=c(bestvoxnum,0),
-                                uselong=0, smooth=0, mycoption=1, inmask=c(mask,NA) )
+                                uselong=0, smooth=0, mycoption=2, inmask=c(mask,NA) )
             mytype<-typeof( mycca$eig1[[1]] )
             if ( mytype == "double" ) ccamat<-t(mycca$eig1) else ccamat<-imageListToMatrix( mycca$eig1, mask )
             if ( mean( data.matrix(mycca$eig2) ) < 0 ) mycca$eig2<-mycca$eig2*(-1)
