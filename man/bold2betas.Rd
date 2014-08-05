@@ -44,4 +44,16 @@ Avants BB
 
 \examples{
   betas<-bold2betas( imat, dmats, dmat$blockNumb, maxnoisepreds=c(12,14,18) )
+# example of what you might do for decoding
+  ee2<-bold2betas( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=30, polydegree=8, whichcols=whichcols ) 
+  eanat<-sparseDecom( data.matrix(ee2$eventbetas), nvecs=10, sparseness=0.01, mycoption=1, inmask=subaal, cthresh=50 )
+  rownames(eanat$projections)<-rownames(ee2$eventbetas)
+  pheatmap(cor(t(eanat$projections)))
+  classes<-rep("",nrow(eanat$projections))
+  for ( i in 1:nrow(eanat$projections)) classes[i]<-strsplit(rownames(eanat$projections)[i],"[.][.]")[[1]][1]
+  classes<-as.factor(classes)
+  inds<-sample(1:nrow(ee2$eventbetas))[1:8]
+  mydf<-data.frame( lab=classes, p=(data.matrix(ee2$eventbetas)) %*% t(data.matrix(imageListToMatrix(eanat$eigenanatomyimages,subaal)) ))
+  mdl<-randomForest(lab~., mydf[inds,] )
+  print( predict( mdl, newdata=mydf[-inds,]) )
 }

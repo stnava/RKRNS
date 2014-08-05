@@ -50,4 +50,18 @@ mysp<-c(-0.02,-0.9)
 whichcols<-grep("coffe",colnames(dmats))
 samp1<-1000:11000
 ee1<-bold2betasCCA( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=12, baseshift=4, sparseness=mysp, bestvoxnum=10, mask=subaal, polydegree=4, whichcols=whichcols ) 
+
+# example of what you might do for decoding
+  ee2<-bold2betasCCA( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=12, baseshift=4, sparseness=mysp, bestvoxnum=10, mask=subaal, polydegree=8, whichcols=whichcols ) 
+  eanat<-sparseDecom( data.matrix(ee2$eventbetas), nvecs=10, sparseness=-0.01, mycoption=1 )
+  rownames(eanat$projections)<-rownames(ee2$eventbetas)
+  pheatmap(cor(t(eanat$projections)))
+  classes<-rep("",nrow(eanat$projections))
+  for ( i in 1:nrow(eanat$projections)) classes[i]<-strsplit(rownames(eanat$projections)[i],"[.][.]")[[1]][1]
+  classes<-as.factor(classes)
+  inds<-sample(1:nrow(ee2$eventbetas))[1:8]
+  mydf<-data.frame( lab=classes, p=(data.matrix(ee2$eventbetas)) %*% data.matrix(eanat$eigenanatomyimages) )
+  mdl<-svm(lab~., mydf[inds,] )
+  print( predict( mdl, newdata=mydf[-inds,]) )
+
 }

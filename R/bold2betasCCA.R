@@ -1,4 +1,5 @@
-bold2betasCCA <- function( boldmatrix, designmatrix, blockNumb, bl=12, baseshift=5, mask=NA, sparseness=c(0,0), multievents=FALSE, polydegree=10, bestvoxnum=50, uselm=FALSE , nvecs=5, whichcols=NA )
+bold2betasCCA <- function( boldmatrix, designmatrix, blockNumb, bl=12, baseshift=5, mask=NA, sparseness=c(0,0), multievents=FALSE, polydegree=10, bestvoxnum=50, uselm=FALSE , nvecs=5, whichcols=NA,
+  mycoption=1, its=10 )
 {
 par(mfrow=c(1,2))
 rct<-1
@@ -18,7 +19,7 @@ eventbetas<-data.frame(matrix( rep(0,neventstot*ncol(boldmatrix)), ncol=ncol(bol
 ct<-1
 for ( runs in allruns ) 
   {
-  print(paste("run%:",rct/length(allruns),"event%:",(ct-1)/neventstot*100,"..."))
+  print(paste("run%:",rct/length(allruns)*100,"event%:",(ct-1)/neventstot*100,"..."))
   kkt<-which( blockNumb == runs )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
@@ -58,8 +59,8 @@ for ( runs in allruns )
           } else { # cca
             locdes<-data.matrix(glmdf)
             mycca<-sparseDecom2( inmatrix=list(  data.matrix(submat) , locdes  ),
-                                sparseness=sparseness, nvecs=nvecs, its=11, cthresh=c(bestvoxnum,0),
-                                uselong=0, smooth=0, mycoption=1, inmask=c(mask,NA) )
+                                sparseness=sparseness, nvecs=nvecs, its=its, cthresh=c(bestvoxnum,0),
+                                uselong=0, smooth=0, mycoption=mycoption, inmask=c(mask,NA) )
 #            locdes[,1:bl]<-locdes[sample(1:nrow(submat)),1:bl] 
 #            permcca<-sparseDecom2( inmatrix=list(  data.matrix(submat) , locdes ),
 #                                sparseness=sparseness, nvecs=nvecs, its=5, cthresh=c(bestvoxnum,0),

@@ -18,7 +18,7 @@ eventbetas<-data.frame(matrix( rep(0,neventstot*ncol(boldmatrix)), ncol=ncol(bol
 ct<-1
 for ( runs in allruns ) 
   {
-  print(paste("run%:",rct/length(allruns),"event%:",(ct-1)/neventstot*100,"..."))
+  print(paste("run%:",rct/length(allruns)*100,"event%:",(ct-1)/neventstot*100,"..."))
   kkt<-which( blockNumb == runs )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
