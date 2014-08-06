@@ -53,7 +53,6 @@ for ( runs in allruns )
   {
   print(paste("ct",rct,"run",runs,":",rct/length(allruns)*100,"%"))
   kkt<-which( blockNumb[whtimes] != runs )
-  print(kkt)
   submat<-boldmatrix[kkt,]
   glmdf<-data.frame( des[kkt,], glmdfnuis[kkt,] )
   mylm<-lm(  data.matrix(submat) ~ . , data=glmdf )
