@@ -1,4 +1,4 @@
-simulateBOLD<-function(ntime=2000,nstim=30)
+simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5)
 {
   rs<-2
   while ( max(rs) > 1 ) {
@@ -10,17 +10,16 @@ simulateBOLD<-function(ntime=2000,nstim=30)
   s1<-sample( c( rep(1,nstim), rep(0,ntime-nstim) ) ) # 10 repeats
   s2<-shift( s1, 150 ) # 10 repeats
   s3<-shift( s2, 150 ) # 10 repeats
-  hrf1<-shift(hemodynamicRF( nrow(simbold), onsets=which(s1>0), durations=1, rt=0.5 ), 0 )
-  hrf2<-shift(hemodynamicRF( nrow(simbold), onsets=which(s2>0), durations=1, rt=0.5 ), 0 )
-  hrf3<-shift(hemodynamicRF( nrow(simbold), onsets=which(s3>0), durations=1, rt=0.5 ), 0 )
-  scl<-0.5
-  simbold[,100:200]<-simbold[,100:200]+as.numeric(hrf1)*0.5*scl
-  simbold[,320:400]<-simbold[,320:400]+as.numeric(hrf2)*0.4*scl
-  simbold[,380:600]<-simbold[,380:600]+as.numeric(hrf3)*0.8*scl
+  hrf1<-shift(hemodynamicRF( nrow(simbold), onsets=which(s1>0), durations=1, rt=1 ), 0 )
+  hrf2<-shift(hemodynamicRF( nrow(simbold), onsets=which(s2>0), durations=1, rt=1 ), 0 )
+  hrf3<-shift(hemodynamicRF( nrow(simbold), onsets=which(s3>0), durations=1, rt=1 ), 0 )
+  simbold[,100:200]<-simbold[,100:200]+as.numeric(hrf1)*0.5*signalscale
+  simbold[,320:400]<-simbold[,320:400]+as.numeric(hrf2)*0.4*signalscale
+  simbold[,380:600]<-simbold[,380:600]+as.numeric(hrf3)*0.8*signalscale
   desmat<-data.frame( a=s1, b=s2, c=s3 ) 
   rs<-rowSums(desmat)
   }
   ts1<-ts(rowMeans(simbold[,380:600]))	
-  plot( ts(data.frame(s3=s3,hrf3=hrf3,bold=ts1) ))
+  plot( ts(data.frame(s3=s3,hrf3=hrf3,bold=ts1,boldraw=simbold[,390]) ))
   return(list(simbold=simbold,desmat=desmat))
 }

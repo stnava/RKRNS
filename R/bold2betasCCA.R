@@ -37,7 +37,7 @@ for ( runs in allruns )
           if ( multievents ) {
             rows<-which(denoisedes[,col]==1)
             rowsx<-which( (rows-row) > 0 )
-            rows<-c( row, rows[rowsx[1]] )
+            rows<-c( row, rows[rowsx[1]], rows[rowsx[2]] )
             denoisematmod1[rows,col]<-1
             denoisematmod2[-rows,col]<-0
           }

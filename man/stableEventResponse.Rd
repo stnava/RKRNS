@@ -49,7 +49,7 @@ Avants BB
 }
 
 \examples{
-  bsim<-simulateBOLD()
+  bsim<-simulateBOLD(signalscale=2)
   imat<-bsim$simbold
   dmats<-bsim$desmat
   runl<-nrow(imat)/4

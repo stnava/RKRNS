@@ -41,6 +41,18 @@ Avants BB
 }
 
 \examples{
+
+#  bsim<-simulateBOLD(signalscale=2)
+  bsim<-simulateBOLD(ntime=500,nstim=5,signalscale=2)
+  imat<-bsim$simbold
+  dmats<-bsim$desmat
+  btsc<-bold2betasCCA( imat , dmats, rep(1,nrow(dmats)), bl=15, baseshift=0, 
+    sparseness=c(-1,-1), bestvoxnum=50, uselm=T, polydegree=1 ) 
+  plot(ts(colMeans(btsc$eventbetas[,1:1000])))
+
+
+
+
  subaal<-antsImageRead("subaal.nii.gz",3)
  mysp<-c(-0.01,0.9) 
  samp1<-1:1000
