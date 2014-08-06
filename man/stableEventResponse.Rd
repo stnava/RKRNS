@@ -49,39 +49,47 @@ Avants BB
 }
 
 \examples{
-nrows<-nrow(imat)
-samp1<-1:round(nrows*0.6)
-samp2<-(max(samp1)+1):nrows
-soldier<-grep('soldier.kicked',colnames(dmats))
-imatd<-data.matrix(imat)
-rm(imat)
-imatd<-winsor(imatd,0.01)
-imatd<-imatd/colMeans(imatd)*100.0-100.0
-i1<-imatd[samp1,] # now % signal change
-i2<-imatd[samp2,] # now % signal change
-rm(imatd)
-ee1<-stableEventResponse(i1,dmats[samp1,], dmat$blockNumb[samp1], 
-  eventselect=soldier,
-  maxnoisepreds=0, polydegree=4 )
-ee2<-stableEventResponse(i2,dmats[samp2,], dmat$blockNumb[samp2], 
-  eventselect=soldier,
-  maxnoisepreds=0, polydegree=4 )
-eeb<-rbind(ee1$cveventbetas,ee2$cveventbetas)
-dmf<-data.matrix(ee1)
-eanat<-sparseDecom( inmatrix=dmf, inmask=subaal, 
-  sparseness=0.01, nv, cthresh=20, its=5 )
-eanatmat<-imageListToMatrix( eanat$eig, subaal )
-for ( k in 1:nv) 
-  {
-  whichvox<-( abs(eanatmat[k,])>1.e-4 )
-  locor<-cor(t(dmf[,whichvox]))
-  mm<-apply(dmf[,whichvox],FUN=mean,MARGIN=2)
-  ms<-apply(dmf[,whichvox],FUN=sd,MARGIN=2)
-  mn<-apply(abs(dmf[,whichvox]),FUN=min,MARGIN=2)
-  effsz<-mean( mm/ms )
-  print(paste(k,":",sum(whichvox),mean(locor),'e:',effsz,'t:',mean(mm),'min:',mean(mn)))
-#  pheatmap(cor(t(dmf[,whichvox])))
-  }
+  bsim<-simulateBOLD()
+  imat<-bsim$simbold
+  dmats<-bsim$desmat
+  runl<-nrow(imat)/4
+  fakeruns<-c( rep(1,runl) , rep(2,runl), rep(3,runl) )
+  fakeruns<-c( fakeruns, rep(4,nrow(imat)-length(fakeruns)))
+  st1<-stableEventResponse(imat,dmats, fakeruns, 
+    eventselect="a", maxnoisepreds=0, polydegree=1, bl=30 )
+  st2<-stableEventResponse(imat,dmats, fakeruns, 
+    eventselect="b", maxnoisepreds=0, polydegree=1, bl=30 )
+  plot(ts(colMeans(st1$cveventbetas[,1:1000])))
+  plot(ts(colMeans(st2$cveventbetas[,1:1000])))
+
+  nrows<-nrow(imat)
+  samp1<-1:round(nrows*0.6)
+  samp2<-(max(samp1)+1):nrows
+  soldier<-grep('soldier.kicked',colnames(dmats))
+  imatd<-data.matrix(imat)
+  rm(imat)
+  imatd<-winsor(imatd,0.01)
+  imatd<-imatd/colMeans(imatd)*100.0-100.0
+  i1<-imatd[samp1,] # now % signal change
+  i2<-imatd[samp2,] # now % signal change
+  rm(imatd)
+  ee1<-stableEventResponse(i1,dmats[samp1,], dmat$blockNumb[samp1], 
+    eventselect=soldier, maxnoisepreds=0, polydegree=4 )
+  dmf<-data.matrix(ee1)
+  eanat<-sparseDecom( inmatrix=dmf, inmask=subaal, 
+    sparseness=0.01, nv, cthresh=20, its=5 )
+  eanatmat<-imageListToMatrix( eanat$eig, subaal )
+  for ( k in 1:nv) 
+    {
+    whichvox<-( abs(eanatmat[k,])>1.e-4 )
+    locor<-cor(t(dmf[,whichvox]))
+    mm<-apply(dmf[,whichvox],FUN=mean,MARGIN=2)
+    ms<-apply(dmf[,whichvox],FUN=sd,MARGIN=2)
+    mn<-apply(abs(dmf[,whichvox]),FUN=min,MARGIN=2)
+    effsz<-mean( mm/ms )
+    print(paste(k,":",sum(whichvox),mean(locor),'e:',effsz,'t:',mean(mm),'min:',mean(mn)))
+#   pheatmap(cor(t(dmf[,whichvox])))
+    }
 
 ee<-stableEventResponse(imat,dmats, dmat$blockNumb, 
   eventselect=soldier,
