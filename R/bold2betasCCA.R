@@ -12,7 +12,6 @@ for ( runs in allruns )
   neventstot<-neventstot+sum(designmatrix[kkt,whichcols])
   }
 designnames<-colnames(designmatrix)[whichcols]
-print(designnames)
 eventhrfs<-data.frame(matrix( rep(0,neventstot*bl), ncol=bl))
 eventrows<-rep(0,neventstot)
 eventbetas<-data.frame(matrix( rep(0,neventstot*ncol(boldmatrix)), ncol=ncol(boldmatrix)))
@@ -45,20 +44,70 @@ for ( runs in allruns )
           twoeventmat<-cbind( denoisematmod1[,col], rowSums(denoisematmod2))
           twoeventmat<-finiteImpuleResponseDesignMatrix( twoeventmat, n=bl, baseshift=baseshift )
           p<-stats::poly( 1:nrow(twoeventmat) ,degree=polydegree )
-          glmdf<-data.frame( twoeventmat , z=p )
+          glmdf<-data.frame( twoeventmat , p=p )
           if ( uselm ) {
             mylm<-lm(  data.matrix(submat) ~ . , data=glmdf )
             mylm<-bigLMStats( mylm , 0.001 )
             betablock<-mylm$beta.t[1:bl,]
             if ( sparseness[2] > 0 ) { betablock[betablock<0]<-0 }
-            eventbetas[ct,]<-apply( abs(betablock) , FUN=sum, MARGIN=2)
+            eventbetas[ct,]<-apply( (betablock) , FUN=sum, MARGIN=2)
             temp<-(as.numeric(eventbetas[ct,]))
             tempord<-sort(temp,decreasing=TRUE)
             bestvoxels<-which( temp > tempord[bestvoxnum]  )
             myhrf<-rowSums( (betablock[,bestvoxels] ) )
+            if ( (myhrf[1] > myhrf[bl/2] ) &  (myhrf[bl] > myhrf[bl/2] ) ) myhrf<-myhrf*(-1)
+            myhrf<-myhrf/max(myhrf)
+            doconvolution<-FALSE
+            if ( doconvolution ) 
+            for ( tk in 1:bl ) twoeventmat[,tk]<-conv( twoeventmat[,tk], myhrf )[1:length(twoeventmat[,tk])]
+            glmdf<-data.frame( twoeventmat , p=p )
+            pblock<-mylm$beta.t[(bl+1):nrow(mylm$beta.t),]
+            pblock<-apply( (pblock) , FUN=sum, MARGIN=2)
+            initmat<-rbind(temp,pblock)
+            initdf<-initializeEigenanatomy( initmat , mask=mask, 2 )
+            mask=initdf$mask
+            nvecs<-length( initdf$initlist )
+            locdes<-data.matrix(glmdf)
+            noisevox<-abs(pblock)>mean(abs(pblock)) # & abs(temp)<mean(abs(temp))
+            ccamat<-(data.matrix(submat) )
+            noisesvd<-svd( ccamat , nu=8, nv=0 )$u
+#            res <- rcc(ccamat, locdes, 0.008096, 0.064)
+            locdes<-cbind( twoeventmat, noisesvd )
+            mycca<-sparseDecom2( inmatrix=list(  ccamat, locdes  ),
+                                initializationList=initdf$initlist,
+                                sparseness=sparseness, nvecs=nvecs, its=its, cthresh=c(bestvoxnum,0),
+                                uselong=0, smooth=0, mycoption=mycoption, inmask=c(mask,NA) )
+            mytype<-typeof( mycca$eig1[[1]] )
+            if ( mytype == "double" ) ccamat<-t(mycca$eig1) else ccamat<-imageListToMatrix( mycca$eig1, mask )
+            if ( mean( data.matrix(mycca$eig2) ) < 0 ) mycca$eig2<-mycca$eig2*(-1)
+            # find predictor most related to betablock1
+            bestv<-0
+            bestval<-0
+            for ( nv in 1:nvecs ) {
+              normval<-sum(abs(mycca$eig2[,nv]))
+              betablock<-sum((mycca$eig2[1:bl,nv]))
+              if ( abs(betablock/normval) > bestval ) {
+                bestval <- abs(betablock/normval)
+                bestv<-nv
+              }
+            }
+            p1<-( data.matrix(submat) %*% t(ccamat) )[,bestv]
+            p2<-( data.matrix(locdes)  %*% data.matrix(mycca$eig2) )[,bestv]
+            eps<-1.e-4
+            ww<-( abs(p1) >= eps & abs(p2) >= eps )
+            locor<-cor.test( p1[ww], p2[ww] )$est
+            plot( p1[ww], p2[ww] )
+            print(paste("best",bestval,bestv,'cor',locor))
+            myhrf2<-as.numeric(mycca$eig2[1:bl,bestv])
+            if ( (myhrf2[1] > myhrf2[bl/2] ) &  (myhrf2[bl] > myhrf2[bl/2] ) ) myhrf2<-myhrf2*(-1)
+            myhrf<-myhrf2
+#            myhrf<-data.frame(stl(ts(myhrf2, frequency = 4),"per")$time.series)$trend
+            eventbetas[ct,]<-ccamat[bestv,]/max(abs(ccamat[bestv,]))
+            temp<-(as.numeric(eventbetas[ct,]))
           } else { # cca
             locdes<-data.matrix(glmdf)
-            mycca<-sparseDecom2( inmatrix=list(  data.matrix(submat) , locdes  ),
+            ccamat<-residuals( lm( data.matrix(submat) ~ p ) )
+            mycca<-sparseDecom2( inmatrix=list(  data.matrix(ccamat) , twoeventmat  ),
                                 sparseness=sparseness, nvecs=nvecs, its=its, cthresh=c(bestvoxnum,0),
                                 uselong=0, smooth=0, mycoption=mycoption, inmask=c(mask,NA) )
 #            locdes[,1:bl]<-locdes[sample(1:nrow(submat)),1:bl] 
@@ -73,14 +122,15 @@ for ( runs in allruns )
             bestval<-0
             for ( nv in 1:nvecs ) {
               normval<-sum(abs(mycca$eig2[,nv]))
-              betablock<-sum(abs(mycca$eig2[1:bl,nv]))
-              if ( (betablock/normval) > bestval ) {
-                bestval <- (betablock/normval)
+              betablock<-sum((mycca$eig2[1:bl,nv]))
+              if ( abs(betablock/normval) > bestval ) {
+                bestval <- abs(betablock/normval)
                 bestv<-nv
               }
             }
+#            bestv<-1
             p1<-( data.matrix(submat) %*% t(ccamat) )[,bestv]
-            p2<-( data.matrix(glmdf)  %*% data.matrix(mycca$eig2) )[,bestv]
+            p2<-( data.matrix(twoeventmat)  %*% data.matrix(mycca$eig2) )[,bestv]
             eps<-1.e-4
             ww<-( abs(p1) >= eps & abs(p2) >= eps )
             locor<-cor.test( p1[ww], p2[ww] )$est

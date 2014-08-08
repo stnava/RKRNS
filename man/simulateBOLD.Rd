@@ -10,7 +10,7 @@
   the basic example produces a noisy data matrix and design matrix. 
   ... see args for some of the options and reasonable defaults.
 }
-\example{
+\examples{
 # get example image
 fn<-paste(path.package("RKRNS"),"/extdata/111157_mocoref_masked.nii.gz",sep="") 
 eximg<-antsImageRead(fn,3)
@@ -24,6 +24,8 @@ dd<-glmDenoiseR( mat, bb$desmat, crossvalidationgroups=2 , maxnoisepreds=0,
 plot(ts(dd$hrf))
 glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
 glmdf<-data.frame( dd$hrfdesignmat, glmdfnuis )
+glmdf <- Filter(function(x)!all(is.na(x)), glmdf)
+glmdf <- Filter(function(x)!all(var(x)==0), glmdf)
 mylm<-lm(  data.matrix(mat) ~ . , data=glmdf )
 mylm<-bigLMStats( mylm , 1.e-4 )
 print(rownames(mylm$beta.t))
@@ -33,4 +35,9 @@ vizimg<-antsImageClone(mask)
 vizimg[mask==1]<-mylm$beta.t[3,]
 plotANTsImage( eximg, functional=list(vizimg),
    slices='1x60x1', threshold="3x11", color='red')
+# now some event-wise stuff
+mysp<-c( -0.01, -0.9 )
+btsc<-bold2betasCCA( data.matrix(mat)  , bb$desmat, rep(1,nrow(mat)),
+     bl=25, baseshift=5, sparseness=mysp, bestvoxnum=10, mask=mask, 
+     polydegree=20, mycoption=1, its=12, uselm=T )
 }

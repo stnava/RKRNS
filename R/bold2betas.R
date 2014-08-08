@@ -22,7 +22,7 @@ for ( runs in allruns )
   kkt<-which( blockNumb == runs )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
-  dd<-glmDenoiseR( submat, denoisedes, whichbase=3:3, selectionthresh=selectionthresh,
+  dd<-glmDenoiseR( submat, denoisedes, whichbase=NA, selectionthresh=selectionthresh,
     crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfbasislength=bl,
     collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree ) 
   glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
