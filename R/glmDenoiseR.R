@@ -99,9 +99,9 @@ mylm<-lm( svdboldmat  ~  designmatrixext  )
 mylm<-bigLMStats( mylm, 0.01 )
 betas<-mylm$beta
 if (debug) print('meanmax')
-meanmax<-function( x ) {  return( mean(sort(x,decreasing=T)[1:50]) ) }
-betamax<-apply(abs(betas),FUN=meanmax,MARGIN=1)
-betamax<-betamax/sum(betamax)
+meanmax<-function( x ) {  return( mean(sort((x),decreasing=T)[1:50]) ) }
+betamax<-apply( (betas),FUN=meanmax,MARGIN=1)
+betamax<-betamax/sum(abs(betamax))
 if ( debug ) print(betamax)
 hrf<-basismat[,1]*0
 k<-1

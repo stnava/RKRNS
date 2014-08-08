@@ -1,4 +1,4 @@
-simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=1, lowfnoise=0.01 , physnoise=0.01, temporalnoise=0.01, option=c("basic","henson"), eximg=NA )
+simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.01 , physnoise=0.01, temporalnoise=0.01, option=c("basic","henson"), eximg=NA, mask=NA )
 {
   if ( option[1] == "henson" ) {
     # from http://www.jstatsoft.org/v44/i10/paper
@@ -59,7 +59,7 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=1, lowfnoise=0.01 
       region.1B.center, region.1C.center, region.2.center, region.3.center),
       radius = c(region.1A.radius, region.1B.radius, region.1C.radius,
       region.2.radius, region.3.radius), form = "sphere", fading = 0.01)
-    mask<-getMask(eximg,cleanup=TRUE)
+    if ( is.na(mask) ) mask<-getMask(eximg,cleanup=TRUE)
     sim.data <- simVOLfmri(design = design, image = spatial, base = as.array(eximg),
       SNR = 3.87, noise = "mixture", type = "rician", rho.temp = c(0.142,
       0.108, 0.084), rho.spat = 0.4, w = c(0.05, 0.1, 0.01,
