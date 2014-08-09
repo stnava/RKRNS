@@ -52,11 +52,11 @@ runs<-bb$desmat$Run; runs[]<-1
 ### cca betas
 btsc<-bold2betasCCA( data.matrix(mat)  , bb$desmat[,1:4], blockNumb=runs,
      bl=15, baseshift=0, sparseness=mysp, bestvoxnum=50, mask=mask, 
-     polydegree=2, mycoption=0, its=12, uselm=2 )
+     polydegree=2, mycoption=0, its=12, uselm=1 )
 zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
 inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
-ff<-which( abs(zze) > 0.5 )
+ff<-which( abs(zze) > 0.35 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)

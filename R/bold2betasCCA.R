@@ -1,9 +1,17 @@
 bold2betasCCA <- function( boldmatrix, designmatrix, blockNumb, bl=12, baseshift=5, mask=NA, sparseness=c(0,0), multievents=FALSE, polydegree=10, bestvoxnum=50, uselm=1 , nvecs=5, whichcols=NA,
   mycoption=1, its=10 )
 {
-    # first use FIR and lm to estimate hrf and betas for polynomials and stimuli
-    # second estimate noise regressors from the voxels that relate highly to the poly regressors
-    # third estimate a new hrf from CCA variables along with voxels/responses
+# first use FIR and lm to estimate hrf and betas for polynomials and stimuli
+# second estimate noise regressors from the voxels that relate highly to the poly regressors
+# third estimate a new hrf from CCA variables along with voxels/responses
+if ( uselm > 0 )
+  {
+  btsc<-bold2betas( boldmatrix=data.matrix(blockNumb) ,
+                    designmatrix=designmatrix, blockNumb=blockNumb,
+                    maxnoisepreds=1:6, bl=bl, polydegree=polydegree,
+                    selectionthresh=0.2 )
+  }
+      
 par(mfrow=c(1,2))
 rct<-1
 if ( all(is.na( whichcols )) ) whichcols<-1:ncol(designmatrix)
