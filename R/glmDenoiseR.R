@@ -95,22 +95,37 @@ if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
 rawboldmat<-data.matrix(boldmatrix)
 svdboldmat<-residuals(lm(rawboldmat~p))
 if (debug) print('lm')
-mylm<-lm( svdboldmat  ~  designmatrixext  )
+fir<-finiteImpuleResponseDesignMatrix( designmatrix, n=hrfbasislength, baseshift=0 )
+mylm<-lm( svdboldmat  ~  designmatrixext )
 mylm<-bigLMStats( mylm, 0.01 )
-betas<-mylm$beta
-if (debug) print('meanmax')
-meanmax<-function( x ) {  return( mean(sort((x),decreasing=T)[1:50]) ) }
-betamax<-apply( (betas),FUN=meanmax,MARGIN=1)
-betamax<-betamax/sum(abs(betamax))
-if ( debug ) print(betamax)
-hrf<-basismat[,1]*0
-k<-1
-for ( i in 1:length(betamax) )
-  {
-  if ( k > ncol(basismat) ) k<-1
-  hrf<-hrf+basismat[, k ]*betamax[i]
-  k<-k+1
-  }
+bl<-hrfbasislength
+if ( !all(is.na(whichbase)) ) { # old way
+  betas<-mylm$beta.t[1:bl,]
+  if (debug) print('meanmax')
+  meanmax<-function( x ) {  return( mean(sort((x),decreasing=T)[1:50]) ) }
+  betamax<-apply( (betas),FUN=meanmax,MARGIN=1)
+  betamax<-betamax/sum(abs(betamax))
+  if ( debug ) print(betamax)
+  hrf<-basismat[,1]*0
+  k<-1
+  for ( i in 1:length(betamax) )
+    {
+    if ( k > ncol(basismat) ) k<-1
+    hrf<-hrf+basismat[, k ]*betamax[i]
+    k<-k+1
+    }
+} else { # new way below
+  fir<-finiteImpuleResponseDesignMatrix( designmatrix, n=hrfbasislength, baseshift=0 )
+  mylm<-lm( rawboldmat  ~  fir + p )
+  mylm<-bigLMStats( mylm, 0.01 )
+  betablock<-mylm$beta.t[1:bl,]
+  temp<-apply( (betablock) , FUN=sum, MARGIN=2)
+  tempord<-sort(temp,decreasing=TRUE)
+  bestvoxnum<-100
+  bestvoxels<-which( temp > tempord[bestvoxnum]  )
+  hrf<-rowSums( (betablock[,bestvoxels] ) )
+  if ( (hrf[1] > hrf[bl/2] ) &  (hrf[bl] > hrf[bl/2] ) ) hrf<-hrf*(-1)
+}
 hrf<-hrf/max(hrf)
 if ( debug ) plot( ts( hrf ) )
 ################### now redo some work w/new hrf

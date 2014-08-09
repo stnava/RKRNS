@@ -41,39 +41,27 @@ Avants BB
 }
 
 \examples{
-
-#  bsim<-simulateBOLD(signalscale=2)
-  bsim<-simulateBOLD(ntime=500,nstim=5,signalscale=2)
-  imat<-bsim$simbold
-  dmats<-bsim$desmat
-  btsc<-bold2betasCCA( imat , dmats, rep(1,nrow(dmats)), bl=15, baseshift=0, 
-    sparseness=c(-1,-1), bestvoxnum=50, uselm=T, polydegree=1 ) 
-  plot(ts(colMeans(btsc$eventbetas[,1:1000])))
-
-
-
-
- subaal<-antsImageRead("subaal.nii.gz",3)
- mysp<-c(-0.01,0.9) 
- samp1<-1:1000
- ee1<-bold2betasCCA( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=12, baseshift=5, sparseness=mysp, bestvoxnum=50, mask=subaal ) 
-
-mysp<-c(-0.02,-0.9) 
-whichcols<-grep("coffe",colnames(dmats))
-samp1<-1000:11000
-ee1<-bold2betasCCA( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=12, baseshift=4, sparseness=mysp, bestvoxnum=10, mask=subaal, polydegree=4, whichcols=whichcols ) 
-
-# example of what you might do for decoding
-  ee2<-bold2betasCCA( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=12, baseshift=4, sparseness=mysp, bestvoxnum=10, mask=subaal, polydegree=8, whichcols=whichcols ) 
-  eanat<-sparseDecom( data.matrix(ee2$eventbetas), nvecs=10, sparseness=-0.01, mycoption=1 )
-  rownames(eanat$projections)<-rownames(ee2$eventbetas)
-  pheatmap(cor(t(eanat$projections)))
-  classes<-rep("",nrow(eanat$projections))
-  for ( i in 1:nrow(eanat$projections)) classes[i]<-strsplit(rownames(eanat$projections)[i],"[.][.]")[[1]][1]
-  classes<-as.factor(classes)
-  inds<-sample(1:nrow(ee2$eventbetas))[1:8]
-  mydf<-data.frame( lab=classes, p=(data.matrix(ee2$eventbetas)) %*% data.matrix(eanat$eigenanatomyimages) )
-  mdl<-svm(lab~., mydf[inds,] )
-  print( predict( mdl, newdata=mydf[-inds,]) )
-
+# get example image
+fn<-paste(path.package("RKRNS"),"/extdata/111157_mocoref_masked.nii.gz",sep="") 
+eximg<-antsImageRead(fn,3)
+fn<-paste(path.package("RKRNS"),"/extdata/subaal.nii.gz",sep="") 
+mask<-antsImageRead(fn,3)
+bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
+mat<-timeseries2matrix( bb$simbold, bb$mask )
+runs<-bb$desmat$Run; runs[]<-1
+### cca betas
+btsc<-bold2betasCCA( data.matrix(mat)  , bb$desmat[,1:4], blockNumb=runs,
+     bl=15, baseshift=0, sparseness=mysp, bestvoxnum=50, mask=mask, 
+     polydegree=2, mycoption=0, its=12, uselm=2 )
+zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
+zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
+inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
+ff<-which( abs(zze) > 0.5 )
+mylabs<-rep("",nrow(btsc$eventbetas))
+for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
+mylabs<-as.factor(mylabs)
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff] )
+mdl<-svm( lab ~., data=mydf[inds,])
+err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
+print(paste("NPredVox",length(ff), "Correct",err*100))
 }

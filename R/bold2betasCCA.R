@@ -1,6 +1,9 @@
-bold2betasCCA <- function( boldmatrix, designmatrix, blockNumb, bl=12, baseshift=5, mask=NA, sparseness=c(0,0), multievents=FALSE, polydegree=10, bestvoxnum=50, uselm=FALSE , nvecs=5, whichcols=NA,
+bold2betasCCA <- function( boldmatrix, designmatrix, blockNumb, bl=12, baseshift=5, mask=NA, sparseness=c(0,0), multievents=FALSE, polydegree=10, bestvoxnum=50, uselm=1 , nvecs=5, whichcols=NA,
   mycoption=1, its=10 )
 {
+    # first use FIR and lm to estimate hrf and betas for polynomials and stimuli
+    # second estimate noise regressors from the voxels that relate highly to the poly regressors
+    # third estimate a new hrf from CCA variables along with voxels/responses
 par(mfrow=c(1,2))
 rct<-1
 if ( all(is.na( whichcols )) ) whichcols<-1:ncol(designmatrix)
@@ -45,7 +48,7 @@ for ( runs in allruns )
           twoeventmat<-finiteImpuleResponseDesignMatrix( twoeventmat, n=bl, baseshift=baseshift )
           p<-stats::poly( 1:nrow(twoeventmat) ,degree=polydegree )
           glmdf<-data.frame( twoeventmat , p=p )
-          if ( uselm ) {
+          if ( uselm > 0 ) {
             mylm<-lm(  data.matrix(submat) ~ . , data=glmdf )
             mylm<-bigLMStats( mylm , 0.001 )
             betablock<-mylm$beta.t[1:bl,]
@@ -57,6 +60,7 @@ for ( runs in allruns )
             myhrf<-rowSums( (betablock[,bestvoxels] ) )
             if ( (myhrf[1] > myhrf[bl/2] ) &  (myhrf[bl] > myhrf[bl/2] ) ) myhrf<-myhrf*(-1)
             myhrf<-myhrf/max(myhrf)
+            if ( uselm == 1 ) {
             doconvolution<-FALSE
             if ( doconvolution ) 
             for ( tk in 1:bl ) twoeventmat[,tk]<-conv( twoeventmat[,tk], myhrf )[1:length(twoeventmat[,tk])]
@@ -103,6 +107,7 @@ for ( runs in allruns )
             myhrf<-myhrf2
 #            myhrf<-data.frame(stl(ts(myhrf2, frequency = 4),"per")$time.series)$trend
             eventbetas[ct,]<-ccamat[bestv,]/max(abs(ccamat[bestv,]))
+            }
             temp<-(as.numeric(eventbetas[ct,]))
           } else { # cca
             locdes<-data.matrix(glmdf)

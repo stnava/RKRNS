@@ -43,67 +43,26 @@ Avants BB
 }
 
 \examples{
-#  betas<-bold2betas( imat, dmats, dmat$blockNumb, maxnoisepreds=c(12,14,18) )
-# example of what you might do for decoding
-# for real data
-#  ee2<-bold2betas( data.matrix(imat[samp1,]) , dmats[samp1,], dmat$blockNumb[samp1], bl=30, polydegree=8, whichcols=whichcols ) 
-# but here make some simulated data
-  bsim<-simulateBOLD()
-  simbold<-bsim$simbold
-  desmat<-bsim$desmat
-  ee2<-bold2betas( simbold , desmat, rep(1,nrow(simbold)), bl=20, polydegree=1, maxnoisepreds=1:10 ) 
-  ee2$eventbe[nrow(ee2$eventbe),]<-colMeans(  ee2$eventbe[1:(nrow(ee2$eventbe)-1),] )	   	   
-  plot(ts(colMeans(ee2$eventbe[,1:2000])))
-  classes<-rep("",nrow(ee2$eventbetas))
-  for ( i in 1:nrow(ee2$eventbetas)) classes[i]<-strsplit(rownames(ee2$eventbetas)[i],"[.]")[[1]][1]
-  classes<-as.factor(classes)
-
-  subvox<-( abs(colMeans(ee2$eventbetas)) > mean(abs(colMeans(ee2$eventbetas)))*2 )
-  submat<-data.matrix(ee2$eventbetas[,])
-  mysvd<-svd(submat,nu=4)$u 
-  eanat<-sparseDecom( submat, nvecs=30, its=1, sparseness=-0.01, mycoption=0, cthresh=0) # 0, z=-0.5 )
-  projmat<-data.matrix( eanat$eigenanatomyimages )
-  rownames(eanat$projections)<-rownames(ee2$eventbetas)
-  inds<-sample(1:nrow(ee2$eventbetas))[1:round(length(classes)*3/4)]
-#  mydf<-data.frame( lab=classes, p=submat[,abs(projmat[,1])>0|abs(projmat[,2])>0|abs(projmat[,3])>0] )
-#  mydf<-data.frame( lab=classes, p=submat %*% projmat )
-  mydf<-data.frame( lab=classes, p=mysvd )
-  errrr<-0; nt<-20
-  for ( test in 1:nt ) {
-    inds<-sample(1:nrow(ee2$eventbetas))[1:round(length(classes)*3/4)]
-    mdl<-randomForest(lab~., mydf[inds,] )
-    predres<-predict( mdl, newdata=mydf[-inds,]) 
-    names(predres)<-paste(mydf$lab[-inds],'true')
-    err<-sum(predres==mydf$lab[-inds])/length(predres)
-    errrr<-errrr+err/nt
-  }
-  print(errrr)
-# now cca 
-
-  inds<-sample(1:nrow(betmat))[1:round(length(classes)*7/10)]
-
-  betmat<-t(scale( t(data.matrix(ee2$eventbetas) ) ))
-  submat<-t(scale(t(submat)))
-  classmat<-data.matrix(cbind(rep(0,nrow(submat)),rep(0,nrow(submat)),rep(0,nrow(submat))))
-  for (k in 1:length(levels(classes))) classmat[,k]<-classes[inds]==levels(classes[inds])[k]
-  eanat<-sparseDecom2( list(submat,classmat), nvecs=5, its=20, sparseness=c( -0.01, -0.1 ), mycoption=0 ) 
-  projmat<-(data.matrix( eanat$eig1 ))
-  whvox <- abs(projmat[,1])>0 | abs(projmat[,2])>0  | abs(projmat[,3])>0| abs(projmat[,4])>0
-  whvox <- abs(projmat[,1])>0  # | abs(projmat[,2])>0 # | abs(projmat[,3])>0
-  mydfcca<-data.frame( lab=classes, p=betmat[,whvox] )
-  mydfcca<-data.frame( lab=classes, p=betmat %*% projmat )
-  mdlcca<-svm(lab~., mydfcca[inds,] )
-  predres<-predict( mdlcca, newdata=mydfcca[-inds,]) 
-  names(predres)<-paste(mydfcca$lab[-inds],'true')
-  err1<-sum(predres==mydfcca$lab[-inds])/length(predres)
-  print(err1)
-
-# compare to a sort of ground truth 
-  mydf<-data.frame( lab=classes, p=svd(ee2$eventbetas[,c(100:600)],nu=10 )$u  )
-  mdl<-svm(lab~., mydf[inds,] )
-  predres<-predict( mdl, newdata=mydf[-inds,]) 
-  names(predres)<-paste(mydf$lab[-inds],'true')
-  err2<-sum(predres==mydf$lab[-inds])/length(predres)
-  print(paste(err1,err2))
-
+# get example image
+fn<-paste(path.package("RKRNS"),"/extdata/111157_mocoref_masked.nii.gz",sep="") 
+eximg<-antsImageRead(fn,3)
+fn<-paste(path.package("RKRNS"),"/extdata/subaal.nii.gz",sep="") 
+mask<-antsImageRead(fn,3)
+bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
+mat<-timeseries2matrix( bb$simbold, bb$mask )
+runs<-bb$desmat$Run; runs[]<-1
+btsc<-bold2betas( boldmatrix=data.matrix(mat) , designmatrix=bb$desmat[,1:4], 
+     blockNumb=runs, maxnoisepreds=0,
+     bl=12, polydegree=2, selectionthresh=0.2 )
+zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
+zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
+inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
+ff<-which( abs(zze) > 0.5 )
+mylabs<-rep("",nrow(btsc$eventbetas))
+for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
+mylabs<-as.factor(mylabs)
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff] )
+mdl<-svm( lab ~., data=mydf[inds,])
+err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
+print(paste("NPredVox",length(ff),"Correct",err*100))
 }

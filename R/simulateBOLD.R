@@ -25,11 +25,13 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
     onsets.F2 <- f2on * TR
 
     designmat<-data.frame( N1=rep(0,nscan), N2=rep(0,nscan),
-                           F1=rep(0,nscan), F2=rep(0,nscan) )
-    designmat$N1[ round(n1on) ]<-1
-    designmat$N2[ round(n2on) ]<-1
+                           F1=rep(0,nscan), F2=rep(0,nscan),
+                           Run=rep(1,nscan) )
+    designmat$N1[ round(n1on)  ]<-1
+    designmat$N2[ round(n2on)  ]<-1
     designmat$F1[ round(f1on) ]<-1
     designmat$F2[ round(f2on) ]<-1
+    designmat$Run[ (round(nscan/2)+1):nscan ]<-2
     
     region.1A.center <- c(13, 13, 11)
     region.1A.radius <- 4

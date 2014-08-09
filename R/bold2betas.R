@@ -24,7 +24,7 @@ for ( runs in allruns )
   submat<-boldmatrix[kkt,]
   dd<-glmDenoiseR( submat, denoisedes, whichbase=NA, selectionthresh=selectionthresh,
     crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfbasislength=bl,
-    collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree ) 
+    collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree )
   glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
   glmdf<-data.frame( dd$hrfdesignmat, glmdfnuis )
   nevents<-sum(denoisedes[,whichcols])
@@ -62,5 +62,5 @@ for ( runs in allruns )
   } # nevents > 0 
   rct<-rct+1
   }# runs
-return(list(eventbetas=eventbetas,eventhrfs=eventhrfs,eventrows=eventrows))
+return(list(eventbetas=eventbetas,eventhrfs=eventhrfs,eventrows=eventrows,hrf=dd$hrf))
 }
