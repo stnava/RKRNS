@@ -51,18 +51,20 @@ mask<-antsImageRead(fn,3)
 bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
 mat<-timeseries2matrix( bb$simbold, bb$mask )
 runs<-bb$desmat$Run; 
-btsc<-bold2betas( boldmatrix=data.matrix(mat) , designmatrix=bb$desmat[,1:4], 
-     blockNumb=runs, maxnoisepreds=0,
-     bl=12, polydegree=4, selectionthresh=0.2 )
+btsc<-bold2betas( boldmatrix=data.matrix(mat), 
+      designmatrix=bb$desmat[,1:4], 
+      blockNumb=runs, maxnoisepreds=0,
+      bl=12, polydegree=4, selectionthresh=0.2 )
 plot(ts(btsc$hrf))
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)
+# sample for training
+inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
 # basic voxel selection & classification
 zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
-inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
-th<-0.6
+th<-0.5
 ff<-which( abs(zze) > th )
 mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff], runs=runs[btsc$eventrows] )
 mdl<-svm( lab ~., data=mydf[inds,])
@@ -74,9 +76,9 @@ ccamats<-list( data.matrix(btsc$eventbetas)[inds,] ,
 ##
 ## this particular cca configuration selects orthogonal information
 ## with initialization similar to that above.  however, the voxel
-## information is regularized and clustered first.  it is also 
-## associated with particular "contrasts" loosely speaking.  
-## the result is 8 predictors associated with particular anatomical
+## information is regularized and clustered first. each component 
+## is also associated with particular "contrasts" (loosely speaking).  
+## the result is 8 predictors associated with connected anatomical
 ## regions where each predictor is an averaged beta map.
 ##
 zze1<-zze2<-zze3<-zze4<-zze
@@ -96,7 +98,7 @@ mydf<-data.frame( lab=mylabs,
   vox=data.matrix(btsc$eventbetas) %*% t(ccaout), runs=runs[btsc$eventrows] )
 mdl<-svm( lab ~., data=mydf[inds,])
 err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
-print(paste("NPredVox",length(ff),"Correct",err*100))
+print(paste("CCA:NPredVox",length(ff),"Correct",err*100))
 vox<-antsImageClone(mask)
 vox[mask==1]<-colSums(abs(ccaout))
 antsImageWrite(vox,'temp.nii.gz')

@@ -1,5 +1,5 @@
 ---
-title: "Introduction to decoding with the RKRNS package"
+title: "BOLD decoding with the RKRNS package"
 bibliography: REFERENCES.bib
 output:
   pdf_document:
@@ -13,20 +13,114 @@ output:
     toc: true
     theme: readable
 ---
-<!--
-%\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Intro to RKRNS}
-  revealjs_presentation:
-    theme: sky
-    transition: fade
-    highlight: pygments
-    center: true
-    incremental: true
--->
 
 # Introduction
 
-# BOLD preprocessing
+Decoding from blood oxygenation-level dependent (BOLD) magnetic resonance imaging (MRI) data 
+remains an esoteric art.  Relatively few public datasets exist and these are rarely accompanied 
+by accessible and validated, general-purpose decoding methodology.  This package seeks to 
+document some relatively standard approaches to processing BOLD data and follow with a few 
+novel extensions.  These are implemented via *R*, its packages and *ANTsR*.
+
+
+## RKRNS Algorithms 
+
+This package employs several algorithms for different aspects of BOLD processing
+
+- hemodynamic response function estimation: based on GLMdenoise (@Kay2013) and conversations 
+  with Kendrick Kay;
+
+- registration and utilities for image processing: ANTs (@Tustison2014) and ANTsR (@ANTsR);
+
+- core image processing and I/O: ITK (@Avants2014a);
+
+- dimensionality reduction: Eigenanatomy (@Dhillon2014) and SCCAN (@Avants2014);
+
+- temporal filtering via *R* packages.
+
+In combination, these tools enable one to go from near-raw medical imaging data 
+to a BOLD decoding experiment.  
+
+## Data organization expected by RKRNS
+
+We make several assumptions about data organization 
+with this package.
+
+- the stimulus matrix matches the bold matrix 
+
+- the ...
+
+XXX 
+
+# Decoding in simulated data
+
+## Example BOLD Data
+
+We adapted methods from the *neuRosim* (@neuRosim) package in order to simulate 
+event-related BOLD data.  This data involves a 4-class decoding task wherein one 
+seeks to identify brain responses to novel faces, famous faces and their first 
+and second presentations to the subject.  We distribute the underlying anatomical 
+BOLD data along with a cortical mask within the package.  The data may be 
+loaded by:
+```{r simdata}
+fn<-paste(path.package("RKRNS"),"/extdata/111157_mocoref_masked.nii.gz",sep="") 
+eximg<-antsImageRead(fn,3)
+fn<-paste(path.package("RKRNS"),"/extdata/subaal.nii.gz",sep="") 
+mask<-antsImageRead(fn,3)
+```
+which gives you both the cortical `mask` and the example BOLD signal 
+image `eximg`.  ANTsR also provides AAL label (@Tzourio-Mazoyer2002) names via:
+```{r aal}
+data(aal,package='ANTsR')
+labs<-1:90
+```
+with cortical labs defined by `labs`.
+
+## Run the simulation
+We generate simulated bold data as in neuRosim.  
+The `simulateBOLD` function results in a bold image 
+in the `antsImage` class.  We subsequently convert 
+this image to a $n\times p$ matrix where there are 
+$n$ time volumes and $p$ voxels in the mask.
+```{r simb}
+bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
+mat<-timeseries2matrix( bb$simbold, bb$mask )
+```
+Perform some diagnostic visualizations on the data.
+```{r simbviz}
+randvox<-sample(1:ncol(mat),4)
+plot(ts(mat[,randvox]))
+```
+
+## Frequency filtering
+Let's get rid of high frequency noise.
+```{r ffilt}
+# only filter high frequencies 1/(2*tr)
+filtmat<-filterfMRI4KRNS( data.matrix(mat), tr=1, NA, NA, trendfrequency=2, trendfrequency2=NA )
+plot(ts(filtmat[,randvox]))
+```
+We can eliminate low frequency contamination with polynomial regressors 
+and other denoising techniques at a later step.
+
+## Estimate $\beta$ values for each event
+We estimate a $\beta^i$ vector for each of $i \in 1 \cdots q$ events.
+This vector contains a scalar $\beta$ value for each voxel,
+i.e. $\beta_j^i$ where $j \in 1 \cdots p$.
+
+# Real data processing with RKRNS
+
+We recommend that you motion correct the data 
+before you use RKRNS tools.  This should be done 
+once and done well.  Good approaches exist in *ANTsR* 
+which yield both motion matrices and relevant summary 
+measurements such as FD and DVARS.  See `?antsPreprocessfMRI` 
+for a simplified utility function.  This function could be 
+used on each run of an experiment and the results stored 
+in organized fashion for later use. 
+
+## BOLD assembly 
+
+## BOLD preprocessing
 
 ## BOLD signal characteristics 
 
@@ -38,7 +132,10 @@ fundamental aspects of BOLD to guide our preprocessing choices:
 - The response has limited temporal extent ( < 25 seconds )
 
 ## Processing decisions
-
+```{r filtering}
+afilterlowfrequency<-4
+afilterhighfrequency<-20
+```
 Our processing therefore uses the following steps:
 
 1. Assemble the BOLD blocks to match the overall event-related design file 
@@ -109,5 +206,3 @@ We can use Brodmann or AAL label sets with the current data though others can ea
 The current parameters select brain regions related to heteromodal association and language.
 
 # References
-
-
