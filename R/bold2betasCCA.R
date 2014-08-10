@@ -11,8 +11,6 @@ if ( uselm > 0 )
                     maxnoisepreds=1:6, bl=bl, polydegree=polydegree,
                     selectionthresh=0.2 )
   }
-      
-par(mfrow=c(1,2))
 rct<-1
 if ( all(is.na( whichcols )) ) whichcols<-1:ncol(designmatrix)
 allruns<-unique( blockNumb )

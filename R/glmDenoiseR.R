@@ -100,10 +100,11 @@ mylm<-lm( svdboldmat  ~  designmatrixext )
 mylm<-bigLMStats( mylm, 0.01 )
 bl<-hrfbasislength
 if ( !all(is.na(whichbase)) ) { # old way
+  bl<-ncol(basismat)
   betas<-mylm$beta.t[1:bl,]
   if (debug) print('meanmax')
   meanmax<-function( x ) {  return( mean(sort((x),decreasing=T)[1:50]) ) }
-  betamax<-apply( (betas),FUN=meanmax,MARGIN=1)
+  betamax<-apply( abs(betas),FUN=meanmax,MARGIN=1)
   betamax<-betamax/sum(abs(betamax))
   if ( debug ) print(betamax)
   hrf<-basismat[,1]*0
@@ -125,6 +126,7 @@ if ( !all(is.na(whichbase)) ) { # old way
   bestvoxels<-which( temp > tempord[bestvoxnum]  )
   hrf<-rowSums( (betablock[,bestvoxels] ) )
   if ( (hrf[1] > hrf[bl/2] ) &  (hrf[bl] > hrf[bl/2] ) ) hrf<-hrf*(-1)
+#  hrf<-data.frame(stl(ts(hrf, frequency = 4),"per")$time.series)$trend
 }
 hrf<-hrf/max(hrf)
 if ( debug ) plot( ts( hrf ) )
