@@ -2,3 +2,5 @@
 library(RKRNS)
 RKRNSsrcdir<-"./"
 render( paste(RKRNSsrcdir,"vignettes/RKRNS.Rmd",sep='') ,'pdf_document')
+q()
+render( paste(RKRNSsrcdir,"vignettes/RKRNS2.Rmd",sep='') ,'pdf_document')

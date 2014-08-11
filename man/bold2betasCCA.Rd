@@ -48,20 +48,12 @@ fn<-paste(path.package("RKRNS"),"/extdata/subaal.nii.gz",sep="")
 mask<-antsImageRead(fn,3)
 bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
 mat<-timeseries2matrix( bb$simbold, bb$mask )
-runs<-bb$desmat$Run; runs[]<-1
+runs<-bb$desmat$Run; 
 ### cca betas
+mysp<-c( -0.01, -0.9 )
 btsc<-bold2betasCCA( data.matrix(mat)  , bb$desmat[,1:4], blockNumb=runs,
-     bl=15, baseshift=0, sparseness=mysp, bestvoxnum=50, mask=mask, 
-     polydegree=2, mycoption=0, its=12, uselm=1 )
-zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
-zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
-inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
-ff<-which( abs(zze) > 0.35 )
-mylabs<-rep("",nrow(btsc$eventbetas))
-for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
-mylabs<-as.factor(mylabs)
-mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff] )
-mdl<-svm( lab ~., data=mydf[inds,])
-err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
-print(paste("NPredVox",length(ff), "Correct",err*100))
+     bl=25, baseshift=0, sparseness=mysp, bestvoxnum=10, mask=mask, 
+     polydegree=1, mycoption=1, its=12, onlyhrf=FALSE )
+plot(ts(t(btsc$runhrfs)))
+# from here see the help for bold2betas
 }

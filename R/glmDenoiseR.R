@@ -1,4 +1,4 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, whichbase = NA, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, whichbase = NA, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA, baseshift=0 )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
@@ -53,13 +53,14 @@ mygamma <- function(x, a1 = 6.,   a2 = 12., b1 = 0.9, b2 = 0.99, cc = 0.35) {
     res
   }
 
-# start with a reasonable default set of bases 
-b1<-mygamma(c(1:hrfbasislength),  1,  5 ,0.9,0.9,0.05) 
-b2<-mygamma(c(1:hrfbasislength),  5, 10 ,0.9,0.9,0.05) 
-b3<-mygamma(c(1:hrfbasislength), 10, 15 ,0.9,0.9,0.05) 
-b4<-mygamma(c(1:hrfbasislength), 15, 20 ,0.9,0.9,0.05) 
-b5<-mygamma(c(1:hrfbasislength), 20, 25 ,0.9,0.9,0.05) 
-b6<-mygamma(c(1:hrfbasislength), 25, 30 ,0.9,0.9,0.05)
+# start with a reasonable default set of bases
+step<-round(hrfbasislength/6)
+b1<-mygamma(c(1:hrfbasislength),      1, step   ,0.9,0.9,0.05)
+b2<-mygamma(c(1:hrfbasislength), step*1, step*2 ,0.9,0.9,0.05) 
+b3<-mygamma(c(1:hrfbasislength), step*2, step*3 ,0.9,0.9,0.05)
+b4<-mygamma(c(1:hrfbasislength), step*3, step*4 ,0.9,0.9,0.05) 
+b5<-mygamma(c(1:hrfbasislength), step*4, step*5 ,0.9,0.9,0.05) 
+b6<-mygamma(c(1:hrfbasislength), step*5, step*6 ,0.9,0.9,0.05)
 basismat<-cbind( b2, b3, b4, b5, b6 )
 if ( ! all(is.na(whichbase)) ) basismat<-basismat[,whichbase[ whichbase <= ncol(basismat)]]
 basismat<-as.matrix( basismat )
@@ -104,7 +105,7 @@ if ( !all(is.na(whichbase)) ) { # old way
   betas<-mylm$beta.t[1:bl,]
   if (debug) print('meanmax')
   meanmax<-function( x ) {  return( mean(sort((x),decreasing=T)[1:50]) ) }
-  betamax<-apply( abs(betas),FUN=meanmax,MARGIN=1)
+  betamax<-apply( (betas),FUN=meanmax,MARGIN=1)
   betamax<-betamax/sum(abs(betamax))
   if ( debug ) print(betamax)
   hrf<-basismat[,1]*0
@@ -116,16 +117,31 @@ if ( !all(is.na(whichbase)) ) { # old way
     k<-k+1
     }
 } else { # new way below
-  fir<-finiteImpuleResponseDesignMatrix( designmatrix, n=hrfbasislength, baseshift=0 )
+  ldes<-matrix(rowMeans(designmatrix),ncol=1)
+  fir<-finiteImpuleResponseDesignMatrix( ldes,
+                         n=hrfbasislength, baseshift=0 )
+  print(dim(cbind(fir,p)))
+  print(dim(rawboldmat))
   mylm<-lm( rawboldmat  ~  fir + p )
   mylm<-bigLMStats( mylm, 0.01 )
-  betablock<-mylm$beta.t[1:bl,]
+  betablock<-mylm$beta.t[1:ncol(fir),]
+  sumbetablock<-betablock[1:hrfbasislength,]*0
+  j<-1
+  for ( i in 1:ncol(ldes) ) {
+    sumbetablock<-betablock[j:(j+hrfbasislength-1),]
+    j<-j+hrfbasislength
+  }
+  betablock<-sumbetablock
   temp<-apply( (betablock) , FUN=sum, MARGIN=2)
   tempord<-sort(temp,decreasing=TRUE)
   bestvoxnum<-100
   bestvoxels<-which( temp > tempord[bestvoxnum]  )
   hrf<-rowSums( (betablock[,bestvoxels] ) )
-  if ( (hrf[1] > hrf[bl/2] ) &  (hrf[bl] > hrf[bl/2] ) ) hrf<-hrf*(-1)
+  meanhrfval<-mean(hrf)
+  mxdf<-abs(max(hrf)-meanhrfval)
+  mndf<-abs(min(hrf)-meanhrfval)
+  if ( mndf > mxdf  ) hrf<-hrf*(-1)
+  if ( abs(min(hrf)) > max(hrf) ) hrf<-hrf*(-1)
 #  hrf<-data.frame(stl(ts(hrf, frequency = 4),"per")$time.series)$trend
 }
 hrf<-hrf/max(hrf)
@@ -188,6 +204,7 @@ if (max(R2summary)<0) scl<-1.05
 bestn<-maxnoisepreds[which( R2summary > scl*max(R2summary) )[1]]
 # glmdenoisedataframe<-data.frame(  hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p )
 # return( glmdenoisedataframe )
+hrf<-hrf/max(hrf)
 return(list( n=bestn, R2atBestN=R2summary[bestn], hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel, hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p ))
 }
 

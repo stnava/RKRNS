@@ -86,6 +86,9 @@ $n$ time volumes and $p$ voxels in the mask.
 bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
 mat<-timeseries2matrix( bb$simbold, bb$mask )
 ```
+The data frame containing the bold image also 
+contains the ... FIXME
+
 Perform some diagnostic visualizations on the data.
 ```{r simbviz}
 randvox<-sample(1:ncol(mat),4)
@@ -101,6 +104,15 @@ plot(ts(filtmat[,randvox]))
 ```
 We can eliminate low frequency contamination with polynomial regressors 
 and other denoising techniques at a later step.
+
+## Autoregression 
+Probably not good for decoding, but 
+we can also model autoregression coefficients.
+```{r arfilt}
+armat<-arCorrection( mat )
+print(armat$arcoefs)
+plot(ts(armat$outmat[,randvox]))
+```
 
 ## Estimate $\beta$ values for each event
 We estimate a $\beta^i$ vector for each of $i \in 1 \cdots q$ events.

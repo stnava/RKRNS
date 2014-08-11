@@ -1,5 +1,6 @@
-bold2betas <- function( boldmatrix, designmatrix, blockNumb, maxnoisepreds=2, polydegree=10, bl=50, crossvalidationgroups=4, selectionthresh=0.1, multievents=FALSE, whichcols=NA )
+bold2betas <- function( boldmatrix, designmatrixIn, blockNumb, maxnoisepreds=2, polydegree=10, bl=50, crossvalidationgroups=4, selectionthresh=0.1, multievents=FALSE, whichcols=NA, baseshift=0 )
 {
+designmatrix<-ashift( designmatrixIn, c(baseshift,0) )
 allruns<-unique( blockNumb )
 if ( all(is.na( whichcols )) ) whichcols<-1:ncol(designmatrix)
 fulleventbetas<-matrix(c(NA,NA),nrow=2)
@@ -12,6 +13,7 @@ for ( runs in allruns )
   }
 designnames<-colnames(designmatrix)[whichcols]
 print(designnames)
+runhrfs<-data.frame(matrix( rep(0,length(allruns)*bl), ncol=bl))
 eventhrfs<-data.frame(matrix( rep(0,neventstot*bl), ncol=bl))
 eventrows<-rep(0,neventstot)
 eventbetas<-data.frame(matrix( rep(0,neventstot*ncol(boldmatrix)), ncol=ncol(boldmatrix)))
@@ -22,13 +24,16 @@ for ( runs in allruns )
   kkt<-which( blockNumb == runs )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
+  oneeventmat<-matrix( rowMeans(denoisedes), ncol=1 )
+  print("begin glm denoise")
   dd<-glmDenoiseR( submat, denoisedes, whichbase=NA, selectionthresh=selectionthresh,
     crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfbasislength=bl,
-    collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree )
+    collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )
+  plot( ts(dd$hrf) )
   glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
   glmdf<-data.frame( dd$hrfdesignmat, glmdfnuis )
   nevents<-sum(denoisedes[,whichcols])
-  if ( nevents > 0 ) {
+  if ( nevents > 0 & TRUE ) {
   for ( row in 1:nrow(denoisedes) ) {
       if ( sum( denoisedes[row,whichcols] ) > 0 )
           {
@@ -44,7 +49,8 @@ for ( runs in allruns )
             denoisematmod1[rows,col]<-1
             denoisematmod2[-rows,col]<-0
           }
-          twoeventmat<-cbind( denoisematmod1[,col], rowSums(denoisematmod2))
+          twoeventmat<-cbind( denoisematmod1[,col],
+                              rowSums(denoisematmod2) )
           twoeventmat[,1]<-conv(twoeventmat[,1],dd$hrf)[1:nrow(twoeventmat)]
           twoeventmat[,2]<-conv(twoeventmat[,2],dd$hrf)[1:nrow(twoeventmat)]
           glmdf<-data.frame( twoeventmat, glmdfnuis )
@@ -60,7 +66,9 @@ for ( runs in allruns )
       }  
     }
   } # nevents > 0 
+  runhrfs[rct,] <- dd$hrf
   rct<-rct+1
   }# runs
-return(list(eventbetas=eventbetas,eventhrfs=eventhrfs,eventrows=eventrows,hrf=dd$hrf))
+return(list(runhrfs=runhrfs,eventbetas=eventbetas,eventhrfs=eventhrfs,
+            eventrows=eventrows,hrf=colMeans(runhrfs)))
 }

@@ -54,7 +54,7 @@ runs<-bb$desmat$Run;
 btsc<-bold2betas( boldmatrix=data.matrix(mat), 
       designmatrix=bb$desmat[,1:4], 
       blockNumb=runs, maxnoisepreds=0,
-      bl=12, polydegree=4, selectionthresh=0.2 )
+      bl=16, polydegree=4, selectionthresh=0.2 )
 plot(ts(btsc$hrf))
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
@@ -64,9 +64,9 @@ inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
 # basic voxel selection & classification
 zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
-th<-0.5
+th<-0.25
 ff<-which( abs(zze) > th )
-mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff], runs=runs[btsc$eventrows] )
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff]) #, runs=runs[btsc$eventrows] )
 mdl<-svm( lab ~., data=mydf[inds,])
 err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
 print(paste("NPredVox",length(ff),"Correct",err*100))

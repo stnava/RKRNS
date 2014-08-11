@@ -357,6 +357,92 @@ adafafa
     betas<-as.matrix( antsImageRead( bfn, 2 ) )
     }
 adaadf
+mysp<-c( -0.005, -0.9 )
+selcols<-which( colMeans(dmats[10:500,]) >  0 )
+j<-1:1000
+btsc<-bold2betasCCA( data.matrix(imat[j,])  , dmats[j,selcols], 
+     blockNumb=dmat$blockNumb[j], bl=20, baseshift=8, 
+     sparseness=mysp, bestvoxnum=20, mask=subaal, 
+     polydegree=1, mycoption=1, its=12, onlyhrf=T )
+
+######################################################
+j<-which( dmat$blockNumb>0 )
+selcols<-which( colMeans(dmats[j,]) >  0 )
+btsc<-bold2betas( boldmatrix=data.matrix(imat[j,]), 
+      designmatrix=dmats[j,selcols], baseshift=4,
+      blockNumb=dmat$blockNumb[j], maxnoisepreds=10,
+      bl=20, polydegree=10, selectionthresh=0.1 )
+mylabs<-rep("",nrow(btsc$eventbetas))
+for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-strsplit( rownames(btsc$eventbetas)[i],'[.][.]')[[1]][1]
+mylabs<-as.factor(mylabs)
+
+nc<-length(unique(mylabs))
+meanbetas<-matrix( rep(0,nc*ncol(btsc$eventbetas)) ,nrow=nc)
+lvs<-levels(mylabs)
+for ( i in 1:nc ) {
+  print(i)
+  meanbetas[i,]<-colMeans(btsc$eventbetas[mylabs==lvs[i],])
+}
+rownames(meanbetas)<-as.character(lvs)
+pdf("meanbetascorr.pdf",width=32,height=32)
+pheatmap(cor(t(meanbetas)))
+dev.off()
+
+eanat<-sparseDecom(data.matrix(meanbetas),inmask=subaal,
+  nvecs=20,sparseness=-0.01,cthresh=10, its=2)
+rownames(eanat$projections)<-rownames(meanbetas)
+pdf("temper.pdf",width=32,height=32)
+pheatmap(cor(t(eanat$projections)))
+dev.off()
+
+
+# sample for training
+# basic voxel selection & classification
+subtest<-grep('coffee',as.character(mylabs))
+runfact<-as.factor(dmat$blockNumb[j][btsc$eventrows[subtest]])
+inds<-sample(1:length(subtest),size=round(length(subtest)*4./5.))
+subbetas<-btsc$eventbetas[subtest,]
+rmean<-rowMeans(subbetas)
+subbetas<-residuals(lm(data.matrix(subbetas)~0+rmean))
+zz<-apply(subbetas,FUN=mean,MARGIN=2)
+zze<-zz/apply(subbetas,FUN=sd,MARGIN=2)
+th<-0.5
+ff<-which( abs(zze) > th )
+mydf<-data.frame( lab=droplevels(mylabs[subtest]),  
+  vox=data.matrix(subbetas)[,ff])
+mdl<-svm( lab ~., data=mydf[inds,])
+err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
+print(paste("NPredVox",length(ff),"Correct",err*100))
+
+nc<-length(unique(mydf$lab))
+locdes<-matrix( rep(0,nrow(mydf)*nc),ncol=nc)
+for ( k in 1:nc ) locdes[mydf$lab==(levels(mydf$lab)[k]),k]<-1
+ccamats<-list( data.matrix(subbetas)[inds,] ,locdes[inds,] )
+mycca<-sparseDecom2( inmatrix=ccamats,
+  sparseness=c( -0.02, -0.9 ), nvecs=6, its=10, cthresh=c(5,0),
+  uselong=0, smooth=0.0, mycoption=2, inmask=c(mask,NA) )
+ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, mask )))
+ff<-which(colSums(abs(ccaout))>1.e-4)
+mydf2<-data.frame( lab=mydf$lab,  
+  vox=data.matrix(subbetas) %*% t(ccaout) )
+mdl<-svm( lab ~., data=mydf2[inds,])
+err<-sum(mydf2[-inds,]$lab==predict( mdl, newdata=mydf2[-inds,]))/nrow(mydf2[-inds,])
+print(paste("CCA:NPredVox",length(ff),"Correct",err*100))
+
+
+
+eanat<-sparseDecom(data.matrix(btsc$eventbetas),inmask=subaal,
+  nvecs=10,sparseness=0.01,cthresh=10)
+rownames(eanat$projections)<-rownames(btsc$eventbetas)
+pdf("temper.pdf",width=32,height=32)
+pheatmap(cor(t(eanat$projections)))
+dev.off()
+rproj<-residuals(lm(data.matrix(eanat$projections)~
+  as.factor(dmat$blockNumb[j][btsc$eventrows])))
+pdf("temper2.pdf",width=32,height=32)
+pheatmap(cor(t(rproj)))
+dev.off()
+
 ```
 
 ```{r glmdenoise,echo=TRUE, message=FALSE, warning=FALSE}
