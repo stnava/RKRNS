@@ -164,6 +164,15 @@ The latter part of the sample code extracts labels
 from the rownames of the output event beta dataframe.
 This will set us up for decoding.
 
+## Visualize the HRF
+Take a quick look at the estimated hemodynamic response function.
+```{r vizhrf}
+plot(ts(btsc$hrf))
+```
+If this doesn't look "normal," then there may be a problem.
+One might also do an SVD on the run-wise HRFs and derive a 
+more flexible basis set for your study.
+
 ## Decode from $\beta$ values for each event
 
 Here, we use effect sizes to focus our decoding 
