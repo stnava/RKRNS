@@ -23,6 +23,10 @@ output:
     toc: true
     theme: readable
 ---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{BOLD decoding with the RKRNS package}
+-->
 
 # Introduction
 
@@ -142,7 +146,7 @@ these levels toward zero.
 We estimate a $\beta^i$ vector for each of $i \in 1 \cdots q$ events.
 This vector contains a scalar $\beta$ value for each voxel,
 i.e. $\beta_j^i$ where $j \in 1 \cdots p$.  This example 
-can be found via `?bold2betas` in *RKRNS*.
+can be found via `?bold2betas`.
 ```{r simb2b}
 btsc<-bold2betas( boldmatrix=data.matrix(mat), 
       designmatrix=bb$desmat[,1:4], baseshift=1,
@@ -152,17 +156,15 @@ mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)
 ```
-We recommend that one looks at the estimated hemodynamic response 
-function in order to help set parameters.  This is available as 
-output from the `bold2betas` function (and `glmDenoiseR`).  
-Key parameters are the basis length for HRF estimation, 
-the maximum number of noise predictors (e.g. `maxnoisepreds=4` or 
-`maxnoisepreds=2:10` to search a range), the polynomial degree 
-and the `selectionthresh` which should be kept below `0.5`.  
-Real data processing should proceed similarly.
-The latter part of the sample code extracts labels 
-from the rownames of the output event beta dataframe.
-This will set us up for decoding.
+We recommend that one looks at the estimated hemodynamic response
+function in order to help set parameters.  This is available as output
+from the `bold2betas` function (and `glmDenoiseR`).  Key parameters
+are the basis length for HRF estimation, the maximum number of noise
+predictors (e.g. `maxnoisepreds=4` or `maxnoisepreds=2:10` to search a
+range), the polynomial degree and the `selectionthresh` which should
+be kept below `0.5`. Real data processing should proceed similarly.
+The latter part of the sample code extracts labels from the rownames
+of the output event beta dataframe.  This will set us up for decoding.
 
 ## Visualize the HRF
 Take a quick look at the estimated hemodynamic response function.
@@ -173,7 +175,7 @@ If this doesn't look "normal," then there may be a problem.
 One might also do an SVD on the run-wise HRFs and derive a 
 more flexible basis set for your study.
 
-## Decode from $\beta$ values for each event
+## Decode from event-wise $\beta$
 
 Here, we use effect sizes to focus our decoding 
 on a subset of the full voxel matrix which is 
@@ -186,7 +188,7 @@ zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
 th<-0.5
 ff<-which( abs(zze) > th )
-mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff]) #, runs=runs[btsc$eventrows] )
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff])
 mdl<-svm( lab ~., data=mydf[inds,])
 err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
 print(paste("NPredVox",length(ff),"Correct",err*100))
@@ -210,8 +212,7 @@ in organized fashion for later use.
 To motion correct your data, one might run:
 ```{r motioncorr}
 # get an average image
-averageImage <- new("antsImage", "float", 3)
-antsMotionCorr(list(d = 3, a = (boldImage), o = averageImage))
+averageImage <- getAverageOfTimeSeriesImage( boldImage )
 motionCorrectionResults <- motion_correction(boldImage, 
    fixed = averageImage, moreaccurate = FALSE)
 ```
