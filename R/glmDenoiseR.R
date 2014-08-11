@@ -39,7 +39,6 @@ crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA ) {
     predmat<-predict(mylm1,newdata=mydf)
     realmat<-residmat[selector,]
     for ( v in 1:nvox ) R2[k,v]<-100*( 1 -  sum( ( predmat[,v] - realmat[,v] )^2 ) / sum(  (mean(realmat[,v]) - realmat[,v] )^2 )  )
-#    plot( ts( rowMeans(realmat) ) )
     }
   return(R2)
 }
@@ -120,8 +119,6 @@ if ( !all(is.na(whichbase)) ) { # old way
   ldes<-matrix(rowMeans(designmatrix),ncol=1)
   fir<-finiteImpuleResponseDesignMatrix( ldes,
                          n=hrfbasislength, baseshift=0 )
-  print(dim(cbind(fir,p)))
-  print(dim(rawboldmat))
   mylm<-lm( rawboldmat  ~  fir + p )
   mylm<-bigLMStats( mylm, 0.01 )
   betablock<-mylm$beta.t[1:ncol(fir),]
@@ -134,7 +131,7 @@ if ( !all(is.na(whichbase)) ) { # old way
   betablock<-sumbetablock
   temp<-apply( (betablock) , FUN=sum, MARGIN=2)
   tempord<-sort(temp,decreasing=TRUE)
-  bestvoxnum<-100
+  bestvoxnum<-50
   bestvoxels<-which( temp > tempord[bestvoxnum]  )
   hrf<-rowSums( (betablock[,bestvoxels] ) )
   meanhrfval<-mean(hrf)
@@ -202,22 +199,6 @@ for ( i in maxnoisepreds )
 scl<-0.95
 if (max(R2summary)<0) scl<-1.05
 bestn<-maxnoisepreds[which( R2summary > scl*max(R2summary) )[1]]
-# glmdenoisedataframe<-data.frame(  hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p )
-# return( glmdenoisedataframe )
 hrf<-hrf/max(hrf)
 return(list( n=bestn, R2atBestN=R2summary[bestn], hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel, hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p ))
 }
-
-
-#
-# mylm<-lm( data.matrix(boldmatrix)  ~  designmatrixext + p )
-# biglm1<-bigLMStats( mylm, 0.01 )
-# collapsep<-biglm1$beta.pval[1,]
-# if ( ncol(designmatrixext) > 1 )
-#  collapsep<-apply( biglm1$beta.pval[1:ncol(designmatrixext),], FUN=mean , MARGIN=2)
-# noisepool<-collapsep > pvalthresh
-#
-# mylm<-lm( data.matrix(boldmatrix)  ~  designmatrixext + p + noiseu[,1:which.min(bestnoiselev)]  )
-# biglm2<-bigLMStats( mylm, 0.01 )
-# return( list( biglm1=biglm1, biglm2=biglm2 ) )
-#

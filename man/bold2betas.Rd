@@ -52,9 +52,9 @@ bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
 mat<-timeseries2matrix( bb$simbold, bb$mask )
 runs<-bb$desmat$Run; 
 btsc<-bold2betas( boldmatrix=data.matrix(mat), 
-      designmatrix=bb$desmat[,1:4], 
+      designmatrix=bb$desmat[,1:4], baseshift=1,
       blockNumb=runs, maxnoisepreds=0,
-      bl=16, polydegree=4, selectionthresh=0.2 )
+      bl=8, polydegree=4, selectionthresh=0.2 )
 plot(ts(btsc$hrf))
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
@@ -64,7 +64,7 @@ inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
 # basic voxel selection & classification
 zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
-th<-0.25
+th<-0.5
 ff<-which( abs(zze) > th )
 mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff]) #, runs=runs[btsc$eventrows] )
 mdl<-svm( lab ~., data=mydf[inds,])

@@ -57,9 +57,9 @@ for ( runs in allruns )
           mylm<-lm(  data.matrix(submat) ~ . , data=glmdf )
           mylm<-bigLMStats( mylm , 0.001 )
           eventbetas[ct,]<-mylm$beta.t[1,]
-          eventrows[ct]<-row
+          eventrows[ct]<-rownames( denoisedes )[row]
+          print(paste("ROW:",rownames( denoisedes )[row],"VS",row))
           eventhrfs[ct,]<-dd$hrf
-          eventrows[ct]<-kkt[row]
           rownames(eventbetas)[ct]<-paste(designnames[col],eventrows[ct],sep='.')
           print(paste(rownames(eventbetas)[ct],"ct:",ct,'...',ct/neventstot*100,"%...Mx",max(abs(mylm$beta.t[1,])),"Me",mean(abs(mylm$beta.t[1,])) ))
           ct<-ct+1
