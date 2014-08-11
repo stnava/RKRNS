@@ -4,7 +4,11 @@ Within R:
 
 ```
 library(devtools)
-install_github("ANTsR",user="stnava")
+pckg = try(require(ANTsR))
+if(!pckg) 
+  {
+  install_github("ANTsR",user="stnava")
+  }
 install_github("RKRNS",user="stnava")
 ```
 
