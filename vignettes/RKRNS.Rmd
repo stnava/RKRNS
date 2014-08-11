@@ -59,8 +59,8 @@ with this package.
 - The design matrix will have one event type per column and will be binary.
 
 - The design matrix matches the bold matrix *in time* at an index level.  Thus, 
-  it has the same number of rows (volumes) as the BOLD matrix. So, the i$^th$ row 
-  of the design matrix corresponds to the i$^th$ BOLD volume.  We provide some 
+  it has the same number of rows (volumes) as the BOLD matrix. So, the i$^{th}$ row 
+  of the design matrix corresponds to the i$^{th}$ BOLD volume.  We provide some 
   utilities to assist in assembling the BOLD volumes to match the design matrix in 
   this manner.
 

@@ -69,7 +69,7 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
       template = as.array(mask), spat = "gaussRF")
   antsimg<-as.antsImage(sim.data)
   antsimg<-antsImageClone( antsimg, 'float' )
-  spc<-as.numeric(rep(tr,4))
+  spc<-as.numeric(rep(TR,4))
   spc[1:3]<-antsGetSpacing(mask)
   antsSetSpacing( antsimg, spc )
   antsSetDirection(antsimg,diag(4))
