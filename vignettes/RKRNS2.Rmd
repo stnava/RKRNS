@@ -366,7 +366,7 @@ btsc<-bold2betasCCA( data.matrix(imat[j,])  , dmats[j,selcols],
      polydegree=1, mycoption=1, its=12, onlyhrf=T )
 
 ######################################################
-j<-which( dmat$blockNumb>0 )
+j<-which( dmat$blockNumb <= 24 )
 selcols<-which( colMeans(dmats[j,]) >  0 )
 btsc<-bold2betas( boldmatrix=data.matrix(imat[j,]), 
       designmatrix=dmats[j,selcols], baseshift=4,
@@ -389,7 +389,7 @@ pheatmap(cor(t(meanbetas)))
 dev.off()
 
 eanat<-sparseDecom(data.matrix(meanbetas),inmask=subaal,
-  nvecs=20,sparseness=-0.01,cthresh=10, its=2)
+  nvecs=20,sparseness=0.01,cthresh=10, its=2)
 rownames(eanat$projections)<-rownames(meanbetas)
 pdf("temper.pdf",width=32,height=32)
 pheatmap(cor(t(eanat$projections)))
@@ -398,21 +398,26 @@ dev.off()
 
 # sample for training
 # basic voxel selection & classification
-subtest<-grep('coffee',as.character(mylabs))
+subtest<-grep('',as.character(mylabs))
 runfact<-as.factor(dmat$blockNumb[j][btsc$eventrows[subtest]])
-inds<-sample(1:length(subtest),size=round(length(subtest)*4./5.))
+sentlength<-as.numeric(dmat$nchar[j][as.numeric(btsc$eventrows)])
+inds<-sample(1:length(subtest),size=round(length(subtest)*9./10.))
 subbetas<-btsc$eventbetas[subtest,]
 rmean<-rowMeans(subbetas)
-subbetas<-residuals(lm(data.matrix(subbetas)~0+rmean))
+# subbetas<-residuals(lm(data.matrix(subbetas)~0+rmean))
 zz<-apply(subbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(subbetas,FUN=sd,MARGIN=2)
-th<-0.5
+th<-0.45
 ff<-which( abs(zze) > th )
 mydf<-data.frame( lab=droplevels(mylabs[subtest]),  
   vox=data.matrix(subbetas)[,ff])
+mydf<-data.frame( lab=sentlength,
+  vox=data.matrix(subbetas)[,ff])
 mdl<-svm( lab ~., data=mydf[inds,])
-err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
-print(paste("NPredVox",length(ff),"Correct",err*100))
+print(cor.test( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) ))
+plot( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) )
+# err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
+# print(paste("NPredVox",length(ff),"Correct",err*100))
 
 nc<-length(unique(mydf$lab))
 locdes<-matrix( rep(0,nrow(mydf)*nc),ncol=nc)

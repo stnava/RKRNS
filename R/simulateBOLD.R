@@ -67,7 +67,11 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
       0.108, 0.084), rho.spat = 0.4, w = c(0.05, 0.1, 0.01,
       0.09, 0.05, 0.7), dim = dim(eximg), nscan = nscan, vee = 0,
       template = as.array(mask), spat = "gaussRF")
-  return( list(simbold=sim.data,desmat=designmat,mask=mask) )
+  antsimg<-as.antsImage(sim.data)
+  antsimg<-antsImageClone( antsimg, 'float' )
+  antsSetSpacing( antsimg, as.numeric(c(antsGetSpacing(mask),tr)) )
+  antsSetDirection(antsimg,diag(4))
+  return( list(simbold=antsimg,desmat=designmat,mask=mask) )
   }
   rs<-2
   while ( max(rs) > 1 ) {
@@ -107,5 +111,5 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
 #  return( tasknoise(act.image = as.array(desmat), sigma = 15) )
   ts1<-ts(rowMeans(simbold[,380:600]))	
   plot( ts(data.frame(s3=s3,hrf3=hrf3,bold=ts1,boldraw=simbold[,390]) ))
-  return(list(simbold=simbold,desmat=desmat))
+  return(list(simbold=(simbold),desmat=desmat))
 }
