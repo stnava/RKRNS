@@ -58,7 +58,6 @@ for ( runs in allruns )
           mylm<-bigLMStats( mylm , 0.001 )
           eventbetas[ct,]<-mylm$beta.t[1,]
           eventrows[ct]<-rownames( denoisedes )[row]
-          print(paste("ROW:",rownames( denoisedes )[row],"VS",row))
           eventhrfs[ct,]<-dd$hrf
           rownames(eventbetas)[ct]<-paste(designnames[col],eventrows[ct],sep='.')
           print(paste(rownames(eventbetas)[ct],"ct:",ct,'...',ct/neventstot*100,"%...Mx",max(abs(mylm$beta.t[1,])),"Me",mean(abs(mylm$beta.t[1,])) ))
