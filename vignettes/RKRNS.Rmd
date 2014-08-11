@@ -84,6 +84,7 @@ and second presentations to the subject.  We distribute the underlying anatomica
 BOLD data along with a cortical mask within the package.  The data may be 
 loaded by:
 ```{r simdata}
+library(RKRNS)
 fn<-paste(path.package("RKRNS"),"/extdata/111157_mocoref_masked.nii.gz",sep="") 
 eximg<-antsImageRead(fn,3)
 fn<-paste(path.package("RKRNS"),"/extdata/subaal.nii.gz",sep="") 
