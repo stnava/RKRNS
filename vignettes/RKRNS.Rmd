@@ -213,7 +213,7 @@ in organized fashion for later use.
 To motion correct your data, one might run:
 ```{r motioncorr}
 # get an average image
-averageImage <- getAverageOfTimeSeriesImage( boldImage )
+averageImage <- getAverageOfTimeSeries( boldImage )
 motionCorrectionResults <- motion_correction(boldImage, 
    fixed = averageImage, moreaccurate = FALSE)
 ```
