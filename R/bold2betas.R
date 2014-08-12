@@ -27,7 +27,7 @@ for ( runs in allruns )
   oneeventmat<-matrix( rowMeans(denoisedes), ncol=1 )
   dd<-glmDenoiseR( submat, denoisedes, whichbase=NA, selectionthresh=selectionthresh,
     crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfbasislength=bl,
-    collapsedesign=F, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )
+    collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )
   plot( ts(dd$hrf) )
   glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
   glmdf<-data.frame( dd$hrfdesignmat, glmdfnuis )
