@@ -93,7 +93,7 @@ if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrixext)
 p<-stats::poly( timevals ,degree=polydegree )
 if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
 rawboldmat<-data.matrix(boldmatrix)
-svdboldmat<-residuals(lm(rawboldmat~p))
+svdboldmat<-residuals(lm(rawboldmat~0+p))
 if (debug) print('lm')
 fir<-finiteImpuleResponseDesignMatrix( designmatrix, n=hrfbasislength, baseshift=0 )
 mylm<-lm( svdboldmat  ~  designmatrixext )
@@ -144,6 +144,8 @@ if ( !all(is.na(whichbase)) ) { # old way
 hrf<-hrf/max(hrf)
 if ( debug ) plot( ts( hrf ) )
 ################### now redo some work w/new hrf
+# reset designmatrix
+designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
 if ( collapsedesign ) designmatrix<-as.matrix( as.numeric( rowSums( designmatrix ) > 0 ) )
 designmatrixext<-designmatrix
 if (debug) print('hrf conv')
@@ -151,7 +153,7 @@ for ( i in 1:ncol(designmatrixext) )
   {
   designmatrixext[,i]<-conv( designmatrix[,i]  , hrf )[1:nrow(designmatrix)]
   }
-hrfdesignmat<-designmatrixIn
+hrfdesignmat<-designmatrix
 for ( i in 1:ncol(hrfdesignmat) )
   {
   hrfdesignmat[,i]<-conv( hrfdesignmat[,i]  , hrf )[1:nrow(hrfdesignmat)]
@@ -187,7 +189,7 @@ for ( i in maxnoisepreds )
     noisepool<-getnoisepool( R2 )
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
     }
-  R2<-crossvalidatedR2(  svdboldmat, designmatrixext, groups , noiseu, p=NA  )
+  R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, p=NA  )
   R2<-apply(R2,FUN=min,MARGIN=2)
   if ( reestimatenoisepool ) noisepool<-getnoisepool( R2 )
   if ( ct == 1 ) R2perNoiseLevel<-R2 else R2perNoiseLevel<-cbind(R2perNoiseLevel,R2)

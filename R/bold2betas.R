@@ -25,10 +25,9 @@ for ( runs in allruns )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
   oneeventmat<-matrix( rowMeans(denoisedes), ncol=1 )
-  print("begin glm denoise")
   dd<-glmDenoiseR( submat, denoisedes, whichbase=NA, selectionthresh=selectionthresh,
     crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfbasislength=bl,
-    collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )
+    collapsedesign=F, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )
   plot( ts(dd$hrf) )
   glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
   glmdf<-data.frame( dd$hrfdesignmat, glmdfnuis )
@@ -49,7 +48,7 @@ for ( runs in allruns )
             denoisematmod1[rows,col]<-1
             denoisematmod2[-rows,col]<-0
           }
-          twoeventmat<-cbind( denoisematmod1[,col],
+          twoeventmat<-cbind( denoisematmod1[,col] ,
                               rowSums(denoisematmod2) )
           twoeventmat[,1]<-conv(twoeventmat[,1],dd$hrf)[1:nrow(twoeventmat)]
           twoeventmat[,2]<-conv(twoeventmat[,2],dd$hrf)[1:nrow(twoeventmat)]

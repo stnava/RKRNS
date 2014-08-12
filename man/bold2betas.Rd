@@ -54,8 +54,8 @@ mat<-timeseries2matrix( bb$simbold, bb$mask )
 runs<-bb$desmat$Run; 
 btsc<-bold2betas( boldmatrix=data.matrix(mat), 
       designmatrix=bb$desmat[,1:4], baseshift=1,
-      blockNumb=runs, maxnoisepreds=0,
-      bl=8, polydegree=4, selectionthresh=0.2 )
+      blockNumb=runs, maxnoisepreds=2,
+      bl=12, polydegree=4, selectionthresh=0.2 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)
