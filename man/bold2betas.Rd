@@ -80,14 +80,15 @@ ccamats<-list( data.matrix(btsc$eventbetas)[inds,] ,
 ## is also associated with particular "contrasts" (loosely speaking).  
 ## the result is 8 predictors associated with connected anatomical
 ## regions where each predictor is an averaged beta map.
-##
+## .... 2 init ideas below.
 zze1<-zze2<-zze3<-zze4<-zze
 zze1[ zze < th ]<-0
 zze2[ zze < th*0.5 ]<-0
 zze3[ zze > (th*(-1)) ]<-0
 zze4[ zze > (th*(-0.5)) ]<-0
 initcca<-t(cbind(zze1,zze2,zze3,zze4))
-initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=2 )$initlist
+initcca<-t( svd( btsc$eventbetas, nu=0, nv=8 )$v )
+initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=1 )$initlist
 nv<-length(initcca)
 mycca<-sparseDecom2( inmatrix=ccamats, initializationList=initcca,
   sparseness=c( -0.001, -0.3 ), nvecs=nv, its=10, cthresh=c(250,0),
