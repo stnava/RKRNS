@@ -58,4 +58,6 @@ var1i[mask==1]<-stb[1,] # then write this out ...
 stb2<-stb
 stb2[ stb < 6 ]<-0
 ee<-eigSeg(mask, matrixToImages( stb2, mask) )
+ImageMath(3,ee,'ClusterThresholdVariate',ee,mask,5)
+# antsImageWrite ...
 }
