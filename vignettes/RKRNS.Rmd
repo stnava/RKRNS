@@ -152,7 +152,7 @@ can be found via `?bold2betas`.
 btsc<-bold2betas( boldmatrix=data.matrix(mat), 
       designmatrix=bb$desmat[,1:4], baseshift=1,
       blockNumb=bb$desmat$Run, maxnoisepreds=0,
-      bl=8, polydegree=4, selectionthresh=0.2 )
+      bl=12, polydegree=4, selectionthresh=0.2 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)
@@ -183,7 +183,7 @@ on a subset of the full voxel matrix which is
 of size `ncol(mat)`.
 ```{r simdecode}
 # sample for training
-inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
+inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*3./4.))
 # basic voxel selection using effect size & classification
 zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
@@ -197,6 +197,41 @@ print(paste("NPredVox",length(ff),"Correct",err*100))
 The "high effect size" voxels are sent to a naive support 
 vector machine to do training (on a fraction of the data) 
 and testing on the left out data.
+
+## Cross-validated effect size
+Effect size increases when a measurement has low variance and a high value.
+The effect size of cross-validated beta estimates may aid voxel selection.
+```{r cveffsz}
+stb<-stableEventResponse(mat,  bb$desmat[,1:4], bb$desmat$Run,  
+			polydegree=12, hrf=btsc$hrf )
+```
+
+## Voxels of clustered effect size
+Use a threshold to find clusters of voxels with large effect.
+```{r eigseg}
+stb2<-abs(stb)
+stb2[ stb2 < 6 ]<-0
+ee<-eigSeg(mask, matrixToImages( stb2, mask) )
+ImageMath(3,ee,'ClusterThresholdVariate',ee,mask,5)
+```
+The `eigSeg` function labels each region of the mask 
+with the class that has the largest effect size.
+
+
+## Decode with effect size clusters
+```{r eigsegdecode}
+ff<-which( ee[mask==1] > 0 )
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff])
+mdl<-svm( lab ~., data=mydf[inds,])
+err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
+print(paste("EigSegPredVox",length(ff),"Correct",err*100))
+```
+
+## Time series per stimulus
+```{r stimulusts}
+whichstim<-1
+ff<-which( ee[mask==1] == whichstim )
+```
 
 # Real data processing with RKRNS
 

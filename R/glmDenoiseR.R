@@ -61,6 +61,13 @@ b4<-mygamma(c(1:hrfbasislength), step*3, step*4 ,0.9,0.9,0.05)
 b5<-mygamma(c(1:hrfbasislength), step*4, step*5 ,0.9,0.9,0.05) 
 b6<-mygamma(c(1:hrfbasislength), step*5, step*6 ,0.9,0.9,0.05)
 basismat<-cbind( b2, b3, b4, b5, b6 )
+b1<-hemodynamicRF( hrfbasislength, onsets=1, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
+b2<-hemodynamicRF( hrfbasislength, onsets=step, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
+b3<-hemodynamicRF( hrfbasislength, onsets=step*2, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
+b4<-hemodynamicRF( hrfbasislength, onsets=step*3, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
+b5<-hemodynamicRF( hrfbasislength, onsets=step*4, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
+b6<-hemodynamicRF( hrfbasislength, onsets=step*5, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
+basismat<-cbind( b1, b2, b3, b4, b5, b6 )
 if ( ! all(is.na(whichbase)) ) basismat<-basismat[,whichbase[ whichbase <= ncol(basismat)]]
 basismat<-as.matrix( basismat )
 #################################################
