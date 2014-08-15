@@ -25,7 +25,7 @@ for ( runs in allruns )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
   oneeventmat<-matrix( rowMeans(denoisedes), ncol=1 )
-  dd<-glmDenoiseR( submat, denoisedes, whichbase=1:5, selectionthresh=selectionthresh,
+  dd<-glmDenoiseR( submat, denoisedes, whichbase=NA, selectionthresh=selectionthresh,
     crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfbasislength=bl,
     collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )
   plot( ts(dd$hrf) )

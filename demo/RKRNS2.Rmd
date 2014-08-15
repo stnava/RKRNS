@@ -366,16 +366,21 @@ btsc<-bold2betasCCA( data.matrix(imat[j,])  , dmats[j,selcols],
      polydegree=1, mycoption=1, its=12, onlyhrf=T )
 
 ######################################################
-j<-which( dmat$blockNumb <= 24 )
+j<-which( dmat$blockNumb <= 30 )
+j<-dmat$blockNumb[ eventdata$eventtimes[grep('coffee',eventdata$sentences)] ]
+j<-which( dmat$blockNumb %in% j )
 selcols<-which( colMeans(dmats[j,]) >  0 )
+# selcols<-grep('coffee', colnames(dmats) )
+# j<-which( dmat$blockNumb <= 10 )
+myruns<-dmat$blockNumb[j]
 btsc<-bold2betas( boldmatrix=data.matrix(imat[j,]), 
       designmatrix=dmats[j,selcols], baseshift=4,
-      blockNumb=dmat$blockNumb[j], maxnoisepreds=10,
-      bl=20, polydegree=10, selectionthresh=0.1 )
+      blockNumb=myruns, maxnoisepreds=0,
+      bl=20, polydegree=20, selectionthresh=0.1 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-strsplit( rownames(btsc$eventbetas)[i],'[.][.]')[[1]][1]
 mylabs<-as.factor(mylabs)
-
+##########################
 nc<-length(unique(mylabs))
 meanbetas<-matrix( rep(0,nc*ncol(btsc$eventbetas)) ,nrow=nc)
 lvs<-levels(mylabs)
@@ -399,40 +404,56 @@ dev.off()
 # sample for training
 # basic voxel selection & classification
 subtest<-grep('',as.character(mylabs))
-runfact<-as.factor(dmat$blockNumb[j][btsc$eventrows[subtest]])
-sentlength<-as.numeric(dmat$nchar[j][as.numeric(btsc$eventrows)])
+subtest<-grep('coffee',as.character(mylabs))
+runfact<-as.factor(dmat$blockNumb[as.numeric(btsc$eventrows)])
+sentlength<-as.numeric(dmat$nchar[as.numeric(btsc$eventrows)])
+evrow<-as.numeric(btsc$eventrows)
+sent<-rep("", length(evrow))
+for ( i in 1:length(evrow) )
+  sent[i]<-colnames(dmats)[ which( dmats[evrow[i],] ==1 ) ]
+sent<-as.factor(sent)
 inds<-sample(1:length(subtest),size=round(length(subtest)*9./10.))
 subbetas<-btsc$eventbetas[subtest,]
 rmean<-rowMeans(subbetas)
-# subbetas<-residuals(lm(data.matrix(subbetas)~0+rmean))
+subbetas<-residuals(lm(data.matrix(subbetas)~0+rmean))
 zz<-apply(subbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(subbetas,FUN=sd,MARGIN=2)
-th<-0.45
+th<-0.6
 ff<-which( abs(zze) > th )
-mydf<-data.frame( lab=droplevels(mylabs[subtest]),  
-  vox=data.matrix(subbetas)[,ff])
-mydf<-data.frame( lab=sentlength,
-  vox=data.matrix(subbetas)[,ff])
+mydf<-data.frame( lab=droplevels(sent[subtest]),  
+  vox=data.matrix(subbetas)[,ff], sl=sentlength[subtest])
 mdl<-svm( lab ~., data=mydf[inds,])
-print(cor.test( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) ))
-plot( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) )
-# err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
-# print(paste("NPredVox",length(ff),"Correct",err*100))
+err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
+print(paste("NPredVox",length(ff),"Correct",err*100))
 
+ mydf<-data.frame( lab=sentlength, vox=data.matrix(subbetas)[,ff])
+ print(cor.test( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) ))
+ plot( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) )
+
+# real signal + noise model
+k<-10
+nv<-10
+initcca<-t( svd( btsc$eventbetas, nu=0, nv=nv )$v )
+initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=2 )$initlist
+sentmat<-matrix( c(sentlength[inds],
+  rep(sentlength[inds]*1+rnorm(length(inds)),k-1)),ncol=k)
 nc<-length(unique(mydf$lab))
 locdes<-matrix( rep(0,nrow(mydf)*nc),ncol=nc)
 for ( k in 1:nc ) locdes[mydf$lab==(levels(mydf$lab)[k]),k]<-1
-ccamats<-list( data.matrix(subbetas)[inds,] ,locdes[inds,] )
+ccamats<-list( data.matrix(subbetas)[inds,] , locdes[inds,] )
 mycca<-sparseDecom2( inmatrix=ccamats,
-  sparseness=c( -0.02, -0.9 ), nvecs=6, its=10, cthresh=c(5,0),
+  initializationList=initcca,
+  sparseness=c( -0.001, -1 ), nvecs=10, its=8, cthresh=c(5,0),
   uselong=0, smooth=0.0, mycoption=2, inmask=c(mask,NA) )
 ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, mask )))
-ff<-which(colSums(abs(ccaout))>1.e-4)
 mydf2<-data.frame( lab=mydf$lab,  
   vox=data.matrix(subbetas) %*% t(ccaout) )
 mdl<-svm( lab ~., data=mydf2[inds,])
 err<-sum(mydf2[-inds,]$lab==predict( mdl, newdata=mydf2[-inds,]))/nrow(mydf2[-inds,])
-print(paste("CCA:NPredVox",length(ff),"Correct",err*100))
+print(paste("CCA:Correct",err*100))
+# plot( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) )
+# print(cor.test( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) ))
+#print(cor.test( mydf2[ inds,]$lab, predict( mdl, newdata=mydf2[ inds,]) ))
 
 
 
