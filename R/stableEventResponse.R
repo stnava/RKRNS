@@ -1,73 +1,55 @@
-stableEventResponse <- function( boldmatrix, designmatrix, blockNumb, eventselect='coffee',
-      polydegree=10, bl=50, crossvalidationgroups=4, selectionthresh=0.1, maxnoisepreds=4 )
+stableEventResponse <- function( boldmatrix, designmatrixIn, runIDs,
+                                polydegree=4, baseshift=0, hrf=NA, timevals=NA )
 {
-eselect<-eventselect
-if ( all( is.character(eventselect) ) ) eselect<-grep( eventselect, colnames(designmatrix) )
-# otherwise treat as numeric
-if (length(eselect)==1) stim<-designmatrix[,eselect] else {
-  stim<-rowSums(designmatrix[,eselect])
-}
-notstim<-rowSums(designmatrix[,-eselect])
-# now subset stim by bl
-whrows<-which( stim == 1 )
-debug<-F
-if ( debug ) print(whrows)
-# cross val over whrows - leaving out a row ...
-# est betas at each, then 
-whtimes<-c()
-maxrow<-nrow(boldmatrix)
-for ( i in 1:length(whrows) )
+# for each event class, estimate betas for each fold based
+# on leave one run out cross-validation
+# return statistics on the stability of beta responses
+# i.e. find voxels that have good, stable beta values
+if ( var( runIDs ) == 0 )
   {
-  lo<-whrows[i]-bl
-  hi<-whrows[i]+bl
-  if ( lo < 1 ) lo<-1
-  if ( hi > maxrow ) hi<-maxrow
-  if ( i == 1 ) whtimes<-c( lo:hi ) else whtimes<-c(whtimes,lo:hi)
+  print("Need distinct runIDs")
+  return(NA)
   }
-whtimes<-unique(whtimes)
-if ( debug ) print(whtimes)
-if ( debug ) print(maxrow)
-stim<-stim[whtimes]
-notstim<-notstim[whtimes]
-des<-cbind(stim=stim,notstim=notstim)
-colnames(des)[1]<-eventselect
-colnames(des)[2]<-paste("Not.",eventselect,sep='')
-# estimate hrf --- add run as a factor ....
-runfactor=blockNumb[whtimes]
-runf<-as.factor(runfactor)
-if (var(as.numeric(runf))==0) return(NA)
-dd<-glmDenoiseR( boldmatrix[whtimes,], des, whichbase=NA, selectionthresh=selectionthresh,
-    crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfbasislength=bl,
-    collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree, runfactor=runf )
-
-# get hrf & noise vecs - estimate beta
-des[,1]<-conv(des[,1],dd$hrf)[1:nrow(des)]
-des[,2]<-conv(des[,2],dd$hrf)[1:nrow(des)]
-if ( debug ) plot( ts(dd$hrf) )
-glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
-allruns<-unique( blockNumb[whtimes] )
-nevents<-length(allruns)
-eventbetas<-data.frame(matrix( rep(0,nevents*ncol(boldmatrix)), ncol=ncol(boldmatrix)))
-rct<-1
-for ( runs in allruns )
+designmatrix<-ashift( designmatrixIn, c(baseshift,0) )
+whichcols<-1:ncol(designmatrix)
+allruns<-unique( runIDs )
+neventstot<-0
+for ( runs in allruns ) 
   {
-  print(paste("ct",rct,"run",runs,":",rct/length(allruns)*100,"%"))
-  kkt<-which( blockNumb[whtimes] != runs )
-  submat<-boldmatrix[kkt,]
-  glmdf<-data.frame( des[kkt,], glmdfnuis[kkt,] )
-  mylm<-lm(  data.matrix(submat) ~ . , data=glmdf )
-  mylm<-bigLMStats( mylm , 0.001 )
-  eventbetas[rct,]<-mylm$beta.t[1,]
-  rownames(eventbetas)[rct]<-paste(runs,sep='.')
-  rct<-rct+1
+  kkt<-which( runIDs == runs )
+  neventstot<-neventstot+sum(designmatrix[kkt,whichcols])
   }
-return( list(cveventbetas=eventbetas, glmdenoiz=dd ) )
-#betas<-bold2betas( boldmatrix[whtimes,], des, blockNumb[whtimes], 
-#                  maxnoisepreds=12, polydegree=4 )
-# return(betas)
-# for ( run in unique( blockNumb[whtimes] ) ) {
-#  dd<-glmDenoiseR( boldmatrix[whtimes,], des2, whichbase=NA, selectionthresh=selectionthresh,
-#    crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfbasislength=bl,
-#    collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree )
-# }
+designnames<-colnames(designmatrix)[whichcols]
+print(designnames)
+if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrix)
+p<-stats::poly( timevals ,degree=polydegree )
+runf<-as.factor( runIDs )
+betastab<-matrix( rep(0,length(whichcols)*ncol(boldmatrix)),
+                      ncol=ncol(boldmatrix) )
+colct<-1
+for ( mycol in whichcols )
+  {
+  rct<-1
+  eventbetas<-matrix( rep(0,length(allruns)*ncol(boldmatrix)),
+                      ncol=ncol(boldmatrix) )
+  for ( runs in allruns ) 
+    {
+    print(paste("mycol",mycol,"run%:",rct/length(allruns)*100))
+    kkt<-runIDs != runs 
+    twoeventmat<-cbind( designmatrix[kkt, mycol] ,
+                 rowSums(designmatrix[kkt,-mycol]) )
+    twoeventmat[,1]<-conv(twoeventmat[,1],hrf)[1:nrow(twoeventmat)]
+    twoeventmat[,2]<-conv(twoeventmat[,2],hrf)[1:nrow(twoeventmat)]
+    glmdf<-data.frame( twoeventmat, p=p[kkt,], runf=runf[kkt] )
+    mylm<-lm(  data.matrix(boldmatrix[kkt,]) ~ . , data=glmdf )
+    mylm<-bigLMStats( mylm , 0.001 )
+    eventbetas[rct,]<-mylm$beta.t[1,]
+    rct<-rct+1
+    }
+#  betalist<-lappend( betalist , eventbetas )
+  betastab[colct,]<-apply( eventbetas, FUN=mean, MARGIN=2)/
+                    apply( eventbetas, FUN=sd, MARGIN=2)
+  colct<-colct+1
+  }# runs
+return(betastab)
 }

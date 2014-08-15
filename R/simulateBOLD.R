@@ -31,7 +31,8 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
     designmat$N2[ round(n2on)  ]<-1
     designmat$F1[ round(f1on) ]<-1
     designmat$F2[ round(f2on) ]<-1
-    designmat$Run[ (round(nscan/2)+1):nscan ]<-2
+    runs<-sort(rep(c(1:4), (round(nscan/4)+1) ))[1:nscan]
+    designmat$Run<-runs
     
     region.1A.center <- c(13, 13, 11)
     region.1A.radius <- 4
