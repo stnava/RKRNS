@@ -1,4 +1,5 @@
-simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.01 , physnoise=0.01, temporalnoise=0.01, option=c("basic","henson"), eximg=NA, mask=NA )
+simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.01,
+  physnoise=0.01, temporalnoise=0.01, option=c("basic","henson"), eximg=NA, mask=NA, nruns=4 )
 {
   if ( option[1] == "henson" ) {
     # from http://www.jstatsoft.org/v44/i10/paper
@@ -31,7 +32,7 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
     designmat$N2[ round(n2on)  ]<-1
     designmat$F1[ round(f1on) ]<-1
     designmat$F2[ round(f2on) ]<-1
-    runs<-sort(rep(c(1:4), (round(nscan/4)+1) ))[1:nscan]
+    runs<-sort(rep(c(1:nruns), (round(nscan/nruns)+1) ))[1:nscan]
     designmat$Run<-runs
     
     region.1A.center <- c(13, 13, 11)
