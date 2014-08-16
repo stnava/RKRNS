@@ -206,17 +206,20 @@ and testing on the left out data.
 Effect size increases when a measurement has low variance and a high value.
 The effect size of cross-validated beta estimates may aid voxel selection.
 ```{r cveffsz}
-stb<-stableEventResponse(mat,  bb$desmat[,1:4], bb$desmat$Run,  
-			polydegree=mypolydegree, hrf=btsc$hrf )
+ccnuis<-compcor( mat, 2 ) # an option ....
+stb<-stableEventResponse( mat,  bb$desmat[,1:4], bb$desmat$Run,  
+			polydegree=12, hrf=btsc$hrf )
 ```
 
 ## Voxels of clustered effect size
 Use a threshold to find clusters of voxels with large effect.
 ```{r eigseg}
 stb2<-abs(stb)
-stb2[ stb2 < 4 ]<-0
+stb2[ stb2 < 5 ]<-0
 ee<-eigSeg(mask, matrixToImages( stb2, mask) )
 ImageMath(3,ee,'ClusterThresholdVariate',ee,mask,5)
+ff<-which( ee[mask==1] > 0 )
+print(length(ff))
 ```
 The `eigSeg` function labels each region of the mask 
 with the class that has the largest effect size.
@@ -224,7 +227,6 @@ with the class that has the largest effect size.
 
 ## Decode with effect size clusters
 ```{r eigsegdecode}
-ff<-which( ee[mask==1] > 0 )
 mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff])
 mdl<-svm( lab ~., data=mydf[inds,])
 err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
