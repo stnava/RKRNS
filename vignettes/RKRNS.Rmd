@@ -254,9 +254,9 @@ To motion correct your data, one might run:
 # get an average image
 averageImage <- getAverageOfTimeSeries( boldImage )
 motionCorrectionResults <- motion_correction(boldImage, 
-   fixed = averageImage, moreaccurate = FALSE)
+   fixed = averageImage, moreaccurate = 0 )
 ```
-Set the `moreaccurate` flag to `TRUE` for usable (not test) results.
+Set the `moreaccurate` flag to `1` or `2` for usable (not test) results.
 You might also estimate FD and DVARS from these results.  One might 
 use `antsPreprocessfMRI` to get these directly.  Note, however, to 
 turn this function's frequency filtering off if you want to do decoding.
