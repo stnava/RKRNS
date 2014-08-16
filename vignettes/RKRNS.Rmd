@@ -404,6 +404,8 @@ plotANTsImage( eximg, mycca$eig1, slices='12x56x1' ,
 
 # Conclusions
 
+## 
+
 With the current RKRNS, one may:
 
 - Exploit *R* functionality with BOLD data
@@ -415,7 +417,6 @@ With the current RKRNS, one may:
 - Employ dimensionality reduction through eigenanatomy or SCCAN
 
 - Use low-dimensional, interpretable predictors for decoding
-
 
 -  The package remains to be evaluated at this level of detail 
 on real data.
