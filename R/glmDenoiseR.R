@@ -53,7 +53,7 @@ mygamma <- function(x, a1 = 6.,   a2 = 12., b1 = 0.9, b2 = 0.99, cc = 0.35) {
   }
 
 # start with a reasonable default set of bases
-step<-round(hrfbasislength/6)
+step<-round(hrfbasislength/5)
 b1<-mygamma(c(1:hrfbasislength),      1, step   ,0.9,0.9,0.05)
 b2<-mygamma(c(1:hrfbasislength), step*1, step*2 ,0.9,0.9,0.05) 
 b3<-mygamma(c(1:hrfbasislength), step*2, step*3 ,0.9,0.9,0.05)
@@ -67,9 +67,10 @@ b3<-hemodynamicRF( hrfbasislength, onsets=step*2, durations=1, rt=1,cc=0.1,a1=3,
 b4<-hemodynamicRF( hrfbasislength, onsets=step*3, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
 b5<-hemodynamicRF( hrfbasislength, onsets=step*4, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
 b6<-hemodynamicRF( hrfbasislength, onsets=step*5, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
-basismat<-cbind( b1, b2, b3, b4, b5, b6 )
+basismat<-cbind( b1, b2, b3, b4, b5 )
 if ( ! all(is.na(whichbase)) ) basismat<-basismat[,whichbase[ whichbase <= ncol(basismat)]]
 basismat<-as.matrix( basismat )
+plot(ts(basismat))
 #################################################
 ####### convolutions on basis image matrix ######
 nbase<-ncol(basismat) # number of basis functions

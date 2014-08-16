@@ -36,7 +36,7 @@ Avants BB
 mat<-replicate(250, rnorm(1000)) 
 dmat<-mat[,1:2]*0
 for ( i in 1:ncol(dmat) ) dmat[,i]<-as.numeric( mat[ ,i] > 0.9*max(mat[,i]))
-regressionmodeldataframe<-glmDenoiseR( mat , dmat )
+regressionmodeldataframe<-glmDenoiseR( mat , dmat, hrfbasislength=12  )
 dd<-glmDenoiseR( mat, dmat, whichbase=c(1:2) , crossvalidationgroups=4 , 
      maxnoisepreds=10 , selectionthresh=0.1 ,collapsedesign=T, reestimatenoisepool=F )
 # note - this may not be stable b/c the designmatrix is ill-conditioned
