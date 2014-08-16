@@ -6,7 +6,8 @@ git rm -rf .
 echo " " > .nojekyll
 cp vignettes/RKRNS.html index.html
 mv vignettes/RKRNS_files .
-git add RKRNS_files/ index.html .nojekyll 
+mv vignettes/Figs . 
+git add Figs/ RKRNS_files/ index.html .nojekyll 
 git commit -m 'WIP: webprez'
 git push origin gh-pages
 git checkout master
