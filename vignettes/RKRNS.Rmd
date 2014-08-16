@@ -17,7 +17,7 @@ output:
     theme: simple
     transition: fade
     highlight: pygments
-    center: true
+    center: false
     self_contained: false
   html_document:
     toc: true
