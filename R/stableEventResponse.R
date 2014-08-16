@@ -1,5 +1,5 @@
-stableEventResponse <- function( boldmatrix, designmatrixIn, runIDs,
-                                polydegree=4, baseshift=0, hrf=NA, timevals=NA )
+stableEventResponse <- function( boldmatrix, designmatrixIn, runIDs, hrf,
+                        verbose=F, polydegree=4, baseshift=0, timevals=NA )
 {
 # for each event class, estimate betas for each fold based
 # on leave one run out cross-validation
@@ -20,7 +20,7 @@ for ( runs in allruns )
   neventstot<-neventstot+sum(designmatrix[kkt,whichcols])
   }
 designnames<-colnames(designmatrix)[whichcols]
-print(designnames)
+if ( verbose ) print(designnames)
 if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrix)
 p<-stats::poly( timevals ,degree=polydegree )
 runf<-as.factor( runIDs )
@@ -34,7 +34,7 @@ for ( mycol in whichcols )
                       ncol=ncol(boldmatrix) )
   for ( runs in allruns ) 
     {
-    print(paste("mycol",mycol,"run%:",rct/length(allruns)*100))
+    if ( verbose ) print(paste("mycol",mycol,"run%:",rct/length(allruns)*100))
     kkt<-runIDs != runs 
     twoeventmat<-cbind( designmatrix[kkt, mycol] ,
                  rowSums(designmatrix[kkt,-mycol]) )

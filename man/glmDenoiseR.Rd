@@ -4,7 +4,7 @@
 \description{
 Inspired by discussion with Kendrick Kay regarding his glm denoise tool 
 http://journal.frontiersin.org/Journal/10.3389/fnins.2013.00247/abstract
- 0. estimate hrf 
+ 0. estimate hrf using assumed function or finite impulse response (FIR)
  1. regressors include: design + trends + noise-pool
  2. find noise-pool by initial cross-validation without noise regressors
  3. cross-validate predictions using different numbers of noise regressors
@@ -12,15 +12,21 @@ http://journal.frontiersin.org/Journal/10.3389/fnins.2013.00247/abstract
  5. return the noise mask and the value for n
 }
 \usage{
-  regressionmodeldataframe<-glmDenoiseR( boldmatrix, designmatrix , hrfbasislength=50, crossvalidationgroups=4, whichbase = NA, selectionthresh=0.1, maxnoisepreds=6 )
+  regressionmodeldataframe<-glmDenoiseR( boldmatrix, designmatrix , hrfBasis=NA, crossvalidationgroups=4, hrfShifts = 4, selectionthresh=0.1, maxnoisepreds=6 )
 }
 
 \arguments{
 \item{boldmatrix}{
   input raw bold data in time by space matrix 
 }
-\item{boldmatrix}{
+\item{designmatrix}{
   input design matrix - binary/impulse entries for event related design, blocks otherwise
+}
+\item{hrfBasis}{
+  basis function for assumed HRF otherwise use FIR
+}
+\item{hrfShifts}{
+  n-shifts of assumed hrf - shifts by 1 or, for FIR, length of estimated HRF
 }
 }
 
@@ -33,25 +39,6 @@ Avants BB
 }
 
 \examples{
-mat<-replicate(250, rnorm(1000)) 
-dmat<-mat[,1:2]*0
-for ( i in 1:ncol(dmat) ) dmat[,i]<-as.numeric( mat[ ,i] > 0.9*max(mat[,i]))
-regressionmodeldataframe<-glmDenoiseR( mat , dmat, hrfbasislength=12  )
-dd<-glmDenoiseR( mat, dmat, whichbase=c(1:2) , crossvalidationgroups=4 , 
-     maxnoisepreds=10 , selectionthresh=0.1 ,collapsedesign=T, reestimatenoisepool=F )
-# note - this may not be stable b/c the designmatrix is ill-conditioned
-dd<-glmDenoiseR( mat, dmat, whichbase=NA , crossvalidationgroups=4 , 
-  maxnoisepreds=2:12 , selectionthresh=0.1 , collapsedesign=F, reestimatenoisepool=F )
-# now use its results in regression
-glmdf<-data.frame( dd$hrfdesignmat, noiseu=dd$noiseu, polys=dd$polys )
-mylm<-lm(  data.matrix(mat) ~ . , data=glmdf )
-mylm<-bigLMStats( mylm , 0.001 )
-rownames(mylm$beta.pval)
-min(p.adjust(mylm$beta.pval[1,],method='n'))
-min(p.adjust(mylm$beta.pval[2,],method='n'))
-min(p.adjust(mylm$beta.pval[1,],method='BH'))
-min(p.adjust(mylm$beta.pval[2,],method='BH'))
-# closer to real data 
 # get example image
 fn<-paste(path.package("RKRNS"),"/extdata/111157_mocoref_masked.nii.gz",sep="") 
 eximg<-antsImageRead(fn,3)
@@ -61,7 +48,21 @@ bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
 boldImage<-bb$simbold
 mat<-timeseries2matrix( bb$simbold, bb$mask )
 runs<-bb$desmat$Run; 
-dd<-glmDenoiseR( mat, bb$desmat[,1:4], whichbase=NA , crossvalidationgroups=8, 
-  maxnoisepreds=2:12 , selectionthresh=0.1 , collapsedesign=F, reestimatenoisepool=F )
-
+# finite impulse response
+hrfbasislength<-20
+dd<-glmDenoiseR( mat, bb$desmat[,1:4], hrfBasis=NA, hrfShifts = hrfbasislength, 
+  crossvalidationgroups=8, maxnoisepreds=c(1,4) , selectionthresh=0.1 , 
+  collapsedesign=F, polydegree=12 )
+# average of assumed HRFs
+tr<-1
+a1<-4
+a2<-10
+hrf<-hemodynamicRF( hrfbasislength, onsets=2, 
+  durations=tr, rt=tr,cc=0.1,a1=a1,a2=a2,b1=0.9, b2=0.9 )
+plot(ts(hrf))
+dd2<-glmDenoiseR( mat, bb$desmat[,1:4], hrfBasis=hrf, hrfShifts = 4 , crossvalidationgroups=8, 
+  maxnoisepreds=2:12 , selectionthresh=0.1 , collapsedesign=T, polydegree=12 )
+# or refine FIR 
+dd3<-glmDenoiseR( mat, bb$desmat[,1:4], hrfBasis=shift(dd$hrf,-2), hrfShifts = 4 , crossvalidationgroups=8, 
+  maxnoisepreds=2 , selectionthresh=0.1 , collapsedesign=T, polydegree=12 )
 }

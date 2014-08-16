@@ -52,15 +52,26 @@ bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
 boldImage<-bb$simbold
 mat<-timeseries2matrix( bb$simbold, bb$mask )
 runs<-bb$desmat$Run; 
+# use glm denoise to estimate a FIR HRF
+glmda<-glmDenoiseR( data.matrix(mat), bb$desmat[,1:4], hrfBasis=NA, 
+  hrfShifts = 12, maxnoisepreds=0 , selectionthresh=0.1 , 
+  collapsedesign=T, polydegree=12, baseshift=0 )
+# use glm denoise to refine an assumed HRF
+b1<-hemodynamicRF( 12, onsets=1, durations=1, rt=1,
+    cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
+glmda<-glmDenoiseR( data.matrix(mat), bb$desmat[,1:4], hrfBasis=b1, 
+  hrfShifts = 8, maxnoisepreds=0 , selectionthresh=0.1, 
+  collapsedesign=T, polydegree=12 )
+# looks ok so do the same w/in bold2betas
 btsc<-bold2betas( boldmatrix=data.matrix(mat), 
-      designmatrix=bb$desmat[,1:4], baseshift=1,
-      blockNumb=runs, maxnoisepreds=2,
-      bl=12, polydegree=4, selectionthresh=0.2 )
+      designmatrix=bb$desmat[,1:4], baseshift=0,
+      blockNumb=runs, maxnoisepreds=0, hrfBasis=glmda$hrf,
+      hrfShifts=0, polydegree=12, selectionthresh=0.2 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)
 # sample for training
-inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*1./2.))
+inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*3./4.))
 # basic voxel selection & classification
 zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
@@ -87,7 +98,7 @@ zze2[ zze < th*0.5 ]<-0
 zze3[ zze > (th*(-1)) ]<-0
 zze4[ zze > (th*(-0.5)) ]<-0
 initcca<-t(cbind(zze1,zze2,zze3,zze4))
-initcca<-t( svd( btsc$eventbetas, nu=0, nv=8 )$v )
+initcca<-t( svd( btsc$eventbetas, nu=0, nv=10 )$v )
 initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=1 )$initlist
 nv<-length(initcca)
 mycca<-sparseDecom2( inmatrix=ccamats, initializationList=initcca,

@@ -1,4 +1,4 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfbasislength=50, whichbase = NA, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA, baseshift=0 )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0 )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
@@ -43,52 +43,7 @@ crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA ) {
   return(R2)
 }
 
-mygamma <- function(x, a1 = 6.,   a2 = 12., b1 = 0.9, b2 = 0.99, cc = 0.35) {
-    d1 <- a1 * b1
-    d2 <- a2 * b2
-    c1 <- (x/d1)^a1
-    c2 <- cc * (x/d2)^a2
-    res <- c1 * exp(-(x - d1)/b1) - c2 * exp(-(x - d2)/b2)
-    res
-  }
-
-# start with a reasonable default set of bases
-step<-round(hrfbasislength/5)
-b1<-mygamma(c(1:hrfbasislength),      1, step   ,0.9,0.9,0.05)
-b2<-mygamma(c(1:hrfbasislength), step*1, step*2 ,0.9,0.9,0.05) 
-b3<-mygamma(c(1:hrfbasislength), step*2, step*3 ,0.9,0.9,0.05)
-b4<-mygamma(c(1:hrfbasislength), step*3, step*4 ,0.9,0.9,0.05) 
-b5<-mygamma(c(1:hrfbasislength), step*4, step*5 ,0.9,0.9,0.05) 
-b6<-mygamma(c(1:hrfbasislength), step*5, step*6 ,0.9,0.9,0.05)
-basismat<-cbind( b2, b3, b4, b5, b6 )
-b1<-hemodynamicRF( hrfbasislength, onsets=1, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
-b2<-hemodynamicRF( hrfbasislength, onsets=step, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
-b3<-hemodynamicRF( hrfbasislength, onsets=step*2, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
-b4<-hemodynamicRF( hrfbasislength, onsets=step*3, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
-b5<-hemodynamicRF( hrfbasislength, onsets=step*4, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
-b6<-hemodynamicRF( hrfbasislength, onsets=step*5, durations=1, rt=1,cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
-basismat<-cbind( b1, b2, b3, b4, b5 )
-if ( ! all(is.na(whichbase)) ) basismat<-basismat[,whichbase[ whichbase <= ncol(basismat)]]
-basismat<-as.matrix( basismat )
-plot(ts(basismat))
 #################################################
-####### convolutions on basis image matrix ######
-nbase<-ncol(basismat) # number of basis functions
-if ( ncol(designmatrix) == 1 ) {
-  designmatrix<-rep( designmatrix, nbase )
-  designmatrix<-t(matrix( designmatrix, nrow=nbase ))
-}
-if ( ncol(designmatrix) > 1 ) designmatrixext<-interleaveMatrixWithItself( designmatrix, nbase ) else designmatrixext<-designmatrix
-k<-1
-if (debug) print('init conv')
-for ( i in 1:ncol(designmatrixext) )
-  {
-  if ( k > ncol(basismat) ) k<-1
-  designmatrixext[,i]<-conv( designmatrixext[,i]  , basismat[,k] )[1:nrow(designmatrixext)]
-  if (debug) print(paste(k,i))
-  k<-k+1
-  }
-if (debug) print('init conv done')
 # overall description of the method
 # 0. estimate hrf
 # 1. regressors include: design + trends + noise-pool
@@ -97,44 +52,50 @@ if (debug) print('init conv done')
 # 4. select best n for predictors from noise pool
 # 5. return the noise mask and the value for n
 # make regressors
-if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrixext)
+if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrix)
 p<-stats::poly( timevals ,degree=polydegree )
 if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
 rawboldmat<-data.matrix(boldmatrix)
 svdboldmat<-residuals(lm(rawboldmat~0+p))
 if (debug) print('lm')
-fir<-finiteImpuleResponseDesignMatrix( designmatrix, n=hrfbasislength, baseshift=0 )
-mylm<-lm( svdboldmat  ~  designmatrixext )
-mylm<-bigLMStats( mylm, 0.01 )
-bl<-hrfbasislength
-if ( !all(is.na(whichbase)) ) { # old way
-  bl<-ncol(basismat)
-  betas<-mylm$beta.t[1:bl,]
+if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
+  if ( hrfShifts > 1 ) {
+    fir<-finiteImpuleResponseDesignMatrix( designmatrix,
+            n=hrfShifts, baseshift=baseshift )
+  } else fir<-designmatrix
+  for ( i in 1:ncol(fir) )
+      fir[,i]<-conv( fir[,i]  , hrfBasis )[1:nrow(designmatrix)]
+  mylm<-lm( svdboldmat  ~  fir )
+  mylm<-bigLMStats( mylm, 0.01 )
+  betas<-mylm$beta.t[1:hrfShifts,]
   if (debug) print('meanmax')
   meanmax<-function( x ) {  return( mean(sort((x),decreasing=T)[1:50]) ) }
-  betamax<-apply( (betas),FUN=meanmax,MARGIN=1)
+  if ( hrfShifts <= 1 ) {
+      betamax<-meanmax( betas )
+  } else {
+      betamax<-apply( (betas),FUN=meanmax,MARGIN=1)
+  }
   betamax<-betamax/sum(abs(betamax))
   if ( debug ) print(betamax)
-  hrf<-basismat[,1]*0
+  hrf<-hrfBasis*0
   k<-1
   for ( i in 1:length(betamax) )
     {
-    if ( k > ncol(basismat) ) k<-1
-    hrf<-hrf+basismat[, k ]*betamax[i]
+    hrf<-hrf+shift(hrfBasis,baseshift+i-1)*betamax[i]
     k<-k+1
     }
 } else { # new way below
   ldes<-matrix(rowMeans(designmatrix),ncol=1)
   fir<-finiteImpuleResponseDesignMatrix( ldes,
-                         n=hrfbasislength, baseshift=0 )
+            n=hrfShifts, baseshift=baseshift )
   mylm<-lm( rawboldmat  ~  fir + p )
   mylm<-bigLMStats( mylm, 0.01 )
   betablock<-mylm$beta.t[1:ncol(fir),]
-  sumbetablock<-betablock[1:hrfbasislength,]*0
+  sumbetablock<-betablock[1:hrfShifts,]*0
   j<-1
   for ( i in 1:ncol(ldes) ) {
-    sumbetablock<-betablock[j:(j+hrfbasislength-1),]
-    j<-j+hrfbasislength
+    sumbetablock<-betablock[j:(j+hrfShifts-1),]
+    j<-j+hrfShifts
   }
   betablock<-sumbetablock
   temp<-apply( (betablock) , FUN=sum, MARGIN=2)
@@ -155,18 +116,13 @@ if ( debug ) plot( ts( hrf ) )
 # reset designmatrix
 designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
 if ( collapsedesign ) designmatrix<-as.matrix( as.numeric( rowSums( designmatrix ) > 0 ) )
-designmatrixext<-designmatrix
 if (debug) print('hrf conv')
-for ( i in 1:ncol(designmatrixext) )
-  {
-  designmatrixext[,i]<-conv( designmatrix[,i]  , hrf )[1:nrow(designmatrix)]
-  }
 hrfdesignmat<-designmatrix
 for ( i in 1:ncol(hrfdesignmat) )
   {
   hrfdesignmat[,i]<-conv( hrfdesignmat[,i]  , hrf )[1:nrow(hrfdesignmat)]
   }
-R2base<-crossvalidatedR2(  svdboldmat, designmatrixext, groups , p=NA )
+R2base<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , p=NA )
 R2base<-apply(R2base,FUN=min,MARGIN=2)
 noisepool<-getnoisepool( R2base )
 if ( max(maxnoisepreds) == 0 )
@@ -192,7 +148,7 @@ for ( i in maxnoisepreds )
   if ( reestimatenoisepool )
     {
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
-    R2<-crossvalidatedR2(  svdboldmat, designmatrixext, groups , noiseu, p=NA  )
+    R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, p=NA  )
     R2<-apply(R2,FUN=median,MARGIN=2)
     noisepool<-getnoisepool( R2 )
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
