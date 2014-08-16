@@ -389,18 +389,19 @@ The input predictors are both clustered and sparse.
 
 Rescale the cca results and make a picture.
 
-```{r vizcca,echo=FALSE,warnings=FALSE}
+```{r vizcca,echo=FALSE,warnings=FALSE,results='hide'}
 for ( img in mycca$eig1 ) {
   img[mask==1]<-abs(img[mask==1])
   img[mask==1]<-img[mask==1]/max(img[mask==1])
 }
+ofn<-"./RKRNS/vignettes/RKRNS_files/temp.png"
 plotANTsImage( eximg, mycca$eig1, slices='12x56x1' , 
- thresh='0.01x1.1', color=rainbow(nv), outname="temp.png")
+ thresh='0.01x1.1', color=rainbow(nv), outname=ofn)
 ```
 
 ## CCA results in image space
 
-![](./temp.png)
+![](./RKRNS/vignettes/RKRNS_files/temp.png)
 
 # Conclusions
 
