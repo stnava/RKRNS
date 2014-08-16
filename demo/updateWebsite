@@ -9,3 +9,4 @@ mv vignettes/RKRNS_files .
 git add RKRNS_files/ index.html .nojekyll 
 git commit -m 'WIP: webprez'
 git push origin gh-pages
+git checkout master

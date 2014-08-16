@@ -297,7 +297,7 @@ print(paste("EigSegPredVox",length(ff),"Correct",err*100))
 Investigate the time series for each stimulus.
 
 
-```{r stimulusts}
+```{r stimulusts,echo=FALSE}
 ff<-which( ee[mask==1] == 1 )
 stimbold1<-ts( scale(rowMeans(mat[,ff]) ) )
 ff<-which( ee[mask==1] == 2 )
@@ -359,7 +359,7 @@ mycca<-sparseDecom2( inmatrix=ccamats, initializationList=initcca,
 ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, mask )))
 ff<-which(colSums(abs(ccaout))>1.e-4)
 ```
-We also count the non-zero voxels which cover `r ff/ncol(mat)*100`% of the brain. 
+We also count the non-zero voxels which cover `r length(ff)/ncol(mat)*100`% of the brain. 
 
 ## Predictive model
 
@@ -373,6 +373,8 @@ $$L_i = f( XW^T ),$$
 that is, learning a (sentence) label function from the BOLD data.
 
 
+## Predictive model: 2
+
 ```{r ccapred}
 mydf<-data.frame( lab=mylabs,  
   vox=data.matrix(btsc$eventbetas) %*% t(ccaout) )
@@ -382,12 +384,12 @@ print(paste("CCA: Correct",err*100))
 ```
 The input predictors are both clustered and sparse.
 
-## Quick look at CCA results
 
+## Quick look at CCA results
 
 Rescale the cca results and make a picture.
 
-```{r vizcca,results='hide'}
+```{r vizcca,echo=FALSE,warnings=FALSE}
 for ( img in mycca$eig1 ) {
   img[mask==1]<-abs(img[mask==1])
   img[mask==1]<-img[mask==1]/max(img[mask==1])
@@ -395,6 +397,7 @@ for ( img in mycca$eig1 ) {
 plotANTsImage( eximg, mycca$eig1, slices='12x56x1' , 
  thresh='0.01x1.1', color=rainbow(nv), outname="temp.png")
 ```
+
 ## CCA results in image space
 
 ![](./temp.png)
