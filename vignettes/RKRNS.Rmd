@@ -394,14 +394,14 @@ for ( img in mycca$eig1 ) {
   img[mask==1]<-abs(img[mask==1])
   img[mask==1]<-img[mask==1]/max(img[mask==1])
 }
-ofn<-"./RKRNS/vignettes/RKRNS_files/temp.png"
+ofn<-"./RKRNS/vignettes/RKRNS_files/figure-revealjs/temp.png"
 plotANTsImage( eximg, mycca$eig1, slices='12x56x1' , 
  thresh='0.01x1.1', color=rainbow(nv), outname=ofn)
 ```
 
 ## CCA results in image space
 
-![](./RKRNS/vignettes/RKRNS_files/temp.png)
+![](./RKRNS/vignettes/RKRNS_files/figure-revealjs/temp.png)
 
 # Conclusions
 
