@@ -254,7 +254,7 @@ The effect size of cross-validated beta estimates may aid voxel selection.
 
 
 ```{r cveffsz}
-ccnuis<-compcor( mat, 2 ) # an option ....
+# ccnuis<-compcor( mat, 2 ) # a denoising option not used here ....
 stb<-stableEventResponse( mat,  bb$desmat[,1:4], bb$desmat$Run,  
 			polydegree=12, hrf=btsc$hrf )
 ```
@@ -338,7 +338,7 @@ ccamats<-list( data.matrix(btsc$eventbetas)[inds,] ,
 Use the SVD of the beta matrix to initialize sparse CCA.
 
 
-```{r initcca}
+```{r initcca,results=hide}
 initcca<-t( svd( btsc$eventbetas, nu=0, nv=10 )$v )
 initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=1 )$initlist
 nv<-length(initcca)
@@ -352,7 +352,7 @@ The design matrix guides the dimensionality reduction
 performed on the $\beta$ matrix.
 
 
-```{r runcca}
+```{r runcca,results=hide}
 mycca<-sparseDecom2( inmatrix=ccamats, initializationList=initcca,
   sparseness=c( -0.001, -1 ), nvecs=nv, its=10, cthresh=c(250,0),
   uselong=0, smooth=0.0, mycoption=1, inmask=c(mask,NA) )
@@ -387,7 +387,7 @@ The input predictors are both clustered and sparse.
 
 Rescale the cca results and make a picture.
 
-```{r vizcca}
+```{r vizcca,results=hide}
 for ( img in mycca$eig1 ) {
   img[mask==1]<-abs(img[mask==1])
   img[mask==1]<-img[mask==1]/max(img[mask==1])
@@ -434,7 +434,7 @@ in organized fashion for later use.
 
 ## Motion correction
 To motion correct your data, one might run:
-```{r motioncorr}
+```{r motioncorr,results=hide}
 # get an average image
 averageImage <- getAverageOfTimeSeries( boldImage )
 motionCorrectionResults <- motion_correction(boldImage, 
