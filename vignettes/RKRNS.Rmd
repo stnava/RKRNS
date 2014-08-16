@@ -28,6 +28,11 @@ output:
 %\VignetteIndexEntry{BOLD decoding with the RKRNS package}
 -->
 
+```{r global options, include=FALSE}
+opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+               warning=FALSE, message=FALSE)
+```
+
 # Introduction
 
 Decoding from blood oxygenation-level dependent (BOLD) magnetic resonance imaging (MRI) data 
@@ -394,14 +399,14 @@ for ( img in mycca$eig1 ) {
   img[mask==1]<-abs(img[mask==1])
   img[mask==1]<-img[mask==1]/max(img[mask==1])
 }
-ofn<-"./RKRNS/vignettes/RKRNS_files/figure-revealjs/temp.png"
+ofn<-"Figs/temp.jpg"
 plotANTsImage( eximg, mycca$eig1, slices='12x56x1' , 
  thresh='0.01x1.1', color=rainbow(nv), outname=ofn)
 ```
 
 ## CCA results in image space
 
-![](./RKRNS/vignettes/RKRNS_files/figure-revealjs/temp.png)
+![](Figs/temp.jpg)
 
 # Conclusions
 
