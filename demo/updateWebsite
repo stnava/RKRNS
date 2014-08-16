@@ -1,0 +1,11 @@
+git checkout master
+git branch -D gh-pages
+git push origin --delete gh-pages
+git checkout --orphan gh-pages
+git rm -rf .
+echo " " > .nojekyll
+cp vignettes/RKRNS.html index.html
+mv vignettes/RKRNS_files .
+git add RKRNS_files/ index.html .nojekyll 
+git commit -m 'WIP: webprez'
+git push origin gh-pages
