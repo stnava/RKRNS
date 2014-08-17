@@ -450,7 +450,7 @@ now report the labels that intersect the eanat images
 
 ## Associating classes to SCCAN predictors
 Recalling: CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$, 
-we can study matrix $Y$ which contrasts columns of the design matrix.
+we can study matrix $Y$ which contrasts or combines columns of the design matrix.
 ```{r sccanpredictorclass}
 rownames(mycca$eig2)<-levels(mylabs)
 temp<-(mycca$eig2)
@@ -509,5 +509,8 @@ You might also estimate FD and DVARS from these results.  One might
 use `antsPreprocessfMRI` to get these directly.  Note, however, to 
 turn this function's frequency filtering off if you want to do decoding.
 
+## FD and DVARS
+
+hey hey ...
 
 # References
