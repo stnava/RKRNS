@@ -324,7 +324,7 @@ stimbold4<-ts( scale(rowMeans(mat[,ff]) ) )
 plot(cbind(stimbold1,stimbold2,stimbold3,stimbold4))
 ```
 
-## Sparse canonical correlation between space-time BOLD and eigenwords
+## Sparse canonical correlation between BOLD and stimuli
 
 
 CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$ where $X, W$ are as above and $Z$
