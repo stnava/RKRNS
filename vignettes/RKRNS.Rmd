@@ -369,7 +369,7 @@ performed on the $\beta$ matrix.
 
 ```{r runcca,results='hide'}
 mycca<-sparseDecom2( inmatrix=ccamats, initializationList=initcca,
-  sparseness=c( -0.001, -1 ), nvecs=nv, its=10, cthresh=c(250,0),
+  sparseness=c( -0.001, -0.95 ), nvecs=nv, its=10, cthresh=c(250,0),
   uselong=0, smooth=0.0, mycoption=1, inmask=c(mask,NA) )
 ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, mask )))
 ff<-which(colSums(abs(ccaout))>1.e-4)
@@ -429,8 +429,15 @@ truth<-mydf[-inds,]$lab
 pred<-predict( mdl, newdata=mydf[-inds,])
 xtab <- table(pred, truth)
 cm<-confusionMatrix(xtab)
-pheatmap(cm$table)
 print(cm$table)
+```
+
+
+## Confusion matrix 2
+
+heatmap of co-occurrence of predictions
+```{r confmat2,echo=FALSE}
+pheatmap(cm$table)
 ```
 
 ## Anatomical coordinates of SCCAN predictors
@@ -444,13 +451,12 @@ Recalling: CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$,
 we can study matrix $Y$ which contrasts columns of the design matrix.
 ```{r sccanpredictorclass}
 rownames(mycca$eig2)<-levels(mylabs)
-pheatmap((mycca$eig2))
+temp<-(mycca$eig2)
+temp[ abs(mycca$eig2) < 0.04 ]<-0
 ```
 ## Associating classes to SCCAN predictors: 2
 
 ```{r sccanpredictorclass2}
-temp<-(mycca$eig2)
-temp[ abs(mycca$eig2) < 0.04 ]<-0
 pheatmap(temp)
 ```
 
