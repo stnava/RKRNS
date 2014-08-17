@@ -446,7 +446,7 @@ we can study matrix $Y$ which contrasts columns of the design matrix.
 rownames(mycca$eig2)<-levels(mylabs)
 pheatmap((mycca$eig2))
 ```
-## Associating classes to SCCAN predictors
+## Associating classes to SCCAN predictors: 2
 
 ```{r sccanpredictorclass2}
 temp<-(mycca$eig2)
