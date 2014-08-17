@@ -43,8 +43,6 @@ novel extensions.  These are implemented via *R*, its packages and *ANTsR*.
 
 ## RKRNS Algorithms 
 
-
-
 This package integrates several frameworks for BOLD processing:
 
 - core image processing and I/O: ITK (@Avants2014a);
@@ -77,6 +75,18 @@ with this package.
   this manner.
 
 Overall, this simple approach aids debugging though has some shortcomings (i.e. rounded event onsets).
+
+## Contributions of the package
+
+- Organizational system
+
+- Implementation of foundational methods
+
+- Reference simulation data and decoding
+
+- Interpretation of results
+
+- Openness and reproducibility
 
 # Decoding in simulated data
 
