@@ -78,7 +78,9 @@ Overall, this simple approach aids debugging though has some shortcomings (i.e. 
 
 ## Contributions of the package
 
-- Organizational system
+*RKRNS* includes:
+
+- An organizational system
 
 - Implementation of foundational methods
 
