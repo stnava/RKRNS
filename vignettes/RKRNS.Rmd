@@ -408,6 +408,42 @@ plotANTsImage( eximg, mycca$eig1, slices='12x56x1' ,
 
 ![](Figs/temp.jpg)
 
+# Interpreting SCCAN prediction results 
+
+## Confusion matrix 
+
+heatmap of co-occurrence of predictions
+```{r confmat,echo=FALSE}
+library(caret) 
+truth<-mydf[-inds,]$lab
+pred<-predict( mdl, newdata=mydf[-inds,])
+xtab <- table(pred, truth)
+cm<-confusionMatrix(xtab)
+pheatmap(cm$table)
+print(cm$table)
+```
+
+## Anatomical coordinates of SCCAN predictors
+
+used ANTs to label the cortex 
+
+now report the labels that intersect the eanat images
+
+## Associating classes to SCCAN predictors
+Recalling: CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$, 
+we can study matrix $Y$ which contrasts columns of the design matrix.
+```{r sccanpredictorclass}
+rownames(mycca$eig2)<-levels(mylabs)
+pheatmap((mycca$eig2))
+```
+## Associating classes to SCCAN predictors
+
+```{r sccanpredictorclass2}
+temp<-(mycca$eig2)
+temp[ abs(mycca$eig2) < 0.04 ]<-0
+pheatmap(temp)
+```
+
 # Conclusions
 
 ## 
@@ -427,7 +463,7 @@ With the current RKRNS, one may:
 -  The package remains to be evaluated at this level of detail 
 on real data.
 
--  Parameter setting should be done in training data.
+-  Showcased some methods for studying the SCCAN results.
 
 See [RKRNS](https://github.com/stnava/RKRNS) for all source code and documentation and [RKRNS-talk](http://stnava.github.io/RKRNS) for html slides.
 
