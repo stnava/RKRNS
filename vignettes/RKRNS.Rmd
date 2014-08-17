@@ -452,7 +452,7 @@ we can study matrix $Y$ which contrasts columns of the design matrix.
 ```{r sccanpredictorclass}
 rownames(mycca$eig2)<-levels(mylabs)
 temp<-(mycca$eig2)
-temp[ abs(mycca$eig2) < 0.04 ]<-0
+temp[ abs(mycca$eig2) < 0.03 ]<-0
 ```
 ## Associating classes to SCCAN predictors: 2
 
@@ -474,12 +474,12 @@ With the current RKRNS, one may:
 
 - Employ dimensionality reduction through eigenanatomy or SCCAN
 
-- Use low-dimensional, interpretable predictors for decoding
+- Use relatively few low-dimensional predictors for decoding
 
--  The package remains to be evaluated at this level of detail 
+- Interpret multivariate results intuitively
+
+The package remains to be evaluated at this level of detail 
 on real data.
-
--  Showcased some methods for studying the SCCAN results.
 
 See [RKRNS](https://github.com/stnava/RKRNS) for all source code and documentation and [RKRNS-talk](http://stnava.github.io/RKRNS) for html slides.
 
