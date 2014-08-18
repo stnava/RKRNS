@@ -195,7 +195,7 @@ Take a quick look at the estimated hemodynamic response function.
 
 
 ```{r vizhrf}
-plot(ts(btsc$hrf))
+plot(ts(glmda$hrf))
 ```
 If this doesn't look "normal," then there may be a problem.
 One might also do an SVD on the run-wise HRFs and derive a 
@@ -487,8 +487,7 @@ With the current RKRNS, one may:
 
 - Interpret multivariate results intuitively
 
-The package remains to be evaluated at this level of detail 
-on real data.
+The package needs evaluation at this level of detail on real data.
 
 See [RKRNS](https://github.com/stnava/RKRNS) for all source code and documentation and [RKRNS-talk](http://stnava.github.io/RKRNS) for html slides.
 
