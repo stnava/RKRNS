@@ -14,7 +14,7 @@ output:
     incremental: true
     widescreen: true
     smaller: false
-    theme: simple
+    theme: night
     transition: fade
     highlight: pygments
     center: false
@@ -74,7 +74,7 @@ with this package.
   utilities to assist in assembling the BOLD volumes in 
   this manner.
 
-Overall, this simple approach aids debugging though has some shortcomings (i.e. rounded event onsets).
+- Simplicity aids debugging but has caveats (rounded event onsets, etc).
 
 ## Contributions of the package
 
@@ -164,12 +164,7 @@ plot(ts(filtmat[,randvox]))
 We can eliminate low frequency contamination with polynomial regressors 
 and other denoising techniques at a later step.
 
-## Autoregression 
-
-
-Probably not good for decoding, but 
-we can also model autoregression coefficients.
-
+## Autoregression Correction
 
 ```{r arfilt}
 armat<-arCorrection( mat )
@@ -222,7 +217,8 @@ btsc<-bold2betas( boldmatrix=data.matrix(mat),
       blockNumb=runs, maxnoisepreds=0, hrfBasis=glmda$hrf,
       hrfShifts=0, polydegree=12, selectionthresh=0.2 )
 mylabs<-rep("",nrow(btsc$eventbetas))
-for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
+for ( i in 1:nrow(btsc$eventbetas) ) 
+  mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)
 ```
 
@@ -420,7 +416,7 @@ plotANTsImage( eximg, mycca$eig1, slices='12x56x1' ,
 
 ![](Figs/temp.jpg)
 
-# Interpreting SCCAN prediction results 
+# Interpreting SCCAN results 
 
 ## Confusion matrix 
 
