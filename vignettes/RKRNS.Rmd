@@ -61,12 +61,11 @@ to a BOLD decoding experiment.
 ## Data organization expected by RKRNS
 
 
-We make several assumptions about data organization 
-with this package.
+*RKRNS* makes several assumptions about data organization.
 
 - The BOLD time series will be masked and converted to a matrix.  This will be known as "the BOLD matrix."
 
-- The design matrix will have one event type per column and will be binary.
+- The design matrix is binary and has one event type per column.
 
 - The design matrix matches the bold matrix *in time* at an index level.  Thus, 
   it has the same number of rows (volumes) as the BOLD matrix. So, the i$^{th}$ row 
