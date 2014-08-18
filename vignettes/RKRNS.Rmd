@@ -82,13 +82,29 @@ with this package.
 
 - An organizational system
 
+  + relatively small scripts implement full study
+
 - Implementation of foundational methods
+
+  + HRF estimation
+
+  + event-wise $\beta$ estimation 
+
+  + denoising via `compcor` and `glmDenoiseR`
+
+  + flexible: easy to estimate voxel-wise optimal models, HRFs, etc
 
 - Reference simulation data and decoding
 
 - Interpretation of results
+  
+  + sparse low-dimensional predictors
 
+  + anatomical labeling of predictors based on AAL
+ 
 - Openness and reproducibility
+
+  + this document tests the package
 
 # Decoding in simulated data
 
