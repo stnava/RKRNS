@@ -449,7 +449,7 @@ ccaanat<-list()
 for ( img in mycca$eig1 ) {
   nzind<-img[ mask == 1 ] > 0 
   aalvals<-aalimg[ mask == 1 ][ nzind ]
-  aalmax<-which.max( hist( aalvals, breaks=1:90 )$counts )+1 
+  aalmax<-which.max( hist( aalvals, breaks=1:90, plot=FALSE )$counts )+1 
   ccaanat<-lappend( ccaanat, aal$label_name[aalmax] )
 }
 ```
