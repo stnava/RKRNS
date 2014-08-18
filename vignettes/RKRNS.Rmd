@@ -440,9 +440,20 @@ pheatmap(cm$table)
 
 ## Anatomical coordinates of SCCAN predictors
 
-used ANTs to label the cortex 
+ANTs propagates AAL labels to the cortex (@Avants2014a,@Tustison2014)
 
-now report the labels that intersect the eanat images
+```{r aallabel}
+fn<-paste(path.package("RKRNS"),"/extdata/111157_aal.nii.gz",sep="") 
+aalimg<-antsImageRead(fn,3)
+ccaanat<-list()
+for ( img in mycca$eig1 ) {
+  nzind<-img[ mask == 1 ] > 0 
+  aalvals<-aalimg[ mask == 1 ][ nzind ]
+  aalmax<-which.max( hist( aalvals, breaks=1:90 )$counts )+1 
+  ccaanat<-lappend( ccaanat, aal$label_name[aalmax] )
+}
+```
+The SCCAN predictors include: `r unlist(ccaanat)`.
 
 ## Associating classes to SCCAN predictors
 Recalling: CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$, 
