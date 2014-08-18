@@ -31,6 +31,7 @@ output:
 ```{r global options, include=FALSE}
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
                warning=FALSE, message=FALSE)
+opts_chunk$set(dev = 'pdf')
 ```
 
 # Introduction
