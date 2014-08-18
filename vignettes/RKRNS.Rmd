@@ -296,6 +296,7 @@ print(length(ff))
 The `eigSeg` function labels each region of the mask 
 with the class that has the largest effect size.
 
+Should return the magnitude of effects ...
 
 ## Decode with effect size clusters
 
@@ -310,6 +311,7 @@ mdl<-svm( lab ~., data=mydf[inds,])
 err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
 print(paste("EigSegPredVox",length(ff),"Correct",err*100))
 ```
+
 
 ## Time series per stimulus
 
@@ -467,6 +469,9 @@ for ( img in mycca$eig1 ) {
 ```
 The SCCAN predictors include: `r unlist(ccaanat)`.
 
+How much of the known network do we actually find?
+
+
 ## Associating classes to SCCAN predictors
 Recalling: CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$, 
 we can study matrix $Y$ which contrasts or combines columns of the design matrix.
@@ -498,6 +503,10 @@ With the current RKRNS, one may:
 - Use relatively few low-dimensional predictors for decoding
 
 - Interpret multivariate results intuitively
+
+- Allows us to exploit prior anatomical labels ....
+
+- or conceptions about what anatomy the decoding should be driven by?
 
 The package needs evaluation at this level of detail on real data.
 
