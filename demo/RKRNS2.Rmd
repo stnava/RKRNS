@@ -346,9 +346,10 @@ for ( i in 1:length( eventtimes ) )
 
 Inspired by discussion with Kendrick Kay.
 ```{r glmdenoiserun,echo=TRUE, message=FALSE, warning=FALSE}
-dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], whichbase=c(4:12) , crossvalidationgroups=4, 
+dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], whichbase=NA , crossvalidationgroups=4, 
      baseshift = 0,  tr=0.5, hrfbasislength=20, polydegree = 12,
      maxnoisepreds=0 , selectionthresh=0.1 ,collapsedesign=T, reestimatenoisepool=F )
+plot(ts(dd$hrf))
 adafafa
   if ( ! file.exists( bfn ) ) {
     betas<-bold2betas( imat, dmats, dmat$blockNumb, 
