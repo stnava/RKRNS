@@ -401,6 +401,12 @@ mydf<-data.frame( lab=mylabs,
 mdl<-svm( lab ~., data=mydf[inds,])
 err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
 print(paste("CCA: Correct",err*100))
+# here is another approach ... use cca to transform BOLD signal to stimuli 
+mydf3<-data.frame( lab=mylabs, 
+  vox=data.matrix(btsc$eventbetas) %*% t(ccaout) %*% t(mycca$eig2) )
+mdl2<-RRF( lab ~., data=mydf3[inds,])
+err<-sum(mydf3[-inds,]$lab==predict( mdl2, newdata=mydf3[-inds,]))/nrow(mydf3[-inds,])
+print(paste("CCA2: Correct",err*100))
 ```
 The input predictors are both clustered and sparse.
 
