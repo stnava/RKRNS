@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>BOLD decoding with RKRNS</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="RKRNS_files/reveal.js-2.6.1/css/reveal.min.css"/>
+
+  <!-- some tweaks to reveal css -->
+  <style type="text/css">
+    .reveal h1 { font-size: 2.0em; }
+    .reveal h2 { font-size: 1.5em;  }
+    .reveal h3 { font-size: 1.25em;	}
+    .reveal h4 { font-size: 1em;	}
+
+    .reveal .slides>section,
+    .reveal .slides>section>section {
+      padding: 0px 0px;
+    }
+
+     .reveal .title {
+        margin-top: 125px;
+        margin-bottom: 50px;
+     }
+
+    .reveal table {
+      border-width: 1px;
+      border-spacing: 2px;
+      border-style: dotted;
+      border-color: gray;
+      border-collapse: collapse;
+      font-size: 0.7em;
+    }
+
+    .reveal table th {
+      border-width: 1px;
+      padding-left: 10px;
+      padding-right: 25px;
+      font-weight: bold;
+      border-style: dotted;
+      border-color: gray;
+    }
+
+    .reveal table td {
+      border-width: 1px;
+      padding-left: 10px;
+      padding-right: 25px;
+      border-style: dotted;
+      border-color: gray;
+    }
+
+  </style>
+
+    <style type="text/css">code{white-space: pre;}</style>
+
+
+<style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+</style>
+
+<link rel="stylesheet" href="RKRNS_files/reveal.js-2.6.1/css/theme/night.css" id="theme">
+
+<style type="text/css">
+.reveal section img {
+  background: rgba(255, 255, 255, 0.85);
+}
+</style>
+
+    <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+    <script>
+      if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'RKRNS_files/reveal.js-2.6.1/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+      }
+    </script>
+    <!--[if lt IE 9]>
+    <script src="RKRNS_files/reveal.js-2.6.1/lib/js/html5shiv.js"></script>
+    <![endif]-->
+
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section>
+    <h1 class="title">BOLD decoding with <em>RKRNS</em></h1>
+    <h3 class="date"></h3>
+</section>
+
+<section class="slide level2">
+
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{BOLD decoding with the RKRNS package}
+-->
+</section>
+<section><section id="introduction" class="titleslide slide level1"><h1>Introduction</h1></section><section id="rkrns-algorithms" class="slide level2">
+<h1>RKRNS Algorithms</h1>
+<p>This package integrates several frameworks for BOLD processing:</p>
+<ul>
+<li class="fragment"><p>core image processing and I/O: ITK (<span class="citation" data-cites="Avants2014a">Avants, Tustison, et al. (2014)</span>);</p></li>
+<li class="fragment"><p>registration and utilities for image processing: ANTs (<span class="citation" data-cites="Tustison2014">Tustison et al. (2014)</span>) and ANTsR (<span class="citation" data-cites="ANTsR">PICSL (2014)</span>);</p></li>
+<li class="fragment"><p>hemodynamic response function estimation: influenced by GLMdenoise (<span class="citation" data-cites="Kay2013">Kay et al. (2013)</span>) and finite impulse response (<span class="citation" data-cites="Kay2008">Kay et al. (2008)</span>) estimates;</p></li>
+<li class="fragment"><p>dimensionality reduction: Eigenanatomy (<span class="citation" data-cites="Dhillon2014">Dhillon et al. (2014)</span>) and SCCAN (<span class="citation" data-cites="Avants2014">Avants, Libon, et al. (2014)</span>);</p></li>
+<li class="fragment"><p>core statistics and temporal filtering via <em>R</em> packages.</p></li>
+</ul>
+<p>In combination, these tools enable one to go from near-raw medical imaging data to a BOLD decoding experiment.</p>
+</section><section id="data-organization-expected-by-rkrns" class="slide level2">
+<h1>Data organization expected by RKRNS</h1>
+<p><em>RKRNS</em> makes several assumptions about data organization.</p>
+<ul>
+<li class="fragment"><p>The BOLD time series will be masked and converted to a matrix. This will be known as “the BOLD matrix.”</p></li>
+<li class="fragment"><p>The design matrix is binary and has one event type per column.</p></li>
+<li class="fragment"><p>The design matrix matches the bold matrix <em>in time</em> at an index level. Thus, it has the same number of rows (volumes) as the BOLD matrix. So, the i<span class="math">\(^{th}\)</span> row of the design matrix corresponds to the i<span class="math">\(^{th}\)</span> BOLD volume. We provide some utilities to assist in assembling the BOLD volumes in this manner.</p></li>
+<li class="fragment"><p>Simplicity aids debugging but has caveats (rounded event onsets, etc).</p></li>
+</ul>
+</section><section id="contributions-of-the-package" class="slide level2">
+<h1>Contributions of the package</h1>
+<p><em>RKRNS</em> includes:</p>
+<ul>
+<li class="fragment">An organizational system</li>
+<li class="fragment"><p>relatively small scripts implement full study</p></li>
+<li class="fragment">Implementation of foundational methods</li>
+<li class="fragment">HRF estimation</li>
+<li class="fragment">event-wise <span class="math">\(\beta\)</span> estimation</li>
+<li class="fragment">denoising via <code>compcor</code> and <code>glmDenoiseR</code></li>
+<li class="fragment"><p>flexible: easy to estimate voxel-wise optimal models, HRFs, etc</p></li>
+<li class="fragment"><p>Reference simulation data and decoding distributed with the package</p></li>
+<li class="fragment">Interpretation of results</li>
+<li class="fragment">sparse low-dimensional predictors</li>
+<li class="fragment"><p>anatomical labeling of predictors based on AAL</p></li>
+<li class="fragment">Openness and reproducibility</li>
+<li class="fragment"><p>this document tests the package</p></li>
+</ul>
+</section></section>
+<section><section id="decoding-in-simulated-data" class="titleslide slide level1"><h1>Decoding in simulated data</h1></section><section id="example-bold-data" class="slide level2">
+<h1>Example BOLD Data</h1>
+<p>We adapted methods from the <em>neuRosim</em> (<span class="citation" data-cites="neuRosim">Welvaert et al. (2011)</span>) package in order to simulate event-related BOLD data. This data involves a 4-class decoding task. One seeks to identify brain responses to novel faces, famous faces and their first and second presentations to the subject. We distribute the underlying anatomical BOLD data along with a cortical mask within the package. The data may be loaded by:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(RKRNS)
+fn&lt;-<span class="kw">paste</span>(<span class="kw">path.package</span>(<span class="st">&quot;RKRNS&quot;</span>),<span class="st">&quot;/extdata/111157_mocoref_masked.nii.gz&quot;</span>,<span class="dt">sep=</span><span class="st">&quot;&quot;</span>) 
+eximg&lt;-<span class="kw">antsImageRead</span>(fn,<span class="dv">3</span>)
+fn&lt;-<span class="kw">paste</span>(<span class="kw">path.package</span>(<span class="st">&quot;RKRNS&quot;</span>),<span class="st">&quot;/extdata/subaal.nii.gz&quot;</span>,<span class="dt">sep=</span><span class="st">&quot;&quot;</span>) 
+mask&lt;-<span class="kw">antsImageRead</span>(fn,<span class="dv">3</span>)</code></pre>
+<p>which gives you both the cortical <code>mask</code> and the example BOLD signal image <code>eximg</code>. ANTsR also provides AAL label (<span class="citation" data-cites="Tzourio-Mazoyer2002">Tzourio-Mazoyer et al. (2002)</span>) names via:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(aal,<span class="dt">package=</span><span class="st">&#39;ANTsR&#39;</span>)
+labs&lt;-<span class="dv">1</span>:<span class="dv">90</span></code></pre>
+<p>with cortical labs defined by <code>labs</code>.</p>
+</section><section id="run-the-simulation" class="slide level2">
+<h1>Run the simulation</h1>
+<p>We generate simulated bold data as in neuRosim.<br />The <code>simulateBOLD</code> function results in a bold image in the <code>antsImage</code> class. We subsequently convert this image to a <span class="math">\(n\times p\)</span> matrix where there are <span class="math">\(n\)</span> time volumes and <span class="math">\(p\)</span> voxels in the mask.</p>
+<pre class="sourceCode r"><code class="sourceCode r">bb&lt;-<span class="kw">simulateBOLD</span>(<span class="dt">option=</span><span class="st">&quot;henson&quot;</span>,<span class="dt">eximg=</span>eximg,<span class="dt">mask=</span>mask)
+boldImage&lt;-bb$simbold
+mat&lt;-<span class="kw">timeseries2matrix</span>( boldImage, bb$mask )</code></pre>
+<p>The data frame containing the bold image also contains the design matrix. One should inspect that matrix to get an idea of the structure expected by RKRNS. Row names and column names are expected to exist in the design matrix dataframe.</p>
+</section><section id="simulated-bold-time-series" class="slide level2">
+<h1>Simulated BOLD time series</h1>
+<p>Perform some diagnostic visualizations on the data.</p>
+<pre class="sourceCode r"><code class="sourceCode r">randvox&lt;-<span class="kw">sample</span>(<span class="dv">1</span>:<span class="kw">ncol</span>(mat),<span class="dv">4</span>)
+<span class="kw">plot</span>(<span class="kw">ts</span>(mat[,randvox]))</code></pre>
+<p><img src="Figs/simbviz.png" title="plot of chunk simbviz" alt="plot of chunk simbviz" width="864" /> The time series is noisy, as expected.</p>
+</section><section id="frequency-filtering" class="slide level2">
+<h1>Frequency filtering</h1>
+<p>Let’s get rid of high frequency noise.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># only filter high frequencies 1/(2*tr)</span>
+filtmat&lt;-<span class="kw">filterfMRI4KRNS</span>( <span class="kw">data.matrix</span>(mat), <span class="dt">tr=</span><span class="dv">1</span>, <span class="ot">NA</span>, <span class="ot">NA</span>, <span class="dt">trendfrequency=</span><span class="dv">2</span>, <span class="dt">trendfrequency2=</span><span class="ot">NA</span> )
+<span class="kw">plot</span>(<span class="kw">ts</span>(filtmat[,randvox]))</code></pre>
+<p><img src="Figs/ffilt.png" title="plot of chunk ffilt" alt="plot of chunk ffilt" width="864" /> We can eliminate low frequency contamination with polynomial regressors and other denoising techniques at a later step.</p>
+</section><section id="autoregression-correction" class="slide level2">
+<h1>Autoregression Correction</h1>
+<pre class="sourceCode r"><code class="sourceCode r">armat&lt;-<span class="kw">arCorrection</span>( mat )
+<span class="kw">print</span>(armat$arcoefs)</code></pre>
+<pre><code>## [1] -0.02820 -0.05086</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(<span class="kw">ts</span>(armat$outmat[,randvox]))</code></pre>
+<p><img src="Figs/arfilt.png" title="plot of chunk arfilt" alt="plot of chunk arfilt" width="864" /> The <code>armat$arcoefs</code> indicate auto-correlation levels of the input data. This function tries to shrink these levels toward zero.</p>
+</section><section id="estimate-the-hemodynamic-response-function" class="slide level2">
+<h1>Estimate the hemodynamic response function</h1>
+<p>Use <code>glmDenoiseR</code> to estimate a FIR HRF.</p>
+<pre class="sourceCode r"><code class="sourceCode r">mypolydegree&lt;-<span class="dv">12</span>
+glmda&lt;-<span class="kw">glmDenoiseR</span>( <span class="kw">data.matrix</span>(mat), bb$desmat[,<span class="dv">1</span>:<span class="dv">4</span>], <span class="dt">hrfBasis=</span><span class="ot">NA</span>, 
+  <span class="dt">hrfShifts =</span> <span class="dv">12</span>, <span class="dt">maxnoisepreds=</span><span class="dv">0</span> , <span class="dt">selectionthresh=</span><span class="fl">0.1</span> , 
+  <span class="dt">collapsedesign=</span>T, <span class="dt">polydegree=</span>mypolydegree, <span class="dt">baseshift=</span><span class="dv">0</span> )</code></pre>
+</section><section id="visualize-the-hrf" class="slide level2">
+<h1>Visualize the HRF</h1>
+<p>Take a quick look at the estimated hemodynamic response function.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(<span class="kw">ts</span>(glmda$hrf))</code></pre>
+<p><img src="Figs/vizhrf.png" title="plot of chunk vizhrf" alt="plot of chunk vizhrf" width="864" /> If this doesn’t look “normal,” then there may be a problem. One might also do an SVD on the run-wise HRFs and derive a more flexible basis set for your study.</p>
+</section><section id="estimate-beta-values-for-each-event" class="slide level2">
+<h1>Estimate <span class="math">\(\beta\)</span> values for each event</h1>
+<p>We estimate a <span class="math">\(\beta^i\)</span> vector for each of <span class="math">\(i \in 1 \cdots q\)</span> events. This vector contains a scalar <span class="math">\(\beta\)</span> value for each voxel, i.e. <span class="math">\(\beta_j^i\)</span> where <span class="math">\(j \in 1 \cdots p\)</span>. This example can be found via <code>?bold2betas</code>.</p>
+<pre class="sourceCode r"><code class="sourceCode r">runs&lt;-bb$desmat$Run; 
+btsc&lt;-<span class="kw">bold2betas</span>( <span class="dt">boldmatrix=</span><span class="kw">data.matrix</span>(mat), 
+      <span class="dt">designmatrix=</span>bb$desmat[,<span class="dv">1</span>:<span class="dv">4</span>], <span class="dt">baseshift=</span><span class="dv">0</span>,
+      <span class="dt">blockNumb=</span>runs, <span class="dt">maxnoisepreds=</span><span class="dv">0</span>, <span class="dt">hrfBasis=</span>glmda$hrf,
+      <span class="dt">hrfShifts=</span><span class="dv">0</span>, <span class="dt">polydegree=</span>mypolydegree, <span class="dt">selectionthresh=</span><span class="fl">0.2</span> )
+mylabs&lt;-<span class="kw">rep</span>(<span class="st">&quot;&quot;</span>,<span class="kw">nrow</span>(btsc$eventbetas))
+for ( i in <span class="dv">1</span>:<span class="kw">nrow</span>(btsc$eventbetas) ) 
+  mylabs[i]&lt;-<span class="kw">substr</span>( <span class="kw">rownames</span>(btsc$eventbetas)[i],<span class="dv">1</span>,<span class="dv">2</span>)
+mylabs&lt;-<span class="kw">as.factor</span>(mylabs)</code></pre>
+</section><section id="estimate-beta-values-for-each-event-2" class="slide level2">
+<h1>Estimate <span class="math">\(\beta\)</span> values for each event: 2</h1>
+<p>We recommend that one looks at the estimated hemodynamic response function in order to help set parameters. This is available as output from the <code>bold2betas</code> function (and <code>glmDenoiseR</code>). Key parameters are the basis length for HRF estimation, the maximum number of noise predictors (e.g. <code>maxnoisepreds=4</code> or <code>maxnoisepreds=2:10</code> to search a range), the polynomial degree and the <code>selectionthresh</code> which should be kept below <code>0.5</code>. Real data processing should proceed similarly. The latter part of the sample code extracts labels from the rownames of the output event beta dataframe. This will set us up for decoding.</p>
+</section><section id="decode-from-event-wise-beta" class="slide level2">
+<h1>Decode from event-wise <span class="math">\(\beta\)</span></h1>
+<p>Use effect size to select a subset of the full voxel matrix.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># sample for training</span>
+inds&lt;-<span class="kw">sample</span>(<span class="dv">1</span>:<span class="kw">nrow</span>(btsc$eventbetas),<span class="dt">size=</span><span class="kw">round</span>(<span class="kw">nrow</span>(btsc$eventbetas)*<span class="dv">3</span>./<span class="dv">4</span>.))
+<span class="co"># basic voxel selection using effect size &amp; classification</span>
+zz&lt;-<span class="kw">apply</span>(btsc$eventbetas,<span class="dt">FUN=</span>mean,<span class="dt">MARGIN=</span><span class="dv">2</span>)
+zze&lt;-zz/<span class="kw">apply</span>(btsc$eventbetas,<span class="dt">FUN=</span>sd,<span class="dt">MARGIN=</span><span class="dv">2</span>)
+th&lt;-<span class="fl">0.4</span>
+ff&lt;-<span class="kw">which</span>( <span class="kw">abs</span>(zze) &gt;<span class="st"> </span>th )
+mydf&lt;-<span class="kw">data.frame</span>( <span class="dt">lab=</span>mylabs,  <span class="dt">vox=</span><span class="kw">data.matrix</span>(btsc$eventbetas)[,ff])
+mdl&lt;-<span class="kw">svm</span>( lab ~., <span class="dt">data=</span>mydf[inds,])
+err&lt;-<span class="kw">sum</span>(mydf[-inds,]$lab==<span class="kw">predict</span>( mdl, <span class="dt">newdata=</span>mydf[-inds,]))/<span class="kw">nrow</span>(mydf[-inds,])
+<span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;NPredVox&quot;</span>,<span class="kw">length</span>(ff),<span class="st">&quot;Correct&quot;</span>,err*<span class="dv">100</span>))</code></pre>
+<pre><code>## [1] &quot;NPredVox 612 Correct 72&quot;</code></pre>
+<p>The “high effect size” voxels are sent to a naive support vector machine to do training (on a fraction of the data) and testing on the left out data.</p>
+</section><section id="cross-validated-effect-size" class="slide level2">
+<h1>Cross-validated effect size</h1>
+<p>Effect size increases when a measurement has low variance and a high value. The effect size of cross-validated beta estimates may aid voxel selection.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># ccnuis&lt;-compcor( mat, 2 ) # a denoising option not used here ....</span>
+stb&lt;-<span class="kw">stableEventResponse</span>( mat,  bb$desmat[,<span class="dv">1</span>:<span class="dv">4</span>], bb$desmat$Run,  
+            <span class="dt">polydegree=</span>mypolydegree, <span class="dt">hrf=</span>btsc$hrf )</code></pre>
+</section><section id="voxels-of-clustered-effect-size" class="slide level2">
+<h1>Voxels of clustered effect size</h1>
+<p>Use a threshold to find clusters of voxels with large effect.</p>
+<pre class="sourceCode r"><code class="sourceCode r">stb2&lt;-<span class="kw">abs</span>(stb)
+stb2[ stb2 &lt;<span class="st"> </span><span class="dv">5</span> ]&lt;-<span class="dv">0</span>
+ee&lt;-<span class="kw">eigSeg</span>(mask, <span class="kw">matrixToImages</span>( stb2, mask) )
+<span class="kw">ImageMath</span>(<span class="dv">3</span>,ee,<span class="st">&#39;ClusterThresholdVariate&#39;</span>,ee,mask,<span class="dv">5</span>)
+ff&lt;-<span class="kw">which</span>( ee[mask==<span class="dv">1</span>] &gt;<span class="st"> </span><span class="dv">0</span> )
+ofn&lt;-<span class="st">&quot;Figs/eigseg.jpg&quot;</span>
+<span class="kw">plotANTsImage</span>( eximg, <span class="kw">list</span>(ee), <span class="dt">slices=</span><span class="st">&#39;12x56x1&#39;</span>,
+  <span class="dt">thresh=</span><span class="st">&#39;1x4&#39;</span>,<span class="dt">color=</span><span class="st">&#39;red&#39;</span>,<span class="dt">outname=</span>ofn)</code></pre>
+<p>The <code>eigSeg</code> function labels each region of the mask with the class that has the largest effect size.</p>
+<p>Should return the magnitude of effects … FIXME colors above.</p>
+</section><section id="eigseg-viz" class="slide level2">
+<h1>eigSeg Viz</h1>
+<p><img src="Figs/eigseg.jpg" /></p>
+</section><section id="decode-with-effect-size-clusters" class="slide level2">
+<h1>Decode with effect size clusters</h1>
+<p>Use only those voxels that exist within clusters and have maximum response for some label class.</p>
+<pre class="sourceCode r"><code class="sourceCode r">mydf&lt;-<span class="kw">data.frame</span>( <span class="dt">lab=</span>mylabs,  <span class="dt">vox=</span><span class="kw">data.matrix</span>(btsc$eventbetas)[,ff])
+mdl&lt;-<span class="kw">svm</span>( lab ~., <span class="dt">data=</span>mydf[inds,])
+err&lt;-<span class="kw">sum</span>(mydf[-inds,]$lab==<span class="kw">predict</span>( mdl, <span class="dt">newdata=</span>mydf[-inds,]))/<span class="kw">nrow</span>(mydf[-inds,])
+<span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;EigSegPredVox&quot;</span>,<span class="kw">length</span>(ff),<span class="st">&quot;Correct&quot;</span>,err*<span class="dv">100</span>))</code></pre>
+<pre><code>## [1] &quot;EigSegPredVox 753 Correct 80&quot;</code></pre>
+</section><section id="time-series-per-stimulus" class="slide level2">
+<h1>Time series per stimulus</h1>
+<p>Investigate the time series for each stimulus.</p>
+<p><img src="Figs/stimulusts.png" title="plot of chunk stimulusts" alt="plot of chunk stimulusts" width="864" /></p>
+</section><section id="sparse-canonical-correlation-between-bold-and-stimuli" class="slide level2">
+<h1>Sparse canonical correlation between BOLD and stimuli</h1>
+<p>CCA maximizes <span class="math">\(PearsonCorrelation( XW^T, ZY^T )\)</span> where <span class="math">\(X, W\)</span> are as above and <span class="math">\(Z\)</span> and <span class="math">\(Y\)</span> are similarly defined. CCA optimizes the matrices <span class="math">\(W, Y\)</span> operating on <span class="math">\(X, Z\)</span> to find a low-dimensional representation of the data pair <span class="math">\(( X , Z )\)</span> in which correlation is maximal. Following ideas outlined in <span class="citation" data-cites="Dhillon2014">Dhillon et al. (2014)</span> and <span class="citation" data-cites="Avants2014">Avants, Libon, et al. (2014)</span>, this method can be extended with sparsity constraints that yield rows of <span class="math">\(W, Y\)</span> with a controllable number of non-zero entries.</p>
+</section><section id="sccan-voxel-selection-classification" class="slide level2">
+<h1>SCCAN voxel selection &amp; classification</h1>
+<p>Set up the CCA by pairing the beta matrix with the design matrix.</p>
+<pre class="sourceCode r"><code class="sourceCode r">ccamats&lt;-<span class="kw">list</span>( <span class="kw">data.matrix</span>(btsc$eventbetas)[inds,] , 
+               <span class="kw">data.matrix</span>(bb$desmat[btsc$eventrows,<span class="dv">1</span>:<span class="dv">4</span>])[inds,] )</code></pre>
+</section><section id="initialize-sccan" class="slide level2">
+<h1>Initialize SCCAN</h1>
+<p>Use the SVD of the beta matrix to initialize sparse CCA.</p>
+<pre class="sourceCode r"><code class="sourceCode r">initcca&lt;-<span class="kw">t</span>( <span class="kw">svd</span>( btsc$eventbetas, <span class="dt">nu=</span><span class="dv">0</span>, <span class="dt">nv=</span><span class="dv">10</span> )$v )
+initcca&lt;-<span class="kw">initializeEigenanatomy</span>( initcca, <span class="dt">mask=</span>mask, <span class="dt">nreps=</span><span class="dv">1</span> )$initlist
+nv&lt;-<span class="kw">length</span>(initcca)</code></pre>
+<p>These 10 vectors initialize the sparse optimizer in a good place.</p>
+</section><section id="supervised-clustering-with-sccan" class="slide level2">
+<h1>Supervised clustering with SCCAN</h1>
+<p>The design matrix guides the dimensionality reduction performed on the <span class="math">\(\beta\)</span> matrix.</p>
+<pre class="sourceCode r"><code class="sourceCode r">mycca&lt;-<span class="kw">sparseDecom2</span>( <span class="dt">inmatrix=</span>ccamats, <span class="dt">initializationList=</span>initcca,
+  <span class="dt">sparseness=</span><span class="kw">c</span>( -<span class="fl">0.001</span>, -<span class="fl">0.95</span> ), <span class="dt">nvecs=</span>nv, <span class="dt">its=</span><span class="dv">10</span>, <span class="dt">cthresh=</span><span class="kw">c</span>(<span class="dv">250</span>,<span class="dv">0</span>),
+  <span class="dt">uselong=</span><span class="dv">0</span>, <span class="dt">smooth=</span><span class="fl">0.0</span>, <span class="dt">mycoption=</span><span class="dv">1</span>, <span class="dt">inmask=</span><span class="kw">c</span>(mask,<span class="ot">NA</span>) )
+ccaout&lt;-(<span class="kw">data.matrix</span>(<span class="kw">imageListToMatrix</span>( mycca$eig1, mask )))
+ff&lt;-<span class="kw">which</span>(<span class="kw">colSums</span>(<span class="kw">abs</span>(ccaout))&gt;<span class="fl">1.e-4</span>)</code></pre>
+<p>We also count the non-zero voxels which cover 0.787% of the brain.</p>
+</section><section id="predictive-model" class="slide level2">
+<h1>Predictive model</h1>
+<p>Given CCA solution matrix <span class="math">\(W\)</span>, one may employ the low-dimensional representation, <span class="math">\(XW^T\)</span>, in multi-label classification. Currently, we employ SVM or random forests as multi-label learners for the problem:</p>
+<p><span class="math">\[L_i = f( XW^T ),\]</span></p>
+<p>that is, learning a (sentence) label function from the BOLD data.</p>
+</section><section id="predictive-model-2" class="slide level2">
+<h1>Predictive model: 2</h1>
+<pre class="sourceCode r"><code class="sourceCode r">mydf&lt;-<span class="kw">data.frame</span>( <span class="dt">lab=</span>mylabs,  
+  <span class="dt">vox=</span><span class="kw">data.matrix</span>(btsc$eventbetas) %*%<span class="st"> </span><span class="kw">t</span>(ccaout) )
+mdl&lt;-<span class="kw">svm</span>( lab ~., <span class="dt">data=</span>mydf[inds,])
+err&lt;-<span class="kw">sum</span>(mydf[-inds,]$lab==<span class="kw">predict</span>( mdl, <span class="dt">newdata=</span>mydf[-inds,]))/<span class="kw">nrow</span>(mydf[-inds,])
+<span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;CCA: Correct&quot;</span>,err*<span class="dv">100</span>))</code></pre>
+<pre><code>## [1] &quot;CCA: Correct 80&quot;</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># here is another approach ... use cca to transform BOLD signal to stimuli </span>
+mydf3&lt;-<span class="kw">data.frame</span>( <span class="dt">lab=</span>mylabs, 
+  <span class="dt">vox=</span><span class="kw">data.matrix</span>(btsc$eventbetas) %*%<span class="st"> </span><span class="kw">t</span>(ccaout) %*%<span class="st"> </span><span class="kw">t</span>(mycca$eig2) )
+mdl2&lt;-<span class="kw">svm</span>( lab ~., <span class="dt">data=</span>mydf3[inds,])
+err&lt;-<span class="kw">sum</span>(mydf3[-inds,]$lab==<span class="kw">predict</span>( mdl2, <span class="dt">newdata=</span>mydf3[-inds,]))/<span class="kw">nrow</span>(mydf3[-inds,])
+<span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;CCA2: Correct&quot;</span>,err*<span class="dv">100</span>))</code></pre>
+<pre><code>## [1] &quot;CCA2: Correct 84&quot;</code></pre>
+<p>The input predictors are both clustered and sparse.</p>
+</section><section id="quick-look-at-cca-results" class="slide level2">
+<h1>Quick look at CCA results</h1>
+<p>Rescale the cca results and make a picture.</p>
+</section><section id="cca-results-in-image-space" class="slide level2">
+<h1>CCA results in image space</h1>
+<p><img src="Figs/temp.jpg" /></p>
+</section></section>
+<section><section id="interpreting-sccan-results" class="titleslide slide level1"><h1>Interpreting SCCAN results</h1></section><section id="confusion-matrix" class="slide level2">
+<h1>Confusion matrix</h1>
+<p>heatmap of co-occurrence of predictions</p>
+<pre><code>##     truth
+## pred F1 F2 N1 N2
+##   F1  5  0  1  1
+##   F2  1  5  0  1
+##   N1  0  0  2  1
+##   N2  0  0  0  8</code></pre>
+</section><section id="confusion-matrix-2" class="slide level2">
+<h1>Confusion matrix 2</h1>
+<p><img src="Figs/confmat2.png" title="plot of chunk confmat2" alt="plot of chunk confmat2" width="864" /></p>
+</section><section id="anatomical-coordinates-of-sccan-predictors" class="slide level2">
+<h1>Anatomical coordinates of SCCAN predictors</h1>
+<p>ANTs propagates AAL labels to the cortex (<span class="citation" data-cites="Avants2014a">Avants, Tustison, et al. (2014)</span>,<span class="citation" data-cites="Tustison2014">Tustison et al. (2014)</span>)</p>
+<pre class="sourceCode r"><code class="sourceCode r">fn&lt;-<span class="kw">paste</span>(<span class="kw">path.package</span>(<span class="st">&quot;RKRNS&quot;</span>),<span class="st">&quot;/extdata/111157_aal.nii.gz&quot;</span>,<span class="dt">sep=</span><span class="st">&quot;&quot;</span>) 
+aalimg&lt;-<span class="kw">antsImageRead</span>(fn,<span class="dv">3</span>)
+ccaanat&lt;-<span class="kw">list</span>()
+for ( img in mycca$eig1 ) {
+  nzind&lt;-img[ mask ==<span class="st"> </span><span class="dv">1</span> ] &gt;<span class="st"> </span><span class="dv">0</span> 
+  aalvals&lt;-aalimg[ mask ==<span class="st"> </span><span class="dv">1</span> ][ nzind ]
+  aalmax&lt;-<span class="kw">which.max</span>( <span class="kw">hist</span>( aalvals, <span class="dt">breaks=</span><span class="dv">1</span>:<span class="dv">90</span>, <span class="dt">plot=</span><span class="ot">FALSE</span> )$counts )+<span class="dv">1</span> 
+  ccaanat&lt;-<span class="kw">lappend</span>( ccaanat, aal$label_name[aalmax] )
+}</code></pre>
+<p>The SCCAN predictors include: Temporal_Inf_R, Temporal_Inf_R, Angular_R, Angular_R, Parietal_Inf_R, Temporal_Inf_R, Temporal_Inf_R, Temporal_Inf_R, Temporal_Inf_L, Angular_R.</p>
+<p>How much of the known network do we actually find?</p>
+</section><section id="associating-classes-to-sccan-predictors" class="slide level2">
+<h1>Associating classes to SCCAN predictors</h1>
+<p>Recalling: CCA maximizes <span class="math">\(PearsonCorrelation( XW^T, ZY^T )\)</span>, we can study matrix <span class="math">\(Y\)</span> which contrasts or combines columns of the design matrix.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">rownames</span>(mycca$eig2)&lt;-<span class="kw">levels</span>(mylabs)
+temp&lt;-(mycca$eig2)
+temp[ <span class="kw">abs</span>(mycca$eig2) &lt;<span class="st"> </span><span class="fl">0.03</span> ]&lt;-<span class="dv">0</span></code></pre>
+</section><section id="associating-classes-to-sccan-predictors-2" class="slide level2">
+<h1>Associating classes to SCCAN predictors: 2</h1>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">pheatmap</span>(temp)</code></pre>
+<p><img src="Figs/sccanpredictorclass2.png" title="plot of chunk sccanpredictorclass2" alt="plot of chunk sccanpredictorclass2" width="864" /></p>
+</section></section>
+<section><section id="conclusions" class="titleslide slide level1"><h1>Conclusions</h1></section><section id="section" class="slide level2">
+<h1></h1>
+<p>With the current RKRNS, one may:</p>
+<ul>
+<li class="fragment"><p>Exploit <em>R</em> functionality with BOLD data</p></li>
+<li class="fragment"><p>Estimate HRFs and event-wise betas</p></li>
+<li class="fragment"><p>Use feature selection based on effect sizes</p></li>
+<li class="fragment"><p>Employ dimensionality reduction through eigenanatomy or SCCAN</p></li>
+<li class="fragment"><p>Use relatively few low-dimensional predictors for decoding</p></li>
+<li class="fragment"><p>Interpret multivariate results intuitively</p></li>
+<li class="fragment"><p>Allows us to exploit prior anatomical labels ….</p></li>
+<li class="fragment"><p>or conceptions about what anatomy the decoding should be driven by?</p></li>
+</ul>
+<p>The package needs evaluation at this level of detail on real data.</p>
+<p>See <a href="https://github.com/stnava/RKRNS">RKRNS</a> for all source code and documentation and <a href="http://stnava.github.io/RKRNS">RKRNS-talk</a> for html slides.</p>
+</section></section>
+<section><section id="real-data-processing-with-rkrns" class="titleslide slide level1"><h1>Real data processing with RKRNS</h1></section><section id="motion-correction" class="slide level2">
+<h1>Motion correction</h1>
+<p>To motion correct your data, one might run:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># get an average image</span>
+averageImage &lt;-<span class="st"> </span><span class="kw">getAverageOfTimeSeries</span>( boldImage )
+motionCorrectionResults &lt;-<span class="st"> </span><span class="kw">motion_correction</span>(boldImage, 
+   <span class="dt">fixed =</span> averageImage, <span class="dt">moreaccurate =</span> <span class="dv">0</span> )</code></pre>
+<p>Set the <code>moreaccurate</code> flag to <code>1</code> or <code>2</code> for usable (not test) results. You might also estimate FD and DVARS from these results. One might use <code>antsPreprocessfMRI</code> to get these directly. Note, however, to turn this function’s frequency filtering off if you want to do decoding.</p>
+</section><section id="fd-and-dvars" class="slide level2">
+<h1>FD and DVARS</h1>
+<p>hey hey …</p>
+</section></section>
+<section><section id="references" class="titleslide slide level1 unnumbered"><h1>References</h1></section></section>
+    </div>
+  </div>
+
+  <script src="RKRNS_files/reveal.js-2.6.1/lib/js/head.min.js"></script>
+  <script src="RKRNS_files/reveal.js-2.6.1/js/reveal.min.js"></script>
+
+  <script>
+
+      // Full list of configuration options available here:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: false,
+        transition: 'fade',
+
+        // Optional libraries used to extend on reveal.js
+        dependencies: []});
+    </script>
+
+  <!-- dynamically load mathjax for compatibility with self-contained -->
+  <script>
+    (function () {
+      var script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+      document.getElementsByTagName("head")[0].appendChild(script);
+    })();
+  </script>
+
+  </body>
+</html>
