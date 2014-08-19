@@ -31,7 +31,6 @@ output:
 ```{r global options, include=FALSE}
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
                warning=FALSE, message=FALSE)
-opts_chunk$set(dev = 'pdf')
 ```
 
 # Introduction
@@ -286,18 +285,24 @@ stb<-stableEventResponse( mat,  bb$desmat[,1:4], bb$desmat$Run,
 Use a threshold to find clusters of voxels with large effect.
 
 
-```{r eigseg}
+```{r eigseg,results='hide'}
 stb2<-abs(stb)
 stb2[ stb2 < 5 ]<-0
 ee<-eigSeg(mask, matrixToImages( stb2, mask) )
 ImageMath(3,ee,'ClusterThresholdVariate',ee,mask,5)
 ff<-which( ee[mask==1] > 0 )
-print(length(ff))
+ofn<-"Figs/eigseg.jpg"
+plotANTsImage( eximg, list(ee), slices='12x56x1',
+  thresh='1x4',color='red',outname=ofn)
 ```
 The `eigSeg` function labels each region of the mask 
 with the class that has the largest effect size.
 
-Should return the magnitude of effects ...
+Should return the magnitude of effects ... FIXME colors above.
+
+## eigSeg Viz
+
+![](Figs/eigseg.jpg)
 
 ## Decode with effect size clusters
 
