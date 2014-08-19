@@ -1,4 +1,4 @@
-assembleBlocks <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix,  assembledImageOutPrefix, dmat, usedesignrow, imat=NA )
+assembleBlocks <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix,  assembledImageOutPrefix, dmat, usedesignrow, imat=NA, ncompcor=6 )
 {
 # print("#########assemble image blocks, potentially event-specifically#########")
 maskdim<-dim( bmask )

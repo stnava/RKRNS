@@ -3,6 +3,7 @@ filterfMRI4KRNS <- function( imat,
     filterlowfrequency=0.1, # 0.05 if you multiply by TR
     filterhighfrequency=1.0, # 0.4 # because of expected bold response < 25secs, > 5 seconds
     trendfrequency=3,
+    trendfrequency2=NA,
     winsorval=0.01,
     removeSentLengthEffects=NA,
     removeEventOverlap=NA 
@@ -16,10 +17,14 @@ filterfMRI4KRNS <- function( imat,
   colnames(imatf)<-colnames(imat)
   fh<-filterhighfrequency
   fl<-filterlowfrequency
-  imatb<-data.frame(frequencyFilterfMRI( imatf,  tr=tr, freqLo=fl, freqHi=fh, opt="butt" )) # , opt="trig" ))
+#  imatb<-data.frame(frequencyFilterfMRI( imatf,  tr=tr, freqLo=fl, freqHi=fh, opt="butt" )) # , opt="trig" ))
   colnames(imatf)<-colnames(imat)
   for ( i in 1:ncol(imatf) ) {
-      imatf[,i]<-data.frame(stl( ts( winsor(imatb[,i],winsorval),frequency=trendfrequency) , "per" )$time.series)$trend
+      if (!is.na(trendfrequency)) imatf[,i]<-data.frame(stl( ts( winsor(imatf[,i],winsorval),frequency=trendfrequency)  , "per" )$time.series)$trend
+      if (!is.na(trendfrequency2)) {
+          temp<-data.frame(stl( ts(        imatf[,i]          ,frequency=trendfrequency2) , "per" )$time.series)$trend
+          imatf[,i]<-imatf[,i]-temp
+      }
   }
   return( imatf ) 
 } 
