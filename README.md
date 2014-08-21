@@ -19,7 +19,7 @@ Then check the help / vignette:
 ```
 help(package = "RKRNS", help_type = "html")
 browseVignettes("RKRNS") #  may not yet work reliably
-% render( paste(RKRNSsrcdir,"/vignettes/RKRNS.Rmd",sep='') ,'all')
+# render( paste(RKRNSsrcdir,"/vignettes/RKRNS.Rmd",sep='') ,'all')
 ```
 
 If the vignette works, then great, b/c it tests basic functionality.
