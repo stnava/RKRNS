@@ -29,6 +29,8 @@ output:
 -->
 
 ```{r global options, include=FALSE}
+library(rmarkdown)
+library(knitr)
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
                warning=FALSE, message=FALSE)
 ```
