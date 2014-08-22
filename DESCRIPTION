@@ -9,5 +9,5 @@ Description: Decoding from BOLD based on (sparse) dimensionality reduction
 License: GPL-2
 VignetteBuilder: knitr
 Imports: Rcpp (>= 0.11.2)
-Depends: ggplot2,d3Network,fpc,caret,neuRosim,FitARMA,forecast,multitaper,pheatmap,psych,visreg,randomForest,e1071,kernlab,RRF,tgp,seewave,rmarkdown,ANTsR
+Depends: ggplot2,d3Network,fpc,caret,neuRosim,FitARMA,forecast,multitaper,pheatmap,psych,visreg,randomForest,e1071,kernlab,RRF,rmarkdown,ANTsR
 LinkingTo: Rcpp
