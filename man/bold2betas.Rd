@@ -98,8 +98,8 @@ zze2[ zze < th*0.5 ]<-0
 zze3[ zze > (th*(-1)) ]<-0
 zze4[ zze > (th*(-0.5)) ]<-0
 initcca<-t(cbind(zze1,zze2,zze3,zze4))
-initcca<-t( svd( btsc$eventbetas, nu=0, nv=10 )$v )
-initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=1 )$initlist
+initcca<-t( svd( btsc$eventbetas, nu=0, nv=5 )$v )
+initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=2 )$initlist
 nv<-length(initcca)
 mycca<-sparseDecom2( inmatrix=ccamats, initializationList=initcca,
   sparseness=c( -0.001, -0.95 ), nvecs=nv, its=10, cthresh=c(250,0),
