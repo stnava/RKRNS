@@ -60,13 +60,13 @@ glmda<-glmDenoiseR( data.matrix(mat), bb$desmat[,1:4], hrfBasis=NA,
 b1<-hemodynamicRF( 12, onsets=1, durations=1, rt=1,
     cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
 glmda<-glmDenoiseR( data.matrix(mat), bb$desmat[,1:4], hrfBasis=b1, 
-  hrfShifts = 8, maxnoisepreds=0 , selectionthresh=0.1, 
-  collapsedesign=T, polydegree=12 )
+  hrfShifts = 12, maxnoisepreds=0 , selectionthresh=0.1, 
+  collapsedesign=T, polydegree=4 )
 # looks ok so do the same w/in bold2betas
 btsc<-bold2betas( boldmatrix=data.matrix(mat), 
       designmatrix=bb$desmat[,1:4], baseshift=0,
       blockNumb=runs, maxnoisepreds=0, hrfBasis=glmda$hrf,
-      hrfShifts=0, polydegree=12, selectionthresh=0.2 )
+      hrfShifts=0, polydegree=4, selectionthresh=0.2 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)
