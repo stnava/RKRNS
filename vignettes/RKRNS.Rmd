@@ -33,6 +33,7 @@ library(rmarkdown)
 library(knitr)
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
                warning=FALSE, message=FALSE)
+zscore<-TRUE
 ```
 
 # Introduction
@@ -191,7 +192,7 @@ Use `glmDenoiseR` to estimate a FIR HRF.
 
 
 ```{r esthrf}
-mypolydegree<-12
+mypolydegree<-4
 glmda<-glmDenoiseR( data.matrix(mat), bb$desmat[,1:4], hrfBasis=NA, 
   hrfShifts = 12, maxnoisepreds=0 , selectionthresh=0.1 , 
   collapsedesign=T, polydegree=mypolydegree, baseshift=0 )
@@ -225,6 +226,11 @@ btsc<-bold2betas( boldmatrix=data.matrix(mat),
       designmatrix=bb$desmat[,1:4], baseshift=0,
       blockNumb=runs, maxnoisepreds=0, hrfBasis=glmda$hrf,
       hrfShifts=0, polydegree=mypolydegree, selectionthresh=0.2 )
+if ( zscore ) {  # z-score the betas
+  betameans<-colMeans(btsc$eventbetas)
+  betasds<-apply(btsc$eventbetas,FUN=sd,MARGIN=2)
+  btsc$eventbetas<-(btsc$eventbetas-betameans)/betasds
+}
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) 
   mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
