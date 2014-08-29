@@ -13,6 +13,7 @@ if ( eigsentbasislength > (ncol( wordembed ) - 1) ) eigsentbasislength<-ncol( wo
 sclfactor<-1
 if ( typeof(functiontoapply) == "character" ) if ( functiontoapply  == "svd" ) sclfactor<-2
 if ( typeof(functiontoapply) == "character" ) if ( functiontoapply  == "nvn" ) sclfactor<-3
+data(eigen_sentences, package = "RKRNS")
 eigsent<-matrix( rep( 0, (nsentencesIn) * eigsentbasislength * sclfactor ) ,  nrow=nsentencesIn )
 rownames( eigsent )<-sentencesIn$Sentence
 sentct<-0 # should = nsentencesIn
@@ -39,6 +40,12 @@ for ( i in 1:nsentencesIn )
         pj<-svd(sentmat)$u %*% sentmat
         if ( dim(pj)[1] == 1 ) pj<-rbind(pj,pj)
         eigsent[sentct,]<-as.numeric(pj[1:2,])
+        }
+      if ( functiontoapply  == "joao" )
+        {
+        whichesent<-which( eigen_sentences$Sentence == sentencesIn$Sentence[i])
+        esent<-eigen_sentences[ whichesent, 4:(4+eigsentbasislength-1) ]
+        eigsent[sentct,]<-as.numeric(esent)
         }
       if ( functiontoapply  == "nvn" )
         {
