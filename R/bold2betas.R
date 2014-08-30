@@ -1,6 +1,6 @@
 bold2betas <- function( boldmatrix, designmatrixIn, blockNumb, maxnoisepreds=2, polydegree=12,
                         hrfShifts=20, hrfBasis=NA, crossvalidationgroups=4, selectionthresh=0.1,
-                        multievents=FALSE, whichcols=NA, baseshift=0, verbose=FALSE )
+                        multievents=FALSE, whichcols=NA, baseshift=0, tr=1, verbose=FALSE )
 {
 designmatrix<-ashift( designmatrixIn, c(baseshift,0) )
 allruns<-unique( blockNumb )
@@ -28,7 +28,7 @@ for ( runs in allruns )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
   oneeventmat<-matrix( rowMeans(denoisedes), ncol=1 )
-  dd<-glmDenoiseR( submat, denoisedes, hrfBasis=hrfBasis, selectionthresh=selectionthresh,
+  dd<-glmDenoiseR( submat, denoisedes, hrfBasis=hrfBasis, selectionthresh=selectionthresh, tr=tr,
     crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfShifts=hrfShifts,
     collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )
   if ( verbose ) plot( ts(dd$hrf) )

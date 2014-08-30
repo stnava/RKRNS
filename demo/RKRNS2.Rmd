@@ -265,7 +265,7 @@ each as well as anatomical filtering i.e. selecting the sub-regions
 from the BOLD run before concatenating along the time dimension.
 
 ```{r assembleimageblocks,echo=TRUE, message=FALSE, warning=FALSE}
-if ( FALSE ) 
+if ( TRUE ) 
 {
 assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, 
   imagepostfix,  dfn, afn, dmat, usedesignrow, imat, ncompcor=0 )
@@ -326,8 +326,8 @@ The "nvn" (noun-verb-noun) approach is currently most useful ( and corresponds t
 verb annotation is currently slightly buggy.  This needs to be revisited.
 
 ```{r eigensentences,echo=TRUE, message=FALSE, warning=FALSE}
-eigsent<-eigenSentences( wiki_words, normalize=F, functiontoapply = "mean", eventdata=eventdata, eigsentbasislength=20 )
-eigsent<-eigenSentences( wiki_words, normalize=T, functiontoapply = sum, eventdata=eventdata, eigsentbasislength=100 )
+eigsent<-eigenSentences( wiki_words, normalize=F, functiontoapply = mean, eventdata=eventdata, eigsentbasislength=20 )
+eigsent<-eigenSentences( wiki_words, normalize=F, functiontoapply = 'joao', eventdata=eventdata, eigsentbasislength=50 )
 weigsent<-whiten(eigsent)
 rownames(weigsent )<-rownames(eigsent)
 # eigsent<-weigsent
@@ -346,14 +346,13 @@ for ( i in 1:length( eventtimes ) )
 
 Inspired by discussion with Kendrick Kay.
 ```{r glmdenoiserun,echo=TRUE, message=FALSE, warning=FALSE}
-dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], whichbase=NA , crossvalidationgroups=4, 
-     baseshift = 0,  tr=0.5, hrfbasislength=20, polydegree = 12,
-     maxnoisepreds=0 , selectionthresh=0.1 ,collapsedesign=T, reestimatenoisepool=F )
+dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], hrfBasis=NA , crossvalidationgroups=4, 
+     baseshift = 0,  tr=0.5, polydegree = 4, hrfShifts = 25,
+     maxnoisepreds=c(1:4) , selectionthresh=0.1 ,collapsedesign=T )
 plot(ts(dd$hrf))
-adafafa
   if ( ! file.exists( bfn ) ) {
     betas<-bold2betas( imat, dmats, dmat$blockNumb, 
-      maxnoisepreds=2, polydegree=4 )
+      maxnoisepreds=4, polydegree=4, hrfShifts = 25 )
     antsImageWrite( as.antsImage( data.matrix( betas ) ) , bfn )
     write.csv( betas[,1:2],  bfn2, row.names=T )
   } else {
