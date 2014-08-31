@@ -394,7 +394,7 @@ rmean<-rowMeans(subbetas)
 zz<-apply(subbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(subbetas,FUN=sd,MARGIN=2)
 inds<-sample(1:length(subtest),size=round(length(subtest)*5./10.))
-nvoxtouse<-25
+nvoxtouse<-205
 ff<-rev(order(abs(zze)))[1:nvoxtouse]
 mydf<-data.frame( lab=droplevels(sent[subtest]),  
   vox=data.matrix(subbetas)[,ff], sl=sentlength[subtest])
@@ -411,7 +411,7 @@ pred<-predict( mdl, newdata=mydf[-inds,])
 xtab <- table(pred, truth)
 cm<-confusionMatrix(xtab)
 print(cm$table)
-pheatmap(cm$table)
+pheatmap(cm$table, cluster_rows = F, cluster_cols = F)
 
  mydf<-data.frame( lab=sentlength, vox=data.matrix(subbetas)[,ff])
  print(cor.test( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) ))

@@ -463,7 +463,7 @@ print(cm$table)
 ## Confusion matrix 2
 
 ```{r confmat2,echo=FALSE}
-pheatmap(cm$table)
+pheatmap(cm$table, cluster_rows = F, cluster_cols = F)
 ```
 
 ## Anatomical coordinates of SCCAN predictors
