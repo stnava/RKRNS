@@ -326,11 +326,7 @@ The "nvn" (noun-verb-noun) approach is currently most useful ( and corresponds t
 verb annotation is currently slightly buggy.  This needs to be revisited.
 
 ```{r eigensentences,echo=TRUE, message=FALSE, warning=FALSE}
-eigsent<-eigenSentences( wiki_words, normalize=F, functiontoapply = mean, eventdata=eventdata, eigsentbasislength=20 )
 eigsent<-eigenSentences( wiki_words, normalize=F, functiontoapply = 'joao', eventdata=eventdata, eigsentbasislength=50 )
-weigsent<-whiten(eigsent)
-rownames(weigsent )<-rownames(eigsent)
-# eigsent<-weigsent
 # map them to the event space
 sentspace<-matrix(rep(NA, length(eventtimes)*ncol(eigsent) ),nrow=length(eventtimes))
 # compute correlations between all sentences
@@ -346,42 +342,107 @@ for ( i in 1:length( eventtimes ) )
 
 Inspired by discussion with Kendrick Kay.
 ```{r glmdenoiserun,echo=TRUE, message=FALSE, warning=FALSE}
-dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], hrfBasis=NA , crossvalidationgroups=4, 
-     baseshift = 0,  tr=0.5, polydegree = 4, hrfShifts = 25,
-     maxnoisepreds=c(1:4) , selectionthresh=0.1 ,collapsedesign=T )
-plot(ts(dd$hrf))
+# dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], hrfBasis=NA , crossvalidationgroups=4, 
+#     baseshift = 0,  tr=0.5, polydegree = 4, hrfShifts = 25,
+#     maxnoisepreds=c(1:4) , selectionthresh=0.1 ,collapsedesign=T )
+# plot(ts(dd$hrf))
   if ( ! file.exists( bfn ) ) {
     betas<-bold2betas( imat, dmats, dmat$blockNumb, 
       maxnoisepreds=4, polydegree=4, hrfShifts = 25 )
-    antsImageWrite( as.antsImage( data.matrix( betas ) ) , bfn )
-    write.csv( betas[,1:2],  bfn2, row.names=T )
+    antsImageWrite( as.antsImage( data.matrix( betas$eventbetas ) ) , bfn )
+    write.csv( betas$eventbetas[,1:2],  bfn2, row.names=T )
   } else {
     betas<-as.matrix( antsImageRead( bfn, 2 ) )
-    }
-adaadf
+  }
 mysp<-c( -0.005, -0.9 )
-selcols<-which( colMeans(dmats[10:500,]) >  0 )
-j<-1:1000
-btsc<-bold2betasCCA( data.matrix(imat[j,])  , dmats[j,selcols], 
-     blockNumb=dmat$blockNumb[j], bl=20, baseshift=8, 
-     sparseness=mysp, bestvoxnum=20, mask=subaal, 
-     polydegree=1, mycoption=1, its=12, onlyhrf=T )
+# selcols<-which( colMeans(dmats[10:500,]) >  0 )
+# j<-1:1000
+# btsc<-bold2betasCCA( data.matrix(imat[j,])  , dmats[j,selcols], 
+#     blockNumb=dmat$blockNumb[j], bl=20, baseshift=8, 
+#     sparseness=mysp, bestvoxnum=20, mask=subaal, 
+#     polydegree=1, mycoption=1, its=12, onlyhrf=T )
 
 ######################################################
-j<-which( dmat$blockNumb <= 30 )
-j<-dmat$blockNumb[ eventdata$eventtimes[grep('coffee',eventdata$sentences)] ]
+wordofinterest<-'man'
+j<-dmat$blockNumb[ eventdata$eventtimes[grep(wordofinterest,eventdata$sentences)] ]
 j<-which( dmat$blockNumb %in% j )
-selcols<-which( colMeans(dmats[j,]) >  0 )
-# selcols<-grep('coffee', colnames(dmats) )
-# j<-which( dmat$blockNumb <= 10 )
+selcols<-grep(wordofinterest, colnames(dmats) )
 myruns<-dmat$blockNumb[j]
 btsc<-bold2betas( boldmatrix=data.matrix(imat[j,]), 
-      designmatrix=dmats[j,selcols], baseshift=0,
-      blockNumb=myruns, maxnoisepreds=0,whichbase=4:12,
-      bl=20, polydegree=12, selectionthresh=0.1 )
+      designmatrix=dmats[j,selcols], baseshift=0, verbose=T,
+      blockNumb=myruns, maxnoisepreds=4, hrfBasis=NA,
+      hrfShifts=25, polydegree=4, selectionthresh=0.1 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-strsplit( rownames(btsc$eventbetas)[i],'[.][.]')[[1]][1]
 mylabs<-as.factor(mylabs)
+
+stop("dafada")
+
+# sample for training
+# basic voxel selection & classification
+subtest<-grep('',as.character(mylabs))
+runfact<-as.factor(dmat$blockNumb[as.numeric(btsc$eventrows)])
+sentlength<-as.numeric(dmat$nchar[as.numeric(btsc$eventrows)])
+evrow<-as.numeric(btsc$eventrows)
+sent<-rep("", length(evrow))
+for ( i in 1:length(evrow) )
+  sent[i]<-colnames(dmats)[ which( dmats[evrow[i],] ==1 ) ]
+sent<-as.factor(sent)
+subbetas<-btsc$eventbetas[subtest,]
+rmean<-rowMeans(subbetas)
+# subbetas<-residuals(lm(data.matrix(subbetas)~0+rmean))
+zz<-apply(subbetas,FUN=mean,MARGIN=2)
+zze<-zz/apply(subbetas,FUN=sd,MARGIN=2)
+inds<-sample(1:length(subtest),size=round(length(subtest)*5./10.))
+nvoxtouse<-25
+ff<-rev(order(abs(zze)))[1:nvoxtouse]
+mydf<-data.frame( lab=droplevels(sent[subtest]),  
+  vox=data.matrix(subbetas)[,ff], sl=sentlength[subtest])
+mdl<-RRF( lab ~., data=mydf[inds,])
+preds<-predict( mdl, newdata=mydf[-inds,])
+err<-sum(mydf[-inds,]$lab==preds)/nrow(mydf[-inds,])
+randerr<-randomClassificationRate( mydf[-inds,]$lab, 500 )
+print(paste("NPredVox",length(ff),"Correct",err*100,"N", length(preds), randerr ))
+
+
+
+truth<-mydf[-inds,]$lab
+pred<-predict( mdl, newdata=mydf[-inds,])
+xtab <- table(pred, truth)
+cm<-confusionMatrix(xtab)
+print(cm$table)
+pheatmap(cm$table)
+
+ mydf<-data.frame( lab=sentlength, vox=data.matrix(subbetas)[,ff])
+ print(cor.test( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) ))
+ plot( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) )
+
+# real signal + noise model
+nv<-10
+initcca<-t( svd( btsc$eventbetas, nu=0, nv=nv )$v )
+zzemat<-rbind(zze,zze)
+k<-10
+initcca<-initializeEigenanatomy( initcca, mask=subaal, nreps=1 )$initlist
+sentmat<-matrix( c(sentlength[inds],
+  rep(sentlength[inds]*1+rnorm(length(inds)),k-1)),ncol=k)
+nc<-length(unique(mydf$lab))
+locdes<-matrix( rep(0,nrow(mydf)*nc),ncol=nc)
+for ( k in 1:nc ) locdes[mydf$lab==(levels(mydf$lab)[k]),k]<-1
+ccamats<-list( data.matrix(subbetas)[inds,] , locdes[inds,] )
+mycca<-sparseDecom2( inmatrix=ccamats,
+  initializationList=initcca,
+  sparseness=c( -0.001, -0.5 ), nvecs=length(initcca), its=18, cthresh=c(0,0),
+  uselong=0, smooth=0.0, mycoption=1, inmask=c(subaal,NA) )
+ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, subaal )))
+mydf2<-data.frame( lab=mydf$lab,  
+  vox=data.matrix(subbetas) %*% t(ccaout) )
+mdl<-svm( lab ~., data=mydf2[inds,])
+err<-sum(mydf2[-inds,]$lab==predict( mdl, newdata=mydf2[-inds,]))/nrow(mydf2[-inds,])
+print(paste("CCA:Correct",err*100))
+# plot( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) )
+# print(cor.test( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) ))
+#print(cor.test( mydf2[ inds,]$lab, predict( mdl, newdata=mydf2[ inds,]) ))
+
 ##########################
 nc<-length(unique(mylabs))
 meanbetas<-matrix( rep(0,nc*ncol(btsc$eventbetas)) ,nrow=nc)
@@ -401,61 +462,6 @@ rownames(eanat$projections)<-rownames(meanbetas)
 pdf("temper.pdf",width=32,height=32)
 pheatmap(cor(t(eanat$projections)))
 dev.off()
-
-
-# sample for training
-# basic voxel selection & classification
-subtest<-grep('',as.character(mylabs))
-subtest<-grep('coffee',as.character(mylabs))
-runfact<-as.factor(dmat$blockNumb[as.numeric(btsc$eventrows)])
-sentlength<-as.numeric(dmat$nchar[as.numeric(btsc$eventrows)])
-evrow<-as.numeric(btsc$eventrows)
-sent<-rep("", length(evrow))
-for ( i in 1:length(evrow) )
-  sent[i]<-colnames(dmats)[ which( dmats[evrow[i],] ==1 ) ]
-sent<-as.factor(sent)
-inds<-sample(1:length(subtest),size=round(length(subtest)*9./10.))
-subbetas<-btsc$eventbetas[subtest,]
-rmean<-rowMeans(subbetas)
-subbetas<-residuals(lm(data.matrix(subbetas)~0+rmean))
-zz<-apply(subbetas,FUN=mean,MARGIN=2)
-zze<-zz/apply(subbetas,FUN=sd,MARGIN=2)
-th<-0.6
-ff<-which( abs(zze) > th )
-mydf<-data.frame( lab=droplevels(sent[subtest]),  
-  vox=data.matrix(subbetas)[,ff], sl=sentlength[subtest])
-mdl<-svm( lab ~., data=mydf[inds,])
-err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
-print(paste("NPredVox",length(ff),"Correct",err*100))
-
- mydf<-data.frame( lab=sentlength, vox=data.matrix(subbetas)[,ff])
- print(cor.test( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) ))
- plot( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) )
-
-# real signal + noise model
-k<-10
-nv<-10
-initcca<-t( svd( btsc$eventbetas, nu=0, nv=nv )$v )
-initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=2 )$initlist
-sentmat<-matrix( c(sentlength[inds],
-  rep(sentlength[inds]*1+rnorm(length(inds)),k-1)),ncol=k)
-nc<-length(unique(mydf$lab))
-locdes<-matrix( rep(0,nrow(mydf)*nc),ncol=nc)
-for ( k in 1:nc ) locdes[mydf$lab==(levels(mydf$lab)[k]),k]<-1
-ccamats<-list( data.matrix(subbetas)[inds,] , locdes[inds,] )
-mycca<-sparseDecom2( inmatrix=ccamats,
-  initializationList=initcca,
-  sparseness=c( -0.001, -1 ), nvecs=10, its=8, cthresh=c(5,0),
-  uselong=0, smooth=0.0, mycoption=2, inmask=c(mask,NA) )
-ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, mask )))
-mydf2<-data.frame( lab=mydf$lab,  
-  vox=data.matrix(subbetas) %*% t(ccaout) )
-mdl<-svm( lab ~., data=mydf2[inds,])
-err<-sum(mydf2[-inds,]$lab==predict( mdl, newdata=mydf2[-inds,]))/nrow(mydf2[-inds,])
-print(paste("CCA:Correct",err*100))
-# plot( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) )
-# print(cor.test( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) ))
-#print(cor.test( mydf2[ inds,]$lab, predict( mdl, newdata=mydf2[ inds,]) ))
 
 
 
