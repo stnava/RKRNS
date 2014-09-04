@@ -27,7 +27,6 @@ for ( runs in allruns )
   kkt<-which( blockNumb == runs )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
-  oneeventmat<-matrix( rowMeans(denoisedes), ncol=1 )
   dd<-glmDenoiseR( submat, denoisedes, hrfBasis=hrfBasis, selectionthresh=selectionthresh, tr=tr,
     crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfShifts=hrfShifts,
     collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )

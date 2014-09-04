@@ -1,4 +1,4 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0 )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
@@ -17,7 +17,7 @@ getnoisepool<-function( x, frac = selectionthresh ) {
   return( x < val )
 }
 
-crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA ) {
+crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA, howmuchnoise ) {
   nvox<-ncol(residmat)
   kfo<-max(groups)
   R2<-matrix(rep(0, nvox * kfo ),nrow=kfo)
@@ -26,14 +26,14 @@ crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA ) {
     selector <- groups!=k
     mydf<-data.frame( designmathrf[selector,] )
     if ( ! all( is.na(noiseu) ) )
-      mydf<-data.frame( mydf, noiseu[selector,1:i] )  
+      mydf<-data.frame( mydf, noiseu[selector,1:howmuchnoise] )  
     if ( ! all( is.na(p) ) )
       mydf<-data.frame( mydf, p[selector,] )
     mylm1<-lm( residmat[selector,]   ~  . , data=mydf )
     selector <- groups==k
     mydf<-data.frame( designmathrf[selector,] )
     if ( ! all( is.na(noiseu) ) )
-      mydf<-data.frame( mydf, noiseu[selector,1:i] )  
+      mydf<-data.frame( mydf, noiseu[selector,1:howmuchnoise] )  
     if ( ! all( is.na(p) ) )
       mydf<-data.frame( mydf, p[selector,] )
     predmat<-predict(mylm1,newdata=mydf)
@@ -54,6 +54,7 @@ crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA ) {
 # make regressors
 if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrix)
 p<-stats::poly( timevals ,degree=polydegree )
+if ( all( !is.na(auxiliarynuisancevars) ) ) p<-cbind(  p, data.matrix(auxiliarynuisancevars) ) 
 if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
 rawboldmat<-data.matrix(boldmatrix)
 svdboldmat<-residuals(lm(rawboldmat~0+p))
@@ -145,15 +146,16 @@ R2summary<-rep(0,length(maxnoisepreds))
 ct<-1
 for ( i in maxnoisepreds )
   {
+  svdboldmat<-residuals(lm(rawboldmat~0+p+noiseu[,1:i]))
   if ( reestimatenoisepool )
     {
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
-    R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, p=NA  )
+    R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, howmuchnoise=i, p=NA  )
     R2<-apply(R2,FUN=median,MARGIN=2)
     noisepool<-getnoisepool( R2 )
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
     }
-  R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, p=NA  )
+  R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu=NA, howmuchnoise=i, p=NA  )
   R2<-apply(R2,FUN=min,MARGIN=2)
   if ( reestimatenoisepool ) noisepool<-getnoisepool( R2 )
   if ( ct == 1 ) R2perNoiseLevel<-R2 else R2perNoiseLevel<-cbind(R2perNoiseLevel,R2)
