@@ -10,7 +10,9 @@ Assembles the bold study from raw block data
 }
 
 \usage{
-assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, imagepostfix,  assembledBlocksOutPrefix, afn, assembledImageOutPrefix, usedesignrow, imat, zscore=TRUE )
+assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, imagepostfix,  
+   assembledBlocksOutPrefix, afn, assembledImageOutPrefix, 
+   usedesignrow, imat, zscore=TRUE, spatialsmoothing=0 )
 }
 
 \arguments{
@@ -43,6 +45,9 @@ assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, imagepostfix,  assemble
 }
 \item{zscore}{
   should we zscore each voxel?
+}
+\item{spatialsmoothing}{
+  scalar value greater than or equal to zero that controls voxel-wise smoothing in 4D
 }
 }
 

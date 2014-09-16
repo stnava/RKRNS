@@ -274,7 +274,7 @@ if ( TRUE )
 {
 assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, 
   imagepostfix,  dfn, afn, dmat, usedesignrow, imat, ncompcor=0,
-  zscore=TRUE )
+  zscore=TRUE, spatialsmooth=3.0 )
 dmat<-assembly2[[1]]
 imat<-assembly2[[2]]
 usedesignrow<-assembly2$usedesignrow
@@ -354,12 +354,13 @@ derkaderka
 #     maxnoisepreds=c(1:4) , selectionthresh=0.1 ,collapsedesign=T )
 # plot(ts(dd$hrf))
   if ( ! file.exists( bfn ) ) {
-    betas<-bold2betas( imat, dmats, dmat$blockNumb, 
-      maxnoisepreds=10:16, polydegree=4, hrfShifts = 25, verbose=T )
-    betas<-bold2betas( boldmatrix=imat, 
-      designmatrix=dmats, baseshift=0, verbose=T,
-      blockNumb=dmat$blockNumb, maxnoisepreds=1:4, hrfBasis=hrf,
-      hrfShifts=4, polydegree=4, selectionthresh=0.1 )
+#    betas<-bold2betas( imat, dmats, dmat$blockNumb, 
+#      maxnoisepreds=10:16, polydegree=4, hrfShifts = 25, verbose=T )
+    hrf<-ts( hemodynamicRF( 20, onsets=2, durations=1, rt=0.5,cc=0.1,a1=8,a2=16,b1=0.6, b2=0.6 ) )
+    betas<-bold2betas( boldmatrix=imat[1:200,], 
+      designmatrix=dmats[1:200,], baseshift=0, verbose=T,
+      blockNumb=dmat$blockNumb[1:200], maxnoisepreds=4, hrfBasis=20,
+      hrfShifts=0, polydegree=4, selectionthresh=0.1 )
     antsImageWrite( as.antsImage( data.matrix( betas$eventbetas ) ) , bfn )
     write.csv( betas$eventbetas[,1:2],  bfn2, row.names=T )
   } else {
