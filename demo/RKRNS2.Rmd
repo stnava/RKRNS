@@ -359,8 +359,11 @@ derkaderka
     hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=4,a2=12,b1=0.6, b2=0.6 ) )
     betas<-bold2betas( boldmatrix=imat[1:200,], 
       designmatrix=dmats[1:200,], baseshift=0, verbose=T,
-      blockNumb=dmat$blockNumb[1:200], maxnoisepreds=12, hrfBasis=hrf,
-      hrfShifts=6, polydegree=4, selectionthresh=0.1 )
+      blockNumb=dmat$blockNumb[1:200], maxnoisepreds=2, hrfBasis=hrf,
+      hrfShifts=6, polydegree=6, selectionthresh=0.01 )
+# msk<-antsImageClone( subaal )
+# msk[subaal==1]<-colMeans(betas$eventbetas[,])# /apply(betas$eventbetas[,],MARGIN=2,FUN=sd);
+# antsImageWrite(msk, 'temp.nii.gz' )
     antsImageWrite( as.antsImage( data.matrix( betas$eventbetas ) ) , bfn )
     write.csv( betas$eventbetas[,1:2],  bfn2, row.names=T )
   } else {
