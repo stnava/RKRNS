@@ -32,8 +32,8 @@ for ( session in mysessions ) {
           highvarmatinds<-compcor( locmatfull, ncompcor=ncompcor,
                                   variance_extreme = compcorvarval, returnhighvarmatinds=TRUE )
         }
-        mycompcor<-scale( locmatfull[,highvarmatinds]  %*% mycompcorv )
-#        mycompcor<-compcor( locmatfull, ncompcor, variance_extreme = compcorvarval )
+#        mycompcor<-scale( locmatfull[,highvarmatinds]  %*% mycompcorv )
+        mycompcor<-compcor( locmatfull, ncompcor, variance_extreme = compcorvarval )
         locmat<-residuals(lm(locmat~0+mycompcor))
     }
     if ( zscore ) {

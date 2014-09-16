@@ -355,7 +355,11 @@ derkaderka
 # plot(ts(dd$hrf))
   if ( ! file.exists( bfn ) ) {
     betas<-bold2betas( imat, dmats, dmat$blockNumb, 
-      maxnoisepreds=4, polydegree=4, hrfShifts = 25 )
+      maxnoisepreds=10:16, polydegree=4, hrfShifts = 25, verbose=T )
+    betas<-bold2betas( boldmatrix=imat, 
+      designmatrix=dmats, baseshift=0, verbose=T,
+      blockNumb=dmat$blockNumb, maxnoisepreds=1:4, hrfBasis=hrf,
+      hrfShifts=4, polydegree=4, selectionthresh=0.1 )
     antsImageWrite( as.antsImage( data.matrix( betas$eventbetas ) ) , bfn )
     write.csv( betas$eventbetas[,1:2],  bfn2, row.names=T )
   } else {
