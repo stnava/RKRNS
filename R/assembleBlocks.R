@@ -8,7 +8,7 @@ subaal<-antsImageClone( aalimg )
 subaal[ aalimg > 0 ]<-0
 for ( lab in labs ) subaal[ aalimg == lab ]<-1
 print(paste("assemble blocks for",afn))
-if ( is.na(imat) ) { # assembly begin ......
+if ( all( is.na(as.numeric(imat)) ) ) { # assembly begin ......
 mysessions<-sort( unique( dmat$session) )
 imat<-matrix()
 for ( session in mysessions ) {
@@ -40,7 +40,7 @@ for ( session in mysessions ) {
         locmatmean<-colMeans( locmat )
         locmatsd<-apply( locmat, FUN=sd, MARGIN=2 )
         locmatsd[ locmatsd == 0 ]<-1
-        locmat<-( locmat - locmatmean ) / locmatsd 
+        locmat<-( locmat - locmatmean ) / locmatsd
     }
     ###########################################################################################
     # partsofblocktouse IS WHERE YOU MIGHT USE SOMETHING DIFFERENT TO FILTER BOTH DMAT & IMAT #
