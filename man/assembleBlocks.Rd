@@ -10,7 +10,7 @@ Assembles the bold study from raw block data
 }
 
 \usage{
-assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, imagepostfix,  assembledBlocksOutPrefix, afn, assembledImageOutPrefix, usedesignrow, imat )
+assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, imagepostfix,  assembledBlocksOutPrefix, afn, assembledImageOutPrefix, usedesignrow, imat, zscore=TRUE )
 }
 
 \arguments{
@@ -40,6 +40,9 @@ assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, imagepostfix,  assemble
 }
 \item{imat}{
   the current estimate of the assembled image matrix 
+}
+\item{zscore}{
+  should we zscore each voxel?
 }
 }
 

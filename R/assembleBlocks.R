@@ -1,4 +1,4 @@
-assembleBlocks <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix,  assembledImageOutPrefix, dmat, usedesignrow, imat=NA, ncompcor=6 )
+assembleBlocks <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix,  assembledImageOutPrefix, dmat, usedesignrow, imat=NA, ncompcor=6, zscore=TRUE )
 {
 # print("#########assemble image blocks, potentially event-specifically#########")
 maskdim<-dim( bmask )
@@ -36,7 +36,12 @@ for ( session in mysessions ) {
 #        mycompcor<-compcor( locmatfull, ncompcor, variance_extreme = compcorvarval )
         locmat<-residuals(lm(locmat~0+mycompcor))
     }
-    locmat<-locmat/mean(locmat)
+    if ( zscore ) {
+        locmatmean<-colMeans( locmat )
+        locmatsd<-apply( locmat, FUN=sd, MARGIN=2 )
+        locmatsd[ locmatsd == 0 ]<-1
+        locmat<-( locmat - locmatmean ) / locmatsd 
+    }
     ###########################################################################################
     # partsofblocktouse IS WHERE YOU MIGHT USE SOMETHING DIFFERENT TO FILTER BOTH DMAT & IMAT #
     # ... e.g. selected events                                                                #

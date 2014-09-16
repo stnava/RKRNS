@@ -69,7 +69,7 @@ reduction.
 opts_chunk$set(dev = 'pdf')
 print("#########setup#########TODO: need to incorporate motion parameters!")
 cleanup<-FALSE
-istest<-FALSE
+istest<-TRUE
 subject<-"111157"
 datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
 data("aal",package="ANTsR")
@@ -92,12 +92,17 @@ if ( exists("imat") ) nvol<-nrow(imat) else nvol<-57600
 boldhours<-nvol*TR/3600
 svmresult<-0
 ccaresult<-0
-usebrod<-F
-if ( ! usebrod ) {
+whichmask<-0
+if ( whichmask == 0 ) { # whole brain
+  aalfn<-paste(datadir,"aal/",subject,"_mocoref_brainmask.nii.gz",sep='')
+  labs<-as.numeric(1) # label numbers to use ... need to know which label set is at hand
+} 
+if ( whichmask == 1 ) { # aal
   aalfn<-paste(datadir,"aal/",subject,"_aal-mocoref.nii.gz",sep='')
   labs<-as.numeric( c(1,13,55:57,79,81,89) ) # lang network + HAA
   labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
-} else {
+} 
+if ( whichmask == 2 ) { # brodmann
   aalfn<-paste(datadir,"aal/",subject,"_Brodmann-mocoref.nii.gz",sep='')
   labs<-as.numeric( c(  9,10,45,46,47,11,12,8,7,39,40,37,21,36 ) ) # Brod + HAA
 }
@@ -134,7 +139,7 @@ The eigenword representation is a a quantitative, contextual semantic similarity
 
 ## Sentence transformation
 
-In this work, we use _products or sums of eigenwords_ as an eigensentence descriptor.
+In this work, we use _concatenations, products or sums of eigenwords_ as an eigensentence descriptor.
 
 $$ e_s = \Pi_i e_i \text{   ... or ...   } e_s = \frac{1}{n} \sum_{i=1}^{i=n} e_i $$.
 
@@ -238,7 +243,7 @@ imagedir<-paste(datadir,"moco/",sep='')
 imagepostfix<-"_moco.nii.gz"
 data("aal",package="ANTsR")
 blocksCSVlist<-Sys.glob(paste(datadir,"design/*csv",sep=''))   # INPUT csv list
-if ( istest ) blocksCSVlist<-blocksCSVlist[1:40] # for testing
+if ( istest ) blocksCSVlist<-blocksCSVlist[1:4] # for testing
 dfn<-paste(datadir,"assembly/assembled_design_",labs[1],"_",labs[length(labs)],"test.csv",sep='') # INPUT out csv name
 afn<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.mha",sep='') # INPUT out img na
 bfn<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"betas.mha",sep='') # INPUT out img na
@@ -268,7 +273,8 @@ from the BOLD run before concatenating along the time dimension.
 if ( TRUE ) 
 {
 assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, 
-  imagepostfix,  dfn, afn, dmat, usedesignrow, imat, ncompcor=0 )
+  imagepostfix,  dfn, afn, dmat, usedesignrow, imat, ncompcor=0,
+  zscore=TRUE )
 dmat<-assembly2[[1]]
 imat<-assembly2[[2]]
 usedesignrow<-assembly2$usedesignrow
@@ -342,6 +348,7 @@ for ( i in 1:length( eventtimes ) )
 
 Inspired by discussion with Kendrick Kay.
 ```{r glmdenoiserun,echo=TRUE, message=FALSE, warning=FALSE}
+derkaderka
 # dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], hrfBasis=NA , crossvalidationgroups=4, 
 #     baseshift = 0,  tr=0.5, polydegree = 4, hrfShifts = 25,
 #     maxnoisepreds=c(1:4) , selectionthresh=0.1 ,collapsedesign=T )
@@ -368,10 +375,17 @@ j<-dmat$blockNumb[ eventdata$eventtimes[grep(wordofinterest,eventdata$sentences)
 j<-which( dmat$blockNumb %in% j )
 selcols<-grep(wordofinterest, colnames(dmats) )
 myruns<-dmat$blockNumb[j]
-btsc<-bold2betas( boldmatrix=data.matrix(imat[j,]), 
-      designmatrix=dmats[j,selcols], baseshift=0, verbose=T,
-      blockNumb=myruns, maxnoisepreds=4, hrfBasis=NA,
-      hrfShifts=25, polydegree=4, selectionthresh=0.1 )
+b2bmat<-data.matrix( cbind( dmats[j,selcols], rowSums(dmats[j,-selcols]) ) )
+# btsc1<-bold2betas( boldmatrix=data.matrix(imat[j,]), whichcols=1:(ncol(b2bmat)-1),
+#      designmatrix=b2bmat, baseshift=0, verbose=T,
+#      blockNumb=myruns, maxnoisepreds=0, hrfBasis=NA,
+#      hrfShifts=25, polydegree=4, selectionthresh=0.1 )
+# derivedhrf<-ts(colMeans(btsc1$runhrfs))
+hrf<-hemodynamicRF( 25, onsets=2, durations=1, rt=0.5,cc=0.1,a1=4,a2=12,b1=0.9, b2=0.9 )
+btsc<-bold2betas( boldmatrix=data.matrix(imat[j,]), whichcols=1:(ncol(b2bmat)-1), 
+      designmatrix=b2bmat, baseshift=0, verbose=T,
+      blockNumb=myruns, maxnoisepreds=2, hrfBasis=hrf,
+      hrfShifts=4, polydegree=4, selectionthresh=0.1 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-strsplit( rownames(btsc$eventbetas)[i],'[.][.]')[[1]][1]
 mylabs<-as.factor(mylabs)
@@ -390,21 +404,25 @@ for ( i in 1:length(evrow) )
 sent<-as.factor(sent)
 subbetas<-btsc$eventbetas[subtest,]
 rmean<-rowMeans(subbetas)
-# subbetas<-residuals(lm(data.matrix(subbetas)~0+rmean))
+# subbetas<-residuals(lm(data.matrix(subbetas)~0+sentlength[subtest]+rmean))
 zz<-apply(subbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(subbetas,FUN=sd,MARGIN=2)
-inds<-sample(1:length(subtest),size=round(length(subtest)*5./10.))
-nvoxtouse<-205
+inds<-sample(1:length(subtest),size=round(length(subtest)*8./10.))
+nvoxtouse<-500
 ff<-rev(order(abs(zze)))[1:nvoxtouse]
-mydf<-data.frame( lab=droplevels(sent[subtest]),  
-  vox=data.matrix(subbetas)[,ff], sl=sentlength[subtest])
+mydf<-data.frame( lab=droplevels(sent[subtest]),  sl=sentlength[subtest])
+mydf<-data.frame( # lab=droplevels(sent[subtest]),  
+  vox=data.matrix(subbetas)[,ff]  , sl=sentlength[subtest] )
+mdl<-svm( sl ~., data=mydf[inds,])
+preds<-(predict( mdl, newdata=mydf[-inds,]))
+print(paste("NPredVox",length(ff),"Corr",cor(preds,mydf$sl[-inds]),"N", length(preds) ))
+
+
 mdl<-RRF( lab ~., data=mydf[inds,])
 preds<-predict( mdl, newdata=mydf[-inds,])
 err<-sum(mydf[-inds,]$lab==preds)/nrow(mydf[-inds,])
 randerr<-randomClassificationRate( mydf[-inds,]$lab, 500 )
 print(paste("NPredVox",length(ff),"Correct",err*100,"N", length(preds), randerr ))
-
-
 
 truth<-mydf[-inds,]$lab
 pred<-predict( mdl, newdata=mydf[-inds,])
@@ -413,32 +431,37 @@ cm<-confusionMatrix(xtab)
 print(cm$table)
 pheatmap(cm$table, cluster_rows = F, cluster_cols = F)
 
- mydf<-data.frame( lab=sentlength, vox=data.matrix(subbetas)[,ff])
- print(cor.test( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) ))
- plot( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) )
+# sentence length
+# mydf<-data.frame( lab=sentlength, vox=data.matrix(subbetas)[,ff])
+# print(cor.test( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) ))
+# plot( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) )
 
 # real signal + noise model
-nv<-10
-initcca<-t( svd( btsc$eventbetas, nu=0, nv=nv )$v )
-zzemat<-rbind(zze,zze)
-k<-10
-initcca<-initializeEigenanatomy( initcca, mask=subaal, nreps=1 )$initlist
-sentmat<-matrix( c(sentlength[inds],
-  rep(sentlength[inds]*1+rnorm(length(inds)),k-1)),ncol=k)
-nc<-length(unique(mydf$lab))
-locdes<-matrix( rep(0,nrow(mydf)*nc),ncol=nc)
-for ( k in 1:nc ) locdes[mydf$lab==(levels(mydf$lab)[k]),k]<-1
-ccamats<-list( data.matrix(subbetas)[inds,] , locdes[inds,] )
+subbetasvoxsel<-data.matrix(subbetas)[inds,ff]
+ccamats<-list( data.matrix(subbetas)[inds,] , subbetasvoxsel )
+ccamats<-list( data.matrix(subbetas)[inds,] , matrix(mydf$sl[inds],ncol=1) )
+spar2<-1.0/nvoxtouse
+spar2<-(1)
 mycca<-sparseDecom2( inmatrix=ccamats,
-  initializationList=initcca,
-  sparseness=c( -0.001, -0.5 ), nvecs=length(initcca), its=18, cthresh=c(0,0),
-  uselong=0, smooth=0.0, mycoption=1, inmask=c(subaal,NA) )
+  sparseness=c( -0.001, spar2 ), nvecs=25, its=25, cthresh=c(5,0),
+  uselong=0, smooth=0.0, mycoption=2, inmask=c(subaal,NA) )
 ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, subaal )))
-mydf2<-data.frame( lab=mydf$lab,  
-  vox=data.matrix(subbetas) %*% t(ccaout) )
-mdl<-svm( lab ~., data=mydf2[inds,])
-err<-sum(mydf2[-inds,]$lab==predict( mdl, newdata=mydf2[-inds,]))/nrow(mydf2[-inds,])
-print(paste("CCA:Correct",err*100))
+nonzerovox<-which( colMeans( abs( ccaout ) ) > 0 )
+mydf<-data.frame( # lab=droplevels(sent[subtest]),  
+  vox=data.matrix(subbetas)[,] %*% t(ccaout), sl=sentlength[subtest])
+mdl<-svm( sl ~., data=mydf[inds,])
+preds<-(predict( mdl, newdata=mydf[-inds,]))
+print(paste("NPredVox",length(nonzerovox),"Corr",cor(preds,mydf$sl[-inds]),"N", length(preds) ))
+
+
+mdl<-RRF( lab ~., data=mydf[inds,])
+preds<-predict( mdl, newdata=mydf[-inds,])
+err<-sum(mydf[-inds,]$lab==preds)/nrow(mydf[-inds,])
+randerr<-randomClassificationRate( mydf[-inds,]$lab, 500 )
+print(paste("CCA:NPredVox",length(nonzerovox),"Correct",err*100,"N", length(preds), randerr ))
+
+#
+# sentence length
 # plot( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) )
 # print(cor.test( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) ))
 #print(cor.test( mydf2[ inds,]$lab, predict( mdl, newdata=mydf2[ inds,]) ))
