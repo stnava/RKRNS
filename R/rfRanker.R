@@ -23,7 +23,7 @@ rfRanker <- function( mydfin , trainingRows, targetSuccessRate=0.15, usesparse=F
   if ( verbose ) print(paste( succct/length(pred) *100 , "%"))
   xtab <- table(pred, truth)
   cm<-confusionMatrix(xtab)
-  nodedf<-data.frame( nodename=mydfin$lab[trainingRows,], nodeid=mydfin$lab[trainingRows,] )
+  nodedf<-data.frame( nodename=mydfin$lab[trainingRows], nodeid=mydfin$lab[trainingRows] )
   ww<-  classificationNetwork( nodesIn=nodedf, truth, pred ,outfile='classificationNetwork.html', mycharge=-2066,zoom=T)
   dfout<-list( errRate=err, successPercent=succct/length(pred) *100, confusionMatrix=cm )
   return( dfout )
