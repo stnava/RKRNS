@@ -21,7 +21,9 @@ rfRanker <- function( mydfin , trainingRows, targetSuccessRate=0.15, usesparse=F
     }
   }
   if ( verbose ) print(paste( succct/length(pred) *100 , "%"))
-  dfout<-data.frame( errRate=err, successPercent=succct/length(pred) *100 )
+  xtab <- table(pred, truth)
+  cm<-confusionMatrix(xtab)
+  dfout<-data.frame( errRate=err, successPercent=succct/length(pred) *100, confusionMatrix=cm )
   return( dfout )
 }
 
