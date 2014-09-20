@@ -1,6 +1,6 @@
 \name{rkrnsRanker}
 \alias{rkrnsRanker}
-\title{use random forest to predict and rank sentences from features}
+\title{use random forest or svm to predict and rank sentences from features}
 \usage{
   rkrnsRanker( mydf, trainingRows, whichmodel=c("randomForest","svm") )
 }
