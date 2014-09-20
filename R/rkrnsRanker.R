@@ -1,12 +1,19 @@
-rfRanker <- function( mydfin , trainingRows, targetSuccessRate=0.15, usesparse=FALSE, verbose=FALSE ) {
+rkrnsRanker <- function( mydfin , trainingRows, targetSuccessRate=0.15, whichmodel='randomForest', verbose=FALSE ) {
   library(randomForest)
   library(RRF)
-  if ( !usesparse ) mdl<-randomForest( lab ~., data=mydfin[trainingRows,] )
-  if (  usesparse ) mdl<-RRF( lab ~., data=mydfin[trainingRows,] )
+  if ( whichmodel == 'randomForest' ) mdl<-randomForest( lab ~., data=mydfin[trainingRows,] )
+  if ( whichmodel == 'RRF' ) mdl<-RRF( lab ~., data=mydfin[trainingRows,] )
+  if ( whichmodel == 'svm' ) mdl<-svm( lab ~., data=mydfin[trainingRows,],  kernel='linear',type='C-classification', probability = TRUE )
   err<-sum(mydfin[-trainingRows,]$lab==predict( mdl, newdata=mydfin[-trainingRows,]))/nrow(mydfin[-trainingRows,])
   truth<-mydfin[-trainingRows,]$lab
-  pred<-predict( mdl, newdata=mydfin[-trainingRows,], norm.votes=TRUE)
-  myvotes<-predict( mdl, newdata=mydfin[-trainingRows,] , type='vote', norm.votes=TRUE )
+  if ( whichmodel == 'randomForest' | whichmodel == 'RRF' ) {
+    pred<-predict( mdl, newdata=mydfin[-trainingRows,], norm.votes=TRUE)
+    myvotes<-predict( mdl, newdata=mydfin[-trainingRows,] , type='vote', norm.votes=TRUE )
+  }
+  if ( whichmodel == 'svm' ) {
+    pred<-predict( mdl, newdata=mydfin[-trainingRows,] )
+    myvotes<-attr(predict( mdl, newdata=mydfin[-trainingRows,] , probability=TRUE ),"probabilities")
+  }
   xtab <- table(pred, truth)
   cm<-confusionMatrix(xtab)
   successthresh<-targetSuccessRate*length(levels(mydfin$lab)) # in top 15%
