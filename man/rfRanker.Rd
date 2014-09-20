@@ -8,7 +8,7 @@
   takes a dataframe that contains a column named lab such that mydf$lab gives the 
   true labeling of the data. trainingRows is a vector identifying which rows
   should be training data.  success is defined by a prediction probability being 
-  within the top targetSuccessRate*100 percent.  Returns 
+  within the top targetSuccessRate*100 percent.  Returns various success metrics.
 }
 \examples{
 mylabs<-rep(c("a","b","c"),5)
