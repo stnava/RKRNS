@@ -234,7 +234,7 @@ The current parameters select brain regions related to heteromodal association a
 
 ```{r setup,echo=TRUE, message=FALSE, warning=FALSE}
 if ( file.exists(aalfn) ) aalimg<-antsImageRead( aalfn , 3 ) else stop(paste("No aalfn",aalfn))
-bmaskfn<-paste(datadir,"ref/",subject,"_mask.nii.gz",sep='')
+bmaskfn<-paste(datadir,"ref/",subject,"_mask_dilate.nii.gz",sep='')
 if ( file.exists(bmaskfn) ) bmask<-antsImageRead( bmaskfn , 3 )
 reffn<-paste(datadir,"ref/",subject,"_mocoref.nii.gz",sep='')
 reffn<-paste(datadir,"aal/",subject,"_mocoref_masked.nii.gz",sep='')
@@ -356,14 +356,21 @@ derkaderka
   if ( ! file.exists( bfn ) ) {
 #    betas<-bold2betas( imat, dmats, dmat$blockNumb, 
 #      maxnoisepreds=10:16, polydegree=4, hrfShifts = 25, verbose=T )
-    hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=4,a2=12,b1=0.6, b2=0.6 ) )
-    betas<-bold2betas( boldmatrix=imat[1:200,], 
-      designmatrix=dmats[1:200,], baseshift=0, verbose=T,
-      blockNumb=dmat$blockNumb[1:200], maxnoisepreds=2, hrfBasis=hrf,
-      hrfShifts=6, polydegree=6, selectionthresh=0.01 )
-# msk<-antsImageClone( subaal )
-# msk[subaal==1]<-colMeans(betas$eventbetas[,])# /apply(betas$eventbetas[,],MARGIN=2,FUN=sd);
-# antsImageWrite(msk, 'temp.nii.gz' )
+    hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
+    betas<-bold2betas( boldmatrix=imat[1:500,], 
+      designmatrix=dmats[1:500,], baseshift=0, verbose=T,
+      blockNumb=dmat$blockNumb[1:500], maxnoisepreds=4, hrfBasis=hrf,
+      hrfShifts=6, polydegree=4, selectionthresh=0.2 )
+ msk<-antsImageClone( subaal ); msk[subaal==1]<-colMeans(betas$eventbetas[,]); antsImageWrite(msk, 'temp.nii.gz' )
+eanat<-sparseDecom(data.matrix(betas$eventbetas),inmask=subaal,
+  nvecs=10,sparseness=0.01,cthresh=10)
+rownames(eanat$projections)<-rownames(betas$eventbetas)
+pdf("temper.pdf",width=32,height=32)
+pheatmap(cor(t(eanat$projections)))
+dev.off()
+
+# /apply(betas$eventbetas[,],MARGIN=2,FUN=sd);
+# 
     antsImageWrite( as.antsImage( data.matrix( betas$eventbetas ) ) , bfn )
     write.csv( betas$eventbetas[,1:2],  bfn2, row.names=T )
   } else {
@@ -496,9 +503,9 @@ dev.off()
 
 
 
-eanat<-sparseDecom(data.matrix(btsc$eventbetas),inmask=subaal,
+eanat<-sparseDecom(data.matrix(betas$eventbetas),inmask=subaal,
   nvecs=10,sparseness=0.01,cthresh=10)
-rownames(eanat$projections)<-rownames(btsc$eventbetas)
+rownames(eanat$projections)<-rownames(betas$eventbetas)
 pdf("temper.pdf",width=32,height=32)
 pheatmap(cor(t(eanat$projections)))
 dev.off()
