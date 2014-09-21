@@ -21,7 +21,11 @@ for ( session in mysessions ) {
     if ( file.exists(imagefn) ) img<-antsImageRead( imagefn ,4)
     if ( isTRUE( all.equal( maskdim, dim(img)[1:3] ) ) ) # or identical(...)
     {
-    if ( spatialsmooth > 0 ) SmoothImage(4,img,0.5,img)
+    if ( spatialsmooth > 0 ) {
+        simg<-antsImageClone( img )
+        SmoothImage(4,img,0.5,simg)
+        img<-simg
+    }
     locmat<-timeseries2matrix( img , subaal )
     locmatmean<-apply( locmat[(throwaway+1):nrow(locmat),], FUN=mean, MARGIN=2 )
     for( j in 1:throwaway ) locmat[j,]<-locmatmean
