@@ -58,7 +58,11 @@ for ( session in mysessions ) {
       designmatrix=dmat[blockindices, 281:ncol(dmat) ], baseshift=0, verbose=F,
       blockNumb=rep(1,nrow(locmat)), maxnoisepreds=4, hrfBasis=hrf,
       hrfShifts=6, polydegree=4, selectionthresh=0.2 )
-    betafn<-paste(datadir,"/betas/",session,"_",block,"_betas.mha",sep='')
+    blockpad<-paste(block,sep='')
+    if ( block < 10 )   blockpad<-paste('000',block,sep='') 
+    if ( block < 100 )  blockpad<-paste('00',block,sep='') 
+    if ( block < 1000 ) blockpad<-paste('0',block,sep='') 
+    betafn<-paste(datadir,"/betas/",session,"_",blockpad,"_betas.mha",sep='')
     cat(paste(betafn,"*"))
     antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ), betafn )
     } # identical check
