@@ -69,7 +69,7 @@ reduction.
 opts_chunk$set(dev = 'pdf')
 print("#########setup#########TODO: need to incorporate motion parameters!")
 cleanup<-FALSE
-istest<-TRUE
+istest<-T # FALSE
 subject<-"111157"
 datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
 data("aal",package="ANTsR")
@@ -79,7 +79,7 @@ responselength<-6/tr # old - now use 8 e.g. 15 seconds div by 0.5 tr => 30 volum
 eventshift<-4
 responselength<-8/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 throwaway<-8
-ncompcor<-6
+ncompcor<-10
 compcorvarval<-0.95
 filterlowfrequency<-4   # 0.05 if you multiply by TR
 filterhighfrequency<-20 # 0.4 # because of expected bold response < 25secs, > 5 seconds
@@ -126,6 +126,8 @@ the subject is scanned over multiple blocks of fMRI of length `r blocklength` se
 The sentence stimuli are presented randomly and with varying delays.  Example sentences, with the total number of presentations, include: 
 
 ```{r sentences,echo=FALSE, message=FALSE, warning=FALSE}
+data("eigen_sentences",package="RKRNS")
+fspacenames<-eigen_sentences$Sentence
 if ( ! exists("fspacenames") ) fspacenames<-sample(rep(c(1:20),50))
 tbl<-table(fspacenames)
 print( tbl[ sample(dim(tbl))[1:10]] )	
@@ -243,7 +245,7 @@ imagedir<-paste(datadir,"moco/",sep='')
 imagepostfix<-"_moco.nii.gz"
 data("aal",package="ANTsR")
 blocksCSVlist<-Sys.glob(paste(datadir,"design/*csv",sep=''))   # INPUT csv list
-if ( istest ) blocksCSVlist<-blocksCSVlist[1:4] # for testing
+if ( istest ) blocksCSVlist<-blocksCSVlist[84:86] # for testing
 dfn<-paste(datadir,"assembly/assembled_design_",labs[1],"_",labs[length(labs)],"test.csv",sep='') # INPUT out csv name
 afn<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"test.mha",sep='') # INPUT out img na
 bfn<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"betas.mha",sep='') # INPUT out img na
@@ -272,15 +274,18 @@ from the BOLD run before concatenating along the time dimension.
 ```{r assembleimageblocks,echo=TRUE, message=FALSE, warning=FALSE}
 if ( TRUE ) 
 {
-assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, 
-  imagepostfix,  dfn, afn, dmat, usedesignrow, imat, ncompcor=10,
+derka
+hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
+assembly2<-assembleBlocksToBetas( bmask, aalimg, labs, datadir, 
+  imagepostfix,  dfn, afn, dmat, usedesignrow, hrf, ncompcor=ncompcor,
   zscore=TRUE, spatialsmooth=2.0 )
+derka
 dmat<-assembly2[[1]]
 imat<-assembly2[[2]]
 usedesignrow<-assembly2$usedesignrow
 subaal<-assembly2$subaal
 } else subaal<-antsImageRead("subaal.nii.gz",3)
-rm(assembly,assembly2) # reclaim some memory
+rm( assembly, assembly2 ) # reclaim some memory
 ```
 
 ## Cleaning up the design matrix and extracting relevant structure for prediction
@@ -348,7 +353,6 @@ for ( i in 1:length( eventtimes ) )
 
 Inspired by discussion with Kendrick Kay.
 ```{r glmdenoiserun,echo=TRUE, message=FALSE, warning=FALSE}
-derkaderka
 # dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], hrfBasis=NA , crossvalidationgroups=4, 
 #     baseshift = 0,  tr=0.5, polydegree = 4, hrfShifts = 25,
 #     maxnoisepreds=c(1:4) , selectionthresh=0.1 ,collapsedesign=T )
@@ -357,58 +361,43 @@ derkaderka
 #    betas<-bold2betas( imat, dmats, dmat$blockNumb, 
 #      maxnoisepreds=10:16, polydegree=4, hrfShifts = 25, verbose=T )
     hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
-    betas<-bold2betas( boldmatrix=imat[1:500,], 
-      designmatrix=dmats[1:500,], baseshift=0, verbose=T,
-      blockNumb=dmat$blockNumb[1:500], maxnoisepreds=4, hrfBasis=hrf,
+    btsc<-bold2betas( boldmatrix=imat, 
+      designmatrix=dmats, baseshift=0, verbose=T,
+      blockNumb=dmat$blockNumb, maxnoisepreds=4, hrfBasis=hrf,
       hrfShifts=6, polydegree=4, selectionthresh=0.2 )
- msk<-antsImageClone( subaal ); msk[subaal==1]<-colMeans(betas$eventbetas[,]); antsImageWrite(msk, 'temp.nii.gz' )
-eanat<-sparseDecom(data.matrix(betas$eventbetas),inmask=subaal,
-  nvecs=10,sparseness=0.01,cthresh=10)
-rownames(eanat$projections)<-rownames(betas$eventbetas)
-pdf("temper.pdf",width=32,height=32)
-pheatmap(cor(t(eanat$projections)))
-dev.off()
-
+#
+# msk<-antsImageClone( subaal ); msk[subaal==1]<-colMeans(betas$eventbetas[,]); antsImageWrite(msk, 'temp.nii.gz' )
+# eanat<-sparseDecom(data.matrix(betas$eventbetas),inmask=subaal,
+#  nvecs=10,sparseness=0.01,cthresh=10)
+# rownames(eanat$projections)<-rownames(betas$eventbetas)
+# pdf("temper.pdf",width=32,height=32)
+# pheatmap(cor(t(eanat$projections)))
+# dev.off()
 # /apply(betas$eventbetas[,],MARGIN=2,FUN=sd);
 # 
-    antsImageWrite( as.antsImage( data.matrix( betas$eventbetas ) ) , bfn )
-    write.csv( betas$eventbetas[,1:2],  bfn2, row.names=T )
+    antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ) , bfn )
+    write.csv( btsc$eventbetas[,1:2],  bfn2, row.names=T )
   } else {
     betas<-as.matrix( antsImageRead( bfn, 2 ) )
   }
 mysp<-c( -0.005, -0.9 )
+######################################################
+#
 # selcols<-which( colMeans(dmats[10:500,]) >  0 )
 # j<-1:1000
 # btsc<-bold2betasCCA( data.matrix(imat[j,])  , dmats[j,selcols], 
 #     blockNumb=dmat$blockNumb[j], bl=20, baseshift=8, 
 #     sparseness=mysp, bestvoxnum=20, mask=subaal, 
 #     polydegree=1, mycoption=1, its=12, onlyhrf=T )
-
+#
 ######################################################
-wordofinterest<-'man'
-j<-dmat$blockNumb[ eventdata$eventtimes[grep(wordofinterest,eventdata$sentences)] ]
-j<-which( dmat$blockNumb %in% j )
-selcols<-grep(wordofinterest, colnames(dmats) )
-myruns<-dmat$blockNumb[j]
-b2bmat<-data.matrix( cbind( dmats[j,selcols], rowSums(dmats[j,-selcols]) ) )
-# btsc1<-bold2betas( boldmatrix=data.matrix(imat[j,]), whichcols=1:(ncol(b2bmat)-1),
-#      designmatrix=b2bmat, baseshift=0, verbose=T,
-#      blockNumb=myruns, maxnoisepreds=0, hrfBasis=NA,
-#      hrfShifts=25, polydegree=4, selectionthresh=0.1 )
-# derivedhrf<-ts(colMeans(btsc1$runhrfs))
-hrf<-hemodynamicRF( 25, onsets=2, durations=1, rt=0.5,cc=0.1,a1=4,a2=12,b1=0.9, b2=0.9 )
-btsc<-bold2betas( boldmatrix=data.matrix(imat[j,]), whichcols=1:(ncol(b2bmat)-1), 
-      designmatrix=b2bmat, baseshift=0, verbose=T,
-      blockNumb=myruns, maxnoisepreds=2, hrfBasis=hrf,
-      hrfShifts=4, polydegree=4, selectionthresh=0.1 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-strsplit( rownames(btsc$eventbetas)[i],'[.][.]')[[1]][1]
 mylabs<-as.factor(mylabs)
-
-stop("dafada")
-
+######################################################
 # sample for training
 # basic voxel selection & classification
+######################################################
 subtest<-grep('',as.character(mylabs))
 runfact<-as.factor(dmat$blockNumb[as.numeric(btsc$eventrows)])
 sentlength<-as.numeric(dmat$nchar[as.numeric(btsc$eventrows)])
@@ -425,26 +414,9 @@ zze<-zz/apply(subbetas,FUN=sd,MARGIN=2)
 inds<-sample(1:length(subtest),size=round(length(subtest)*8./10.))
 nvoxtouse<-500
 ff<-rev(order(abs(zze)))[1:nvoxtouse]
-mydf<-data.frame( lab=droplevels(sent[subtest]),  sl=sentlength[subtest])
-mydf<-data.frame( # lab=droplevels(sent[subtest]),  
-  vox=data.matrix(subbetas)[,ff]  , sl=sentlength[subtest] )
-mdl<-svm( sl ~., data=mydf[inds,])
-preds<-(predict( mdl, newdata=mydf[-inds,]))
-print(paste("NPredVox",length(ff),"Corr",cor(preds,mydf$sl[-inds]),"N", length(preds) ))
-
-
-mdl<-RRF( lab ~., data=mydf[inds,])
-preds<-predict( mdl, newdata=mydf[-inds,])
-err<-sum(mydf[-inds,]$lab==preds)/nrow(mydf[-inds,])
-randerr<-randomClassificationRate( mydf[-inds,]$lab, 500 )
-print(paste("NPredVox",length(ff),"Correct",err*100,"N", length(preds), randerr ))
-
-truth<-mydf[-inds,]$lab
-pred<-predict( mdl, newdata=mydf[-inds,])
-xtab <- table(pred, truth)
-cm<-confusionMatrix(xtab)
-print(cm$table)
-pheatmap(cm$table, cluster_rows = F, cluster_cols = F)
+mydf<-data.frame( lab=droplevels(sent[subtest]),  
+  vox=data.matrix(subbetas)[,ff] ) # , sl=sentlength[subtest] )
+effszRank<-rkrnsRanker( mydf, inds )
 
 # sentence length
 # mydf<-data.frame( lab=sentlength, vox=data.matrix(subbetas)[,ff])
@@ -452,9 +424,8 @@ pheatmap(cm$table, cluster_rows = F, cluster_cols = F)
 # plot( mydf[-inds,]$lab, predict( mdl, newdata=mydf[-inds,]) )
 
 # real signal + noise model
-subbetasvoxsel<-data.matrix(subbetas)[inds,ff]
-ccamats<-list( data.matrix(subbetas)[inds,] , subbetasvoxsel )
 ccamats<-list( data.matrix(subbetas)[inds,] , matrix(mydf$sl[inds],ncol=1) )
+ccamats<-list( data.matrix(subbetas)[inds,] , subbetasvoxsel )
 spar2<-1.0/nvoxtouse
 spar2<-(1)
 mycca<-sparseDecom2( inmatrix=ccamats,
@@ -462,26 +433,11 @@ mycca<-sparseDecom2( inmatrix=ccamats,
   uselong=0, smooth=0.0, mycoption=2, inmask=c(subaal,NA) )
 ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, subaal )))
 nonzerovox<-which( colMeans( abs( ccaout ) ) > 0 )
-mydf<-data.frame( # lab=droplevels(sent[subtest]),  
-  vox=data.matrix(subbetas)[,] %*% t(ccaout), sl=sentlength[subtest])
-mdl<-svm( sl ~., data=mydf[inds,])
-preds<-(predict( mdl, newdata=mydf[-inds,]))
-print(paste("NPredVox",length(nonzerovox),"Corr",cor(preds,mydf$sl[-inds]),"N", length(preds) ))
+mydf<-data.frame(  lab=droplevels(sent[subtest]) , vox=data.matrix(subbetas)[,] %*% t(ccaout) )
+eanatRank<-rkrnsRanker( mydf, inds )
+```
 
-
-mdl<-RRF( lab ~., data=mydf[inds,])
-preds<-predict( mdl, newdata=mydf[-inds,])
-err<-sum(mydf[-inds,]$lab==preds)/nrow(mydf[-inds,])
-randerr<-randomClassificationRate( mydf[-inds,]$lab, 500 )
-print(paste("CCA:NPredVox",length(nonzerovox),"Correct",err*100,"N", length(preds), randerr ))
-
-#
-# sentence length
-# plot( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) )
-# print(cor.test( mydf2[-inds,]$lab, predict( mdl, newdata=mydf2[-inds,]) ))
-#print(cor.test( mydf2[ inds,]$lab, predict( mdl, newdata=mydf2[ inds,]) ))
-
-##########################
+```{r wip,eval=FALSE}
 nc<-length(unique(mylabs))
 meanbetas<-matrix( rep(0,nc*ncol(btsc$eventbetas)) ,nrow=nc)
 lvs<-levels(mylabs)
@@ -515,16 +471,12 @@ pdf("temper2.pdf",width=32,height=32)
 pheatmap(cor(t(rproj)))
 dev.off()
 
-```
-
-```{r glmdenoise,echo=TRUE, message=FALSE, warning=FALSE}
 myclass<-templateBasedClassification( data.matrix(betas), 
   (eventdata$sentences), data.matrix(betas), method="dict" )
 print(cor(t(myclass$featuretemplate)))
 vizimg<-antsImageClone(subaal)
 vizimg[subaal==1]<-abs(myclass$featuretemplate[1,]); antsImageWrite(vizimg,'temp.nii.gz')
 
-adafda
 # ssd<-apply(abs(betas[whichevents2,]),FUN=sd,MARGIN=2)
 # sme<-apply(abs(betas[whichevents2,]),FUN=mean,MARGIN=2)
 # effsz<-ssd/sme
@@ -598,7 +550,7 @@ print(sum(ecp==ec)/length(ec))
 # vizimg[subaal==1]<-abs(mylm$beta.t[3,]); antsImageWrite(vizimg,'temp3.nii.gz')
 # adfafd
 # now do something similar with CCA
-dafafdfa
+
 accs<-rep(0,100) 
 for ( acc in 1:100 ) {
 slct<-sample(rep(c(rep(FALSE,2),rep(TRUE,20)),10))[1:nrow(scmat1)]

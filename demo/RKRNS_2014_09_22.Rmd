@@ -462,7 +462,7 @@ if (dobehav) {
 
 ```{r evalrealdata,eval=TRUE,echo=FALSE,warnings=FALSE,results='hide', message=FALSE }
 #### randomly select events for training
-whichevents<-sample( 1:nrow(desmat) )[1:round(nrow(desmat)* 1/2 )]
+whichevents<-sample( 1:nrow(desmat) )[1:round(nrow(desmat)* 8/10 )]
 matTrain<-mat[ whichevents, ]
 desmatTrain<-desmat[ whichevents, ]
 esentsAllEventsTrain<-esentsAllEvents[ whichevents, ]
@@ -673,13 +673,13 @@ hist(correlationsBetweenPredictedBetasAndRealBetas,main=ttl)
 dev.off()
 ttl<-paste("Predicted Betas Correlation Qvals with Real Betas using",sum(nonzerovox),'voxels')
 qvals<-p.adjust( correlationsPvalsBetweenPredictedBetasAndRealBetas[!is.na(correlationsPvalsBetweenPredictedBetasAndRealBetas)] )
-png('Figs/correlationsPvalsBetweenPredictedBetasAndRealBetas.png')
+pdf('Figs/correlationsPvalsBetweenPredictedBetasAndRealBetas.pdf')
 hist(qvals,main=ttl)
 dev.off()
 print(paste("% of significantly predicted data:", sum(qvals < 0.05 )/length(qvals)*100 ))
 ```
 
-![](Figs/correlationsPvalsBetweenPredictedBetasAndRealBetas.png)
+![](Figs/correlationsPvalsBetweenPredictedBetasAndRealBetas.pdf)
 
 # Conclusions
 
