@@ -35,7 +35,7 @@ library(knitr)
 datadir2<-"/Users/stnava/Downloads/SCCA_bold_data/"
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
                warning=FALSE, message=FALSE)
-zscore<-TRUE
+zscore<-FALSE
 nevents<-220
 nclass<-3
 mask<-NA
@@ -509,7 +509,7 @@ inds<-sample(1:nrow(desmat),size=round(nrow(desmat)*8./10.))
 nvoxtouse<-50
 ff<-rev(order(abs(zze)))[1:nvoxtouse]
 ```
-The "high effect size" voxels are sent to a naive random forest model
+The "high effect size" voxels are sent to a naive prediction machine
 to do training (on a fraction of the data) and testing on the left out
 data.
 
@@ -615,7 +615,7 @@ plotANTsImage( mask, sccan$eig1, slices='12x56x1' ,
 ## Confusion matrix 
 
 heatmap of co-occurrence of predictions
-```{r confmat,echo=FALSE}
+```{r confmat,eval=FALSE,echo=FALSE}
 print(eanatRank$confusionMatrix$table)
 ```
 
@@ -623,7 +623,7 @@ print(eanatRank$confusionMatrix$table)
 ## Confusion matrix 2
 
 ```{r confmat2,echo=FALSE}
-pheatmap(eanatRank$confusionMatrix$table, cluster_rows = F, cluster_cols = F)
+pheatmap(eanatRank$confusionMatrix$table, cluster_rows = F, cluster_cols = F, show_rownames = F, show_colnames = F)
 ```
 
 ## Anatomical coordinates of SCCAN predictors
@@ -646,7 +646,7 @@ for ( img in sccan$eig1 ) {
 ```
 The SCCAN predictors include: `r unique(unlist(ccaanat))`.
 
-How much of the known network do we actually find? Right/left flip?
+How much of the known network do we actually find? 
 
 ## Map from sentence input to expected $\beta$ images
 
@@ -668,17 +668,18 @@ for ( i in 1:nrow(betaPredict) ) {
   if ( abs(mycor$est) > 0.5 ) { plot( betaPredict[i,nonzerovox], betaTest[i,nonzerovox] ); Sys.sleep(0) }
 }
 ttl<-paste("Predicted Betas Correlation with Real Betas using",sum(nonzerovox),'voxels')
-pdf('Figs/correlationsBetweenPredictedBetasAndRealBetas.pdf')
+png('Figs/correlationsBetweenPredictedBetasAndRealBetas.png')
 hist(correlationsBetweenPredictedBetasAndRealBetas,main=ttl)
 dev.off()
 ttl<-paste("Predicted Betas Correlation Qvals with Real Betas using",sum(nonzerovox),'voxels')
 qvals<-p.adjust( correlationsPvalsBetweenPredictedBetasAndRealBetas[!is.na(correlationsPvalsBetweenPredictedBetasAndRealBetas)] )
-pdf('Figs/correlationsPvalsBetweenPredictedBetasAndRealBetas.pdf')
+png('Figs/correlationsPvalsBetweenPredictedBetasAndRealBetas.png')
 hist(qvals,main=ttl)
 dev.off()
 print(paste("% of significantly predicted data:", sum(qvals < 0.05 )/length(qvals)*100 ))
 ```
 
+![](Figs/correlationsPvalsBetweenPredictedBetasAndRealBetas.png)
 
 # Conclusions
 
