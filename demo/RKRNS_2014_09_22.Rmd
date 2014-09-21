@@ -1,0 +1,709 @@
+---
+title: "Sentence decoding from BOLD with *RKRNS*"
+bibliography: REFERENCES.bib
+output:
+  pdf_document:
+    toc: true
+    highlight: zenburn
+  ioslides_presentation:
+    incremental: false
+    widescreen: true
+    smaller: false
+  revealjs_presentation:
+    pandoc_args: [ "--slide-level", "2" ]
+    incremental: true
+    widescreen: true
+    smaller: false
+    theme: night
+    transition: fade
+    highlight: pygments
+    center: false
+    self_contained: false
+  html_document:
+    toc: true
+    theme: readable
+---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{BOLD decoding with the RKRNS package}
+-->
+
+```{r global options, include=FALSE}
+library(RKRNS)
+library(rmarkdown)
+library(knitr)
+datadir2<-"/Users/stnava/Downloads/SCCA_bold_data/"
+opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
+               warning=FALSE, message=FALSE)
+zscore<-TRUE
+nevents<-220
+nclass<-3
+mask<-NA
+mat<-replicate(100, rnorm(nevents)) 
+desmat<-data.frame(replicate(nclass, rnorm(nevents))*0)
+for ( i in 1:nrow(desmat) ) {
+  ev<-sample(1:nclass)[1]
+  desmat[i,ev]<-1
+  rownames(desmat)[i]<-paste("Event",ev,i,sep='.')
+}
+nv<-5
+```
+
+```{r define variables,echo=FALSE, message=FALSE, warning=FALSE}
+# setupfile<-paste("demo/",c("setup.R"),sep='')
+# source(system.file( setupfile, package="RKRNS"))
+opts_chunk$set(dev = 'pdf')
+cleanup<-FALSE
+istest<-TRUE
+subject<-"111157"
+datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
+data("aal",package="ANTsR")
+tr<-as.numeric(0.5)
+eventshift<-6        # old - now use 4
+responselength<-6/tr # old - now use 8 e.g. 15 seconds div by 0.5 tr => 30 volumes
+eventshift<-4
+responselength<-8/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
+throwaway<-8
+ncompcor<-6
+compcorvarval<-0.95
+filterlowfrequency<-4   # 0.05 if you multiply by TR
+filterhighfrequency<-20 # 0.4 # because of expected bold response < 25secs, > 5 seconds
+trendfrequency<-3
+winsorval<-0.01
+throwaway<-8
+TR<-0.5
+blocklength<-450*TR
+if ( exists("imat") ) nvol<-nrow(imat) else nvol<-57600
+boldhours<-nvol*TR/3600
+svmresult<-0
+ccaresult<-0
+whichmask<-0
+if ( whichmask == 0 ) { # whole brain
+  aalfn<-paste(datadir,"aal/",subject,"_mocoref_brainmask.nii.gz",sep='')
+  labs<-as.numeric(1) # label numbers to use ... need to know which label set is at hand
+} 
+if ( whichmask == 1 ) { # aal
+  aalfn<-paste(datadir,"aal/",subject,"_aal-mocoref.nii.gz",sep='')
+  labs<-as.numeric( c(1,13,55:57,79,81,89) ) # lang network + HAA
+  labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
+} 
+if ( whichmask == 2 ) { # brodmann
+  aalfn<-paste(datadir,"aal/",subject,"_Brodmann-mocoref.nii.gz",sep='')
+  labs<-as.numeric( c(  9,10,45,46,47,11,12,8,7,39,40,37,21,36 ) ) # Brod + HAA
+}
+# HAAs # precent; postcent gyrus ; ang gyr; ATL ...
+# prefrontal: BA 9-10, 45-47 anterior 11-12, anterior 8 
+# posterior parietal: posterior 7 39-40
+# lateral temporal BA37, BA21 
+# parahipp BA36,37 
+```
+
+
+# RKRNS Overview
+
+## Introduction
+
+We employ the *RKRNS* package to decode read sentences from BOLD data.
+The package allows 
+
+- HRF estimation (`glmDenoiseR`)
+
+- event-wise beta estimation (`bold2betas`)
+
+- spatial, temporal and noise filtering (`ImageMath`,`compcor`) 
+
+- un/supervised regularized dimensionality reduction / feature selection (`sparseDecom`,`sparseDecom2`)
+
+Here, we focus on SVMs for decoding which can be easily
+applied via `rkrnsRanker`.  Finally, we show preliminary results that
+predict BOLD activation images from input eigensentences or other
+features.  We briefly touch on future directions for this work.
+
+## Background 
+
+Comprehension from reading, like hearing (@French1947), is fast and
+contextual.  While significant research has been done on the process
+of understanding from reading (see @Frost2012; @Price2012;
+@Seghier2013; @Carreiras2014 for reviews), very little work identifies
+whether real-time sentence reading leads to repeatable brain
+activations.
+
+## RKRNS Algorithms 
+
+This package integrates several frameworks for BOLD processing:
+
+- core image processing and I/O: ITK (@Avants2014a);
+
+- registration and utilities for image processing: ANTs (@Tustison2014) and ANTsR (@ANTsR);
+
+- hemodynamic response function estimation: influenced by GLMdenoise (@Kay2013) and finite impulse response (@Kay2008) estimates;
+
+- dimensionality reduction: Eigenanatomy (@Dhillon2014) and SCCAN (@Avants2014);
+
+- core statistics and temporal filtering via *R* packages.
+
+In combination, these tools enable one to go from near-raw medical imaging data 
+to a BOLD decoding experiment.  
+
+## Data organization expected by RKRNS
+
+*RKRNS* makes several assumptions about data organization.
+
+- The BOLD time series will be masked and converted to a matrix.  This will be known as "the BOLD matrix."
+
+- The design matrix is binary and has one event type per column.
+
+- The design matrix matches the bold matrix *in time* at an index level.  Thus, 
+  it has the same number of rows (volumes) as the BOLD matrix. So, the i$^{th}$ row 
+  of the design matrix corresponds to the i$^{th}$ BOLD volume.  We provide some 
+  utilities to assist in assembling the BOLD volumes in 
+  this manner.
+
+- *supervision matrices* are organized as above but each row contains a $n$-vector representing a quantitative feature
+
+- Simplicity aids debugging but has caveats (rounded event onsets, etc).
+
+## Contributions of the package
+
+*RKRNS* includes:
+
+- An organizational system
+  + relatively small scripts implement full study
+
+- Implementation of foundational methods
+  + HRF estimation
+  + event-wise $\beta$ estimation 
+  + denoising via `compcor` and `glmDenoiseR`
+  + flexible: easy to estimate voxel-wise optimal models, HRFs, etc
+
+- Reference simulation data and decoding distributed with the package
+
+- Interpretation of results
+  + sparse low-dimensional predictors
+  + anatomical labeling of predictors based on AAL
+
+- Openness and reproducibility
+  + this document tests the package
+
+
+# Eigenwords and eigensentences
+
+## Eigenwords and eigensentences
+
+* Language has structure that may be based on simple rules (@Bolhuis2014)
+
+* Its structure is "orderly" but not (to our knowledge) quantitative  
+
+* As a substitute, machine learning methods define a (semi)-quantitative word/sentence space based on data
+
+* Since such methods are based on real example data, they may uncover (partially) "real" structure in language
+
+* We can test this hypothesis (indirectly) through decoding experiments
+
+These features will help identify voxels of the brain that are relevant to decoding.
+
+## Definitions
+
+The eigenword representation is a quantitative, contextual semantic similarity space recently contributed by Dhillon and Ungar [link](http://www.cis.upenn.edu/~ungar/CVs/spectral_NLP.html) in @dhillon_icml12_tscca .  Eigenwords are based on the canonical correlation analysis of the adjacency matrix (FIXME word choice) of words within a large corpus (Wikipedia). That is, eigenword representations are driven by the sentence-level context(s) within which a word appears.
+
+## Sentence transformation
+
+In this work, we use _concatenations, products or sums of eigenwords_ as an eigensentence descriptor.
+
+$$ e_s = [ e_\text{subject} , e_\text{verb} , e_\text{object} ] $$.
+
+Or, use thematic role to organize the words in each sentence.
+
+# Decoding w/RKRNS
+
+## Spectral representations of language at the brain and sentence level
+
+We show that functional activation of the left hemisphere language
+network reliably decodes an individual's reading experience.  We use a
+framework based on dimensionality reduction ( _eigenanatomy_ and
+_eigenwords_ ) to identify brain sub-regions that differentiate
+related content during an extended session of sentence reading.  A
+distinguishing feature of this framework is that it makes relatively
+few assumptions about the BOLD response beyond its slow (6 - 20+
+second ) time-scale.  Our statistical design focuses on the event
+occurrence (reading) and its quantitative representation.  The BOLD
+response is encoded directly as event-matched spatiotemporal
+predictors from which we derive sparse dynamic, anatomical dictionary
+descriptors.  Our approach seeks to address two of the fundamental
+issues at hand: (1) the need for a quantitative description of
+sentences that is related to sentence comprehension from reading and
+(2) a general formulation for relating the high-dimensional
+spatiotemporal BOLD space to spectral sentence representations.
+
+## Data 
+
+We generated bold data from a Siemens 3T Trio MRI machine.
+
+The full experiment employs randomized sentence presentation in an event-related design with 
+TR=`r TR` second BOLD data.  In total, we acquired `r boldhours` hours of scan time over X sessions.  Within a session, 
+the subject is scanned over multiple blocks of fMRI of length `r blocklength` seconds.  We expunge the first `r throwaway` volumes.
+
+
+## Task Sentences
+
+The sentence stimuli are presented randomly and with varying delays.  Example sentences, with the total number of presentations, include: 
+
+```{r sentences,echo=FALSE, message=FALSE, warning=FALSE}
+data("eigen_sentences",package="RKRNS")
+fspacenames<-eigen_sentences$Sentence
+if ( ! exists("fspacenames") ) fspacenames<-sample(rep(c(1:20),50))
+tbl<-table(fspacenames)
+print( tbl[ sample(dim(tbl))[1:10]] )	
+```
+
+
+# BOLD processing and priors
+
+```{r boldpro,echo=FALSE, message=FALSE, warning=FALSE}
+afilterlowfrequency<-filterlowfrequency*TR
+afilterhighfrequency<-filterhighfrequency*TR
+```
+
+## BOLD signal characteristics 
+
+BOLD signal is information rich but noisy.  We employ three
+fundamental aspects of BOLD to guide our preprocessing choices:
+
+- Physiological noise contaminates the BOLD signal ( see compcor @Behzadi2007 )
+- The BOLD response is slow ( > 5 seconds ) after a stimulus
+- The response has limited temporal extent ( < 25 seconds )
+
+## Processing decisions
+
+Our processing therefore uses the following steps:
+
+1. Assemble the BOLD blocks to match the overall event-related design file 
+    - optionally use anatomical labeling to select subregions for assembly
+    - preliminary studies use language network regions: `r aal$label_name[labs]`.
+1. Learn physiological noise parameters from 1 block and apply them to the rest
+1. Filter the fMRI with a Butterworth band-pass filter, extracting select mid-range frequencies
+    - low frequency is `r afilterlowfrequency`
+    - high frequency is `r afilterhighfrequency`
+1. model sentence length effects (& motion---TODO) by linear regression
+
+## Training & testing
+
+Once these steps are complete we choose a training
+and testing split and perform statistical modeling.
+
+# Multivariate statistical modeling
+
+## Formulation
+
+Convert the BOLD to a spatiotemporal representation.  This model is of the form:
+
+$$ Z_k = w + w_{00} x_{00} + w_{01} x_{01} + \cdots + 
+ w_{0p} x_{0p} + w_{10} x_{10} + \cdots + w_{tp} x_{tp} + \epsilon$$
+
+where $w$ represents a weighting term, $Z_k$ represents a multivariate outcome (an
+_eigensentence_) at time k, $x_{lm}$ represents a BOLD measurement at time $l$
+and space $m$ and $t$ represents the maximum temporal index within a
+short window near event $Z_k$. 
+
+## Matrix formulation
+
+So, if $t=0$, then the global time
+index is $k$; if $t=1$, the global time index is $k+1$, etcetera.
+This formulation allows us to simultaneously model and/or select
+variables in space-time.  From here, we denote the right side of the 
+above equation (for all $k$) as $XW^T$ where $X$ 
+has dimensions $n \times p$ and $W$ has dimensions $k \times p$. 
+Similarly, $Z$ is a matrix of
+_eigensentence_ representations with dimension $n \times q$. 
+
+## Sparse canonical correlation between space-time BOLD and eigenwords
+
+CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$ where $X, W$ are as above and $Z$
+and $Y$ are similarly defined.  CCA optimizes the matrices $W, Y$
+operating on $X, Z$ to find a low-dimensional representation of the
+data pair $( X , Z )$ in which correlation is maximal.  Following
+ideas outlined in @Dhillon2014 and @Avants2014, this method can be
+extended with sparsity constraints that yield rows of $W, Y$ with a
+controllable number of non-zero entries.
+
+## Predictive model
+
+Given CCA solution matrix $W$, one may employ the low-dimensional
+representation, $XW^T$, in multi-label classification.  Currently, we
+employ SVM or random forests as multi-label learners for the problem:
+
+$$L_i = f( XW^T ),$$
+
+that is, learning a (sentence) label function from the BOLD data.
+
+(actually, this is a WIP so do not take this too seriously --- see below )
+
+
+## Sample BOLD time series
+
+Perform some diagnostic visualizations on the data.
+
+```{r simbviz}
+randvox<-sample(1:ncol(mat),4)
+plot(ts(mat[,randvox]))
+```
+The time series is noisy, as expected.
+
+## Estimate the hemodynamic response function
+
+Use `glmDenoiseR` to estimate the HRF from a subset of runs.
+
+```{r esthrf,eval=FALSE}
+mypolydegree<-4
+hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
+glmda<-glmDenoiseR( data.matrix(mat), desmat, hrfBasis=hrf, 
+  hrfShifts = 4, maxnoisepreds=0 , selectionthresh=0.1 , 
+  collapsedesign=T, polydegree=mypolydegree, baseshift=0 )
+```
+
+## Visualize the HRF
+
+Take a quick look at the estimated hemodynamic response function.
+
+```{r vizhrf}
+hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
+plot(ts(hrf))
+```
+
+## Estimate $\beta$ values for each event
+
+We estimate a $\beta^i$ vector for each of $i \in 1 \cdots q$ events.
+This vector contains a scalar $\beta$ value for each voxel,
+i.e. $\beta_j^i$ where $j \in 1 \cdots p$.  This example 
+can be found via `?bold2betas`.
+
+
+```{r simb2b,eval=FALSE}
+runs<-sort(rep(c(1,2),nrow(desmat)/2))[1:nrow(desmat)] # bb$desmat$Run; 
+btsc<-bold2betas( boldmatrix=data.matrix(mat), 
+      designmatrix=desmat, baseshift=0,
+      blockNumb=runs, maxnoisepreds=0, hrfBasis=glmda$hrf,
+      hrfShifts=0, polydegree=mypolydegree, selectionthresh=0.2 )
+if ( zscore ) {  # z-score the betas
+  betameans<-colMeans(btsc$eventbetas)
+  betasds<-apply(btsc$eventbetas,FUN=sd,MARGIN=2)
+  btsc$eventbetas<-(btsc$eventbetas-betameans)/betasds
+}
+mylabs<-rep("",nrow(btsc$eventbetas))
+for ( i in 1:nrow(btsc$eventbetas) ) 
+  mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
+mylabs<-as.factor(mylabs)
+```
+
+## Estimate $\beta$ values for each event: 2
+
+We recommend that one looks at the estimated hemodynamic response
+function in order to help set parameters.  This is available as output
+from the `bold2betas` function (and `glmDenoiseR`).  Key parameters
+are the basis length for HRF estimation, the maximum number of noise
+predictors (e.g. `maxnoisepreds=4` or `maxnoisepreds=2:10` to search a
+range), the polynomial degree and the `selectionthresh` which should
+be kept below `0.5`. Real data processing should proceed similarly.
+The latter part of the sample code extracts labels from the rownames
+of the output event beta dataframe.  This will set us up for decoding.
+
+
+## Decode from event-wise $\beta$
+
+
+```{r loadrealdata,eval=TRUE,echo=FALSE,warnings=FALSE,results='hide', message=FALSE }
+dd<-read.csv(paste(datadir2,'beta_labels.csv',sep=''))
+ns<-length(unique(dd$Sent))  # count sentences
+# create a design matrix 
+desmat<-matrix( rep(0,nrow(dd)*ns), nrow=nrow(dd) )
+for ( i in 1:ns) {
+  ww<-which( dd$Sent == i ) 
+  desmat[ww,i]<-1
+}
+# build a matrix of BOLD activation, given a mask
+fns<-as.character( dd$FN )
+aal<-antsImageRead(paste(datadir2,"aal.nii.gz",sep=''),3)
+mask<-antsImageRead(paste(datadir2,"mask_fullbrain.nii.gz",sep=''),3)
+matfn<-paste(datadir2,'mat.mha',sep='')
+if ( ! file.exists(matfn) ) {
+  imglist<-imageFileNames2ImageList( fns, 3 )
+  mat<-imageListToMatrix( imglist, mask )
+} else mat<-as.matrix( antsImageRead( matfn, 2 ) )
+matsd<-apply( mat, FUN=sd, MARGIN=2 ) # standard deviation of columns
+mat[ , matsd == 0 ]<-rowMeans( mat[ , matsd > 0 ] ) # filter 0 sd cols
+#### get eigensentences ####
+sentlabs<-read.csv(paste(datadir2,"sentence_labels.csv",sep=''))
+data("sentences",package="RKRNS")
+data("eigen_sentences",package="RKRNS")
+maxeigsentbasis<-ncol(eigen_sentences)
+eigsentdim<-90 # just the first eigsentdim dimensions
+esents<-data.matrix(eigen_sentences[,4:(4+eigsentdim-1)]) 
+esentsAllEvents<-matrix( rep(0, nrow(desmat)*ncol(esents)), nrow=nrow(desmat) )
+esentsLabs<-rep( sentlabs$Sent[1], nrow(desmat) )
+for ( i in 1:nrow(desmat) ) {
+  esentsAllEvents[i,]<-esents[ as.numeric(dd$Sent[i]), ]
+  esentsLabs[i]<-sentlabs$Sent[dd$Sent[i]]
+}
+
+# behavioral ranking
+dobehav<-F
+if (dobehav) {
+  behav<-read.csv("amt_clustfeat_sentences.csv")
+  behavinds<-2:ncol(behav)
+#  pheatmap(cor(behav[,behavinds] ))
+  esentsAllEvents<-matrix( rep(0, nrow(desmat)*length(behavinds)), nrow=nrow(desmat) )
+  esentsLabs<-rep( sentlabs$Sent[1], nrow(desmat) )
+  for ( i in 1:nrow(desmat) ) {
+      esentsAllEvents[i,]<-as.numeric(behav[ as.numeric(dd$Sent[i]), behavinds ])
+      esentsLabs[i]<-sentlabs$Sent[dd$Sent[i]]
+  }
+}
+```
+
+```{r evalrealdata,eval=TRUE,echo=FALSE,warnings=FALSE,results='hide', message=FALSE }
+#### randomly select events for training
+whichevents<-sample( 1:nrow(desmat) )[1:round(nrow(desmat)* 1/2 )]
+matTrain<-mat[ whichevents, ]
+desmatTrain<-desmat[ whichevents, ]
+esentsAllEventsTrain<-esentsAllEvents[ whichevents, ]
+esentTest<-data.matrix( esentsAllEvents[ -whichevents, ] )
+betaTest<-data.matrix( mat[ -whichevents, ] )
+#### basic voxel selection using effect size & classification
+zz<-apply(matTrain,FUN=mean,MARGIN=2)
+zze<-zz/apply(matTrain,FUN=sd,MARGIN=2)
+th<-2.0
+ff<-( abs(zze) > th )
+mylabs<-as.factor( esentsLabs  )
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(mat)[,ff])
+effszRank<-rkrnsRanker( mydf, whichevents )
+
+#### allow 2 different applications of sccan
+usedesignmat<-FALSE
+if ( usedesignmat ) { # simple test using design matrix
+  sccan<-sparseDecom2( inmatrix=list(matTrain,desmatTrain),
+    inmask=c(mask,NA), sparseness=c(-0.001,0.01),
+    nvecs=5, cthresh=c(5,0), its=3, mycoption=1 )
+  eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
+} else { # eigensentences
+  sccan<-sparseDecom2( inmatrix=list(matTrain,esentsAllEventsTrain),
+    inmask=c(mask,NA), sparseness=c( -0.001 , -0.9 ),
+    nvecs=10, cthresh=c(25,0), its=1, mycoption=1 )
+  eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
+  antsImageWrite( eseg, 'eseg_esent.nii.gz' ) # the selected voxels
+}
+# decoding based on cca voxels
+eig1<-imageListToMatrix( sccan$eig1 , mask )
+ff<-( abs(zze) > th )
+ff2<-eseg[mask==1] > 0 & eseg[mask==1] < Inf 
+ffloc<-( ff2 | ff )
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(mat)[,ffloc])
+eanatRank<-rkrnsRanker( mydf, whichevents, whichmodel='svm' )
+```
+
+Use effect size to select a subset of the full voxel matrix.
+```{r simdecode,eval=FALSE}
+# sample for training
+zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
+zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
+inds<-sample(1:nrow(desmat),size=round(nrow(desmat)*8./10.))
+nvoxtouse<-50
+ff<-rev(order(abs(zze)))[1:nvoxtouse]
+```
+The "high effect size" voxels are sent to a naive random forest model
+to do training (on a fraction of the data) and testing on the left out
+data.
+
+## Sparse canonical correlation between BOLD and stimuli
+
+CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$ where $X, W$ are as above and $Z$
+and $Y$ are similarly defined.  CCA optimizes the matrices $W, Y$
+operating on $X, Z$ to find a low-dimensional representation of the
+data pair $( X , Z )$ in which correlation is maximal.  Following
+ideas outlined in @Dhillon2014 and @Avants2014, this method can be
+extended with sparsity constraints that yield rows of $W, Y$ with a
+controllable number of non-zero entries.
+
+## SCCAN voxel selection & classification
+
+Set up the CCA by pairing the beta matrix with the design matrix.
+
+
+```{r ccamatrices,eval=FALSE}
+ccamats<-list( data.matrix(btsc$eventbetas)[inds,] , 
+               data.matrix(desmat[btsc$eventrows,])[inds,] )
+```
+
+## Initialize SCCAN
+
+Use the SVD of the beta matrix to initialize sparse CCA.
+
+```{r initcca,results='hide',eval=FALSE}
+initcca<-t( svd( btsc$eventbetas, nu=0, nv=10 )$v )
+initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=1 )$initlist
+nv<-length(initcca)
+```
+These `r nv` vectors initialize the sparse optimizer in a good place.
+
+## Supervised clustering with SCCAN
+
+The design matrix guides the dimensionality reduction 
+performed on the $\beta$ matrix.
+
+```{r runcca,results='hide',eval=FALSE}
+mycca<-sparseDecom2( inmatrix=ccamats, # initializationList=initcca,
+  sparseness=c( -0.001, -0.95 ), nvecs=nv, its=10, cthresh=c(250,0),
+  uselong=0, smooth=0.0, mycoption=1, inmask=c(mask,NA) )
+if ( !is.na(mask)) ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, mask )))
+if (  is.na(mask)) ccaout<-t(mycca$eig1)
+ff<-which(colSums(abs(ccaout))>1.e-4)
+```
+We also count the non-zero voxels which cover `r length(ff)/ncol(mat)*100`% of the brain. 
+
+## Predictive model
+
+
+Given CCA solution matrix $W$, one may employ the low-dimensional
+representation, $XW^T$, in multi-label classification.  Currently, we
+employ SVM or random forests as multi-label learners for the problem:
+
+$$L_i = f( XW^T ),$$
+
+that is, learning a (sentence) label function from the BOLD data.
+
+
+## Predictive model: 2
+
+```{r ccapred,eval=FALSE}
+mydf<-data.frame( lab=mylabs, vox=data.matrix(btsc$eventbetas) %*% t(ccaout) )
+mdl<-svm( lab ~., data=mydf[inds,])
+err<-sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])
+print(paste("CCA: Correct",err*100))
+# here is another approach ... use cca to transform BOLD signal to stimuli 
+mydf3<-data.frame( lab=mylabs, 
+  vox=data.matrix(btsc$eventbetas) %*% t(ccaout) %*% t(mycca$eig2) )
+mdl2<-svm( lab ~., data=mydf3[inds,])
+err<-sum(mydf3[-inds,]$lab==predict( mdl2, newdata=mydf3[-inds,]))/nrow(mydf3[-inds,])
+print(paste("CCA2: Correct",err*100))
+```
+The input predictors are both clustered and sparse.
+
+
+## Quick look at CCA results
+
+Effect size voxel selection yields success rate `r effszRank$suc`.
+
+Eigensentence / eigenanatomy voxel selection yields success rate `r eanatRank$suc`.
+
+Rescale the cca results and make a picture.
+
+```{r vizcca,eval=TRUE,echo=FALSE,warnings=FALSE,results='hide'}
+for ( img in sccan$eig1 ) {
+  img[mask==1]<-abs(img[mask==1])
+  img[mask==1]<-img[mask==1]/max(img[mask==1])
+}
+ofn<-"Figs/temp.jpg"
+plotANTsImage( mask, sccan$eig1, slices='12x56x1' , 
+ thresh='0.01x1.1', color=rainbow(nv), outname=ofn)
+```
+
+## CCA results in image space
+
+![](Figs/temp.jpg)
+
+# Interpreting SCCAN results 
+
+## Confusion matrix 
+
+heatmap of co-occurrence of predictions
+```{r confmat,echo=FALSE}
+print(eanatRank$confusionMatrix$table)
+```
+
+
+## Confusion matrix 2
+
+```{r confmat2,echo=FALSE}
+pheatmap(eanatRank$confusionMatrix$table, cluster_rows = F, cluster_cols = F)
+```
+
+## Anatomical coordinates of SCCAN predictors
+
+ANTs propagates AAL labels to the cortex (@Avants2014a,@Tustison2014)
+
+```{r aallabel}
+data("aal",package="ANTsR")
+fn<-paste(path.package("RKRNS"),"/extdata/111157_aal.nii.gz",sep="") 
+aalimg<-antsImageRead(fn,3)
+ccaanat<-list()
+for ( img in sccan$eig1 ) {
+  nzind<-img[ mask == 1 ] > 0 
+  aalvals<-aalimg[ mask == 1 ][ nzind ]
+  aalvals<-aalvals[aalvals>0]
+  aalmax<-which.max( hist( aalvals, breaks=1:max(aalvals), plot=FALSE )$counts )+1 
+  for ( myaal in unique(aalvals) )
+    ccaanat<-lappend( ccaanat, aal$label_name[myaal] )
+}
+```
+The SCCAN predictors include: `r unique(unlist(ccaanat))`.
+
+How much of the known network do we actually find? Right/left flip?
+
+## Map from sentence input to expected $\beta$ images
+
+Predict beta images from eigensentence representation
+
+```{r predictbeta,eval=TRUE,echo=FALSE,warnings=FALSE,results='hide', message=FALSE }
+nvsub<-10; if ( nvsub > ncol(sccan$eig2) ) nvsub<-ncol(sccan$eig2)
+v2evec<- ( data.matrix(sccan$eig2[,1:nvsub]) )
+betaPredict <-( esentTest %*% v2evec ) %*% (eig1[1:nvsub,])
+maskvox<-eseg[ mask==1 ]
+nonzerovox<-( maskvox > 0 )
+correlationsBetweenPredictedBetasAndRealBetas<-rep(0,nrow(betaPredict))
+correlationsPvalsBetweenPredictedBetasAndRealBetas<-rep(0,nrow(betaPredict))
+for ( i in 1:nrow(betaPredict) ) {
+  mycor<-cor.test( betaPredict[i,nonzerovox], betaTest[i,nonzerovox] )
+  if ( is.na( mycor$est ) )  { mycor$est<-0; mycor$p.value<-0 }
+  correlationsBetweenPredictedBetasAndRealBetas[i]<-mycor$est
+  correlationsPvalsBetweenPredictedBetasAndRealBetas[i]<-mycor$p.value
+  if ( abs(mycor$est) > 0.5 ) { plot( betaPredict[i,nonzerovox], betaTest[i,nonzerovox] ); Sys.sleep(0) }
+}
+ttl<-paste("Predicted Betas Correlation with Real Betas using",sum(nonzerovox),'voxels')
+pdf('Figs/correlationsBetweenPredictedBetasAndRealBetas.pdf')
+hist(correlationsBetweenPredictedBetasAndRealBetas,main=ttl)
+dev.off()
+ttl<-paste("Predicted Betas Correlation Qvals with Real Betas using",sum(nonzerovox),'voxels')
+qvals<-p.adjust( correlationsPvalsBetweenPredictedBetasAndRealBetas[!is.na(correlationsPvalsBetweenPredictedBetasAndRealBetas)] )
+pdf('Figs/correlationsPvalsBetweenPredictedBetasAndRealBetas.pdf')
+hist(qvals,main=ttl)
+dev.off()
+print(paste("% of significantly predicted data:", sum(qvals < 0.05 )/length(qvals)*100 ))
+```
+
+
+# Conclusions
+
+## Conclusions
+
+With the current RKRNS, one may:
+
+- Exploit *R* functionality with BOLD data
+
+- Estimate HRFs and event-wise betas
+
+- Use feature selection based on effect sizes
+
+- Employ dimensionality reduction through eigenanatomy or SCCAN
+
+- Use relatively few low-dimensional predictors for decoding
+
+- Interpret multivariate results intuitively
+
+- Allows us to exploit prior anatomical labels ....
+
+- or conceptions about what anatomy the decoding should be driven by?
+
+The package needs evaluation at this level of detail on real data.
+
+See [RKRNS](https://github.com/stnava/RKRNS) for all source code and documentation and [RKRNS-talk](http://stnava.github.io/RKRNS) for html slides.
+
+# References
