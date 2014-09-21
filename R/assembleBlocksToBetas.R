@@ -58,7 +58,7 @@ for ( session in mysessions ) {
       designmatrix=dmats, baseshift=0, verbose=T,
       blockNumb=rep(1,nrow(locmat)), maxnoisepreds=4, hrfBasis=hrf,
       hrfShifts=6, polydegree=4, selectionthresh=0.2 )
-    betafn<-paste(session,"_",block,"_betas.mha",sep='')
+    betafn<-paste(datadir,"/",session,"_",block,"_betas.mha",sep='')
     antsImageWrite( as.antsImage( btsc$eventbetas ), betafn )
     } # identical check
     cat(paste(betafn,"*"))
