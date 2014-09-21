@@ -59,9 +59,9 @@ for ( session in mysessions ) {
       blockNumb=rep(1,nrow(locmat)), maxnoisepreds=4, hrfBasis=hrf,
       hrfShifts=6, polydegree=4, selectionthresh=0.2 )
     betafn<-paste(datadir,"/betas/",session,"_",block,"_betas.mha",sep='')
-    antsImageWrite( as.antsImage( btsc$eventbetas ), betafn )
-    } # identical check
     cat(paste(betafn,"*"))
+    antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ), betafn )
+    } # identical check
     } # localblocks
   cat(paste(session,"done",dim(imat)[1],"by",dim(imat)[2],"assembled so far\n"))
 } # session 
