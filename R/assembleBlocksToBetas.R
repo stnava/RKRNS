@@ -1,4 +1,4 @@
-assembleBlocks <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix, 
+assembleBlocksToBetas <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix, 
     assembledImageOutPrefix, dmat, usedesignrow, hrf, ncompcor=6, zscore=TRUE, spatialsmooth=0 )
 {
 # print("#########assemble image blocks, potentially event-specifically#########")
