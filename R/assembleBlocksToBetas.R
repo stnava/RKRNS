@@ -55,7 +55,7 @@ for ( session in mysessions ) {
     usedesignrow[blockindices]<-partsofblocktouse
     #### now go bold2betas
     btsc<-bold2betas( boldmatrix=locmat, 
-      designmatrix=dmat[blockindices, 281:ncol(dmat) ], baseshift=0, verbose=T,
+      designmatrix=dmat[blockindices, 281:ncol(dmat) ], baseshift=0, verbose=F,
       blockNumb=rep(1,nrow(locmat)), maxnoisepreds=4, hrfBasis=hrf,
       hrfShifts=6, polydegree=4, selectionthresh=0.2 )
     betafn<-paste(datadir,"/betas/",session,"_",block,"_betas.mha",sep='')
