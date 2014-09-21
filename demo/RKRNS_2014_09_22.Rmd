@@ -1,6 +1,6 @@
 ---
 title: "Sentence decoding from BOLD with *RKRNS*"
-bibliography: REFERENCES.bib
+bibliography: RKRNS_2014_09_22.bib
 output:
   pdf_document:
     toc: true
