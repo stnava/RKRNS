@@ -23,8 +23,10 @@ for ( session in mysessions ) {
     if ( as.numeric(block) < 10 )   blockpad<-paste('000',block,sep='') 
     betafn<-paste(datadir,"/betas/",session,"_",blockpad,"_betas.mha",sep='')
     cat(paste(betafn,"*"))
-    if ( ! file.exists( betafn ) ) {
+    blockindices<-which( dmat$session == session & dmat$blockNumb == block )
+    partsofblocktouse<-rep( TRUE, length(blockindices) )
     imagefn<-paste(imagedir,subject,"_",session,"_",blocknum,imagepostfix,sep='')
+    if ( ! file.exists( betafn ) ) {
     if ( file.exists(imagefn) ) img<-antsImageRead( imagefn ,4)
     if ( isTRUE( all.equal( maskdim, dim(img)[1:3] ) ) ) # or identical(...)
     {
@@ -55,11 +57,8 @@ for ( session in mysessions ) {
         locmatsd[ locmatsd == 0 ]<-1
         locmat<-( locmat - locmatmean ) / locmatsd
     }
-    blockindices<-which( dmat$session == session & dmat$blockNumb == block )
     if ( length( blockindices ) != nrow(locmat) ) stop(" length( blockindices ) != nrow(locmat) ")
-    partsofblocktouse<-rep( TRUE, length(blockindices) )
     locmat<-locmat[partsofblocktouse,]
-    usedesignrow[blockindices]<-partsofblocktouse
 #### now go bold2betas
       btsc<-bold2betas( boldmatrix=locmat, 
         designmatrix=dmat[blockindices, 281:ncol(dmat) ], baseshift=0, verbose=F,
@@ -67,17 +66,15 @@ for ( session in mysessions ) {
         hrfShifts=6, polydegree=4, selectionthresh=0.2 )
       antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ), betafn )
     } # beta exists
+    if ( file.exists(imagefn) )
+    {
+    usedesignrow[blockindices]<-partsofblocktouse
+    }
     } # identical check
     } # localblocks
   cat(paste(session,"done",dim(imat)[1],"by",dim(imat)[2],"assembled so far\n"))
 } # session 
-imat<-data.frame(imat)
-antsImageWrite( as.antsImage( data.matrix( imat ) ) , afn )
-if ( sum( usedesignrow ) != nrow(imat) ) stop("  sum( usedesignrow ) != nrow(imat) ")
 dmat<-dmat[usedesignrow,]
-if ( nrow(dmat) != nrow(imat) ) print("CHECK DIMENSIONS MATCH!")
-write.csv(dmat,dfn,row.names=F)
 } # existence
-imat<-data.frame(imat)
-return( list( dmat=dmat, imat=imat, usedesignrow=usedesignrow, subaal=subaal ) )
+return( list( dmat=dmat, usedesignrow=usedesignrow, subaal=subaal ) )
 }
