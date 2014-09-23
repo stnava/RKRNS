@@ -505,9 +505,10 @@ if ( usedesignmat ) { # simple test using design matrix
 } else { # eigensentences
   sccan<-sparseDecom2( inmatrix=list(matTrain,esentsAllEventsTrain),
     inmask=c(mask,NA), sparseness=c( -0.001 , -0.9 ),
-    nvecs=10, cthresh=c(10,0), its=20, mycoption=1 )
+    nvecs=10, cthresh=c(10,0), its=4, mycoption=0 )
   eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
-  antsImageWrite( eseg, 'eseg_esent.nii.gz' ) # the selected voxels
+  esegfn<-paste(datadir2,'eseg_esent.nii.gz',sep='')
+  antsImageWrite( eseg, esegfn ) # the selected voxels
 }
 # decoding based on cca voxels
 eig1<-imageListToMatrix( sccan$eig1 , mask )
@@ -630,9 +631,14 @@ plotANTsImage( mask, sccan$eig1, slices='12x56x1' ,
  thresh='0.01x1.1', color=rainbow(nv), outname=ofn)
 ```
 
-## CCA results in image space
 
-![](Figs/temp.jpg)
+## CCA results in 3D image space
+
+![](Figs/cca_voxels_render.png)
+
+## CCA results in axial image space
+
+![](Figs/cca_voxels.png)
 
 # Interpreting SCCAN results 
 
