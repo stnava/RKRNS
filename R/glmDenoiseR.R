@@ -123,7 +123,10 @@ for ( i in 1:ncol(hrfdesignmat) )
   {
   hrfdesignmat[,i]<-conv( hrfdesignmat[,i]  , hrf )[1:nrow(hrfdesignmat)]
   }
+svdboldmatsd<-apply( svdboldmat , FUN=sd, MARGIN=2 )
+svdboldmat[ , svdboldmatsd==0 ]<-rowMeans( svdboldmat[ , svdboldmatsd>0 ] )
 R2base<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , p=NA )
+# R2base[ , is.na(R2base) ]<-rowMeans( R2base[, !is.na(R2base)] )
 R2base<-apply(R2base,FUN=min,MARGIN=2)
 noisepool<-getnoisepool( R2base )
 if ( max(maxnoisepreds) == 0 )

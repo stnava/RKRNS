@@ -69,7 +69,7 @@ reduction.
 opts_chunk$set(dev = 'pdf')
 print("#########setup#########TODO: need to incorporate motion parameters!")
 cleanup<-FALSE
-istest<-T # FALSE
+istest<-FALSE
 subject<-"111157"
 datadir<-paste("/Users/stnava/data/KRNS/",subject,"/",sep='')
 data("aal",package="ANTsR")
@@ -278,7 +278,7 @@ derka
 hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
 assembly2<-assembleBlocksToBetas( bmask, aalimg, labs, datadir, 
   imagepostfix,  dfn, afn, dmat, usedesignrow, hrf, ncompcor=ncompcor,
-  zscore=TRUE, spatialsmooth=2.0 )
+  zscore=TRUE, spatialsmooth=1.5 )
 derka
 dmat<-assembly2[[1]]
 imat<-assembly2[[2]]
