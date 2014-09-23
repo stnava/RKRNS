@@ -57,6 +57,8 @@ p<-stats::poly( timevals ,degree=polydegree )
 if ( all( !is.na(auxiliarynuisancevars) ) ) p<-cbind(  p, data.matrix(auxiliarynuisancevars) ) 
 if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
 rawboldmat<-data.matrix(boldmatrix)
+rawboldmatsd<-apply( rawboldmat , FUN=sd, MARGIN=2 )
+rawboldmat[ , rawboldmatsd==0 ]<-rowMeans( rawboldmat[ , rawboldmatsd>0 ] )
 svdboldmat<-residuals(lm(rawboldmat~0+p))
 if (debug) print('lm')
 if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
@@ -123,8 +125,6 @@ for ( i in 1:ncol(hrfdesignmat) )
   {
   hrfdesignmat[,i]<-conv( hrfdesignmat[,i]  , hrf )[1:nrow(hrfdesignmat)]
   }
-svdboldmatsd<-apply( svdboldmat , FUN=sd, MARGIN=2 )
-svdboldmat[ , svdboldmatsd==0 ]<-rowMeans( svdboldmat[ , svdboldmatsd>0 ] )
 R2base<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , p=NA )
 # R2base[ , is.na(R2base) ]<-rowMeans( R2base[, !is.na(R2base)] )
 R2base<-apply(R2base,FUN=min,MARGIN=2)
