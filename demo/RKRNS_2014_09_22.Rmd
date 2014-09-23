@@ -505,7 +505,7 @@ if ( usedesignmat ) { # simple test using design matrix
 } else { # eigensentences
   sccan<-sparseDecom2( inmatrix=list(matTrain,esentsAllEventsTrain),
     inmask=c(mask,NA), sparseness=c( -0.001 , -0.9 ),
-    nvecs=10, cthresh=c(10,0), its=4, mycoption=0 )
+    nvecs=12, cthresh=c(10,0), its=4, mycoption=1 )
   eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
   esegfn<-paste(datadir2,'eseg_esent.nii.gz',sep='')
   antsImageWrite( eseg, esegfn ) # the selected voxels
