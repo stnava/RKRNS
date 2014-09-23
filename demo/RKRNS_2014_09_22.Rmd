@@ -114,10 +114,12 @@ The package allows
 
 - un/supervised regularized dimensionality reduction / feature selection (`sparseDecom`,`sparseDecom2`)
 
-Here, we focus on SVMs for decoding which can be easily
-applied via `rkrnsRanker`.  Finally, we show preliminary results that
-predict BOLD activation images from input eigensentences or other
-features.  We briefly touch on future directions for this work.
+Here, we focus on evaluating our dimensionality reduction methods
+combined with SVMs for decoding.  These can be easily applied via
+`rkrnsRanker`.  Finally, we show preliminary results that use sparse 
+canonical correlation analysis for neuroimaging (SCCAN) to predict BOLD
+activation images from input eigensentences or other features.  We
+briefly touch on future directions for this work.
 
 ## Background 
 
@@ -157,9 +159,9 @@ to a BOLD decoding experiment.
   it has the same number of rows (volumes) as the BOLD matrix. So, the i$^{th}$ row 
   of the design matrix corresponds to the i$^{th}$ BOLD volume.  We provide some 
   utilities to assist in assembling the BOLD volumes in 
-  this manner.
+  this manner (see `assembleBlocksToBetas` and `assembleBlocks`).
 
-- *supervision matrices* are organized as above but each row contains a $n$-vector representing a quantitative feature
+- *supervision matrices* are organized as above but each row contains a $n$-vector representing a quantitative feature, for example, an eigensentence.
 
 - Simplicity aids debugging but has caveats (rounded event onsets, etc).
 
@@ -190,25 +192,26 @@ to a BOLD decoding experiment.
 
 ## Eigenwords and eigensentences
 
-* Language has structure that may be based on simple rules (@Bolhuis2014)
+* Language has structure that may be based on simple rules (@Bolhuis2014).
 
-* Its structure is "orderly" but not (to our knowledge) quantitative  
+* Its structure is "orderly" but not easily defined by mathematical or purely logical rules.  
 
-* As a substitute, machine learning methods define a (semi)-quantitative word/sentence space based on data
+* As a substitute, machine learning methods define a (semi)-quantitative word/sentence space based on data.  Eigenwords, for instance, learn low-dimensional representations of words from corpora.
 
-* Since such methods are based on real example data, they may uncover (partially) "real" structure in language
+* Since such methods are based on real example data, they may uncover
+  (partially) "real" quantitative structure in language.
 
-* We can test this hypothesis (indirectly) through decoding experiments
+* We can test this hypothesis (indirectly) through decoding experiments.
 
 These features will help identify voxels of the brain that are relevant to decoding.
 
 ## Definitions
 
-The eigenword representation is a quantitative, contextual semantic similarity space recently contributed by Dhillon and Ungar [link](http://www.cis.upenn.edu/~ungar/CVs/spectral_NLP.html) in @dhillon_icml12_tscca .  Eigenwords are based on the canonical correlation analysis of the adjacency matrix (FIXME word choice) of words within a large corpus (Wikipedia). That is, eigenword representations are driven by the sentence-level context(s) within which a word appears.
+The eigenword representation is a quantitative, contextual semantic similarity space recently contributed by Dhillon and Ungar [link](http://www.cis.upenn.edu/~ungar/CVs/spectral_NLP.html) in @dhillon_icml12_tscca .  Eigenwords are computed as the singular vectors of the matrix of co-occurrence of words within a large corpus (e.g. Wikipedia). That is, eigenword representations are driven by the sentence-level context(s) within which a word appears.
 
 ## Sentence transformation
 
-In this work, we use _concatenations, products or sums of eigenwords_ as an eigensentence descriptor.
+In this work, we use _concatenations, products or sums of eigenwords_ as an eigensentence descriptor.  Concatenation may be the most straightorward way of coding simple sentence representations with eigenwords:
 
 $$ e_s = [ e_\text{subject} , e_\text{verb} , e_\text{object} ] $$.
 
@@ -240,13 +243,13 @@ spatiotemporal BOLD space to spectral sentence representations.
 We generated bold data from a Siemens 3T Trio MRI machine.
 
 The full experiment employs randomized sentence presentation in an event-related design with 
-TR=`r TR` second BOLD data.  In total, we acquired `r boldhours` hours of scan time over X sessions.  Within a session, 
+TR=`r TR` second BOLD data.  In total, we acquired `r boldhours` hours of scan time over $>4$ sessions.  Within a session, 
 the subject is scanned over multiple blocks of fMRI of length `r blocklength` seconds.  We expunge the first `r throwaway` volumes.
 
 
 ## Task Sentences
 
-The sentence stimuli are presented randomly and with varying delays.  Example sentences, with the total number of presentations, include: 
+The sentence stimuli are presented randomly and with varying delays.  Example sentences, with the total number of presentations in a run, include: 
 
 ```{r sentences,echo=FALSE, message=FALSE, warning=FALSE}
 data("eigen_sentences",package="RKRNS")
@@ -279,17 +282,20 @@ Our processing therefore uses the following steps:
 
 1. Assemble the BOLD blocks to match the overall event-related design file 
     - optionally use anatomical labeling to select subregions for assembly
-    - preliminary studies use language network regions: `r aal$label_name[labs]`.
-1. Learn physiological noise parameters from 1 block and apply them to the rest
-1. Filter the fMRI with a Butterworth band-pass filter, extracting select mid-range frequencies
+    - map a traditional label image to the subject BOLD space so we can label our results e.g.: `r aal$label_name[labs]`.
+1. Learn physiological noise parameters ~~from 1 block and apply them to the rest~~ per run.
+1. ~~Filter the fMRI with a Butterworth band-pass filter, extracting select mid-range frequencies:~~
     - low frequency is `r afilterlowfrequency`
     - high frequency is `r afilterhighfrequency`
-1. model sentence length effects (& motion---TODO) by linear regression
+1. Use `glmDenoiseR` and `bold2betas` to generate event-wise $\beta$ images 
+1. Use `sparseDecom2` (SCCAN) for voxel selection
+1. Plug the sparse feature images into a prediction model
+1. ~~model sentence length effects (& motion---TODO) by linear regression~~
 
 ## Training & testing
 
-Once these steps are complete we choose a training
-and testing split and perform statistical modeling.
+The steps outlined above do not use knowledge of the event identity, only the event timing.
+Any steps that use the event's identity (e.g. during feature selection) are isolated to the training data.
 
 # Multivariate statistical modeling
 
@@ -303,28 +309,37 @@ $$ Z_k = w + w_{00} x_{00} + w_{01} x_{01} + \cdots +
 where $w$ represents a weighting term, $Z_k$ represents a multivariate outcome (an
 _eigensentence_) at time k, $x_{lm}$ represents a BOLD measurement at time $l$
 and space $m$ and $t$ represents the maximum temporal index within a
-short window near event $Z_k$. 
+short window near event $Z_k$.  In this preliminary implementation, we constrain the temporal 
+weight values through an assumed hemodynamic response function shape.
 
 ## Matrix formulation
 
-So, if $t=0$, then the global time
-index is $k$; if $t=1$, the global time index is $k+1$, etcetera.
-This formulation allows us to simultaneously model and/or select
-variables in space-time.  From here, we denote the right side of the 
-above equation (for all $k$) as $XW^T$ where $X$ 
-has dimensions $n \times p$ and $W$ has dimensions $k \times p$. 
-Similarly, $Z$ is a matrix of
-_eigensentence_ representations with dimension $n \times q$. 
+So, if $t=0$, then the global time index is $k$; if $t=1$, the global
+time index is $k+1$, etcetera.  This formulation allows us to
+simultaneously model and/or select variables in space-time.  From
+here, we denote the right side of the above equation (for all $k$) as
+$XW^T$ where $X$ has dimensions $n \times p$ and $W$ has dimensions $k
+\times p$.  Similarly, $Z$ is a matrix of _eigensentence_
+representations with dimension $n \times q$.  In this preliminary
+implementation, the temporal information is collapsed onto the event
+onset and the spatial variable is the voxel-wise $\beta$ image that
+encodes the brain's response to a task element.
 
-## Sparse canonical correlation between space-time BOLD and eigenwords
+## Sparse canonical correlation between BOLD $\beta$ images and eigensentences
 
-CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$ where $X, W$ are as above and $Z$
-and $Y$ are similarly defined.  CCA optimizes the matrices $W, Y$
-operating on $X, Z$ to find a low-dimensional representation of the
-data pair $( X , Z )$ in which correlation is maximal.  Following
-ideas outlined in @Dhillon2014 and @Avants2014, this method can be
-extended with sparsity constraints that yield rows of $W, Y$ with a
-controllable number of non-zero entries.
+CCA maximizes $PearsonCorrelation( XW^T, ZY^T )$.  The $X$ is the
+matrix of BOLD-based event wise $\beta$ images.  The $Z$ matrix is the
+feature set that represents the quantitative sentence descriptions.
+The row-dimensions of $X, Z$ must match but the column dimensions are
+usually different.  The $W$ and $Y$ matrices are the solutions over
+which we optimize.  CCA optimizes the matrices $W, Y$ operating on $X,
+Z$ to find a low-dimensional representation of the data pair $( X , Z
+)$ in which correlation is maximal.  Following ideas outlined in
+@Dhillon2014 and @Avants2014, this method can be extended with
+sparsity constraints that yield rows of $W, Y$ with a controllable
+number of non-zero entries.  See @Avants2014 for the generic algorithm
+and description of the spatial regularizer that operates on $X$ and
+the $\ell_1$ regularizers that operate on both $X$ and $Z$.
 
 ## Predictive model
 
@@ -334,10 +349,12 @@ employ SVM or random forests as multi-label learners for the problem:
 
 $$L_i = f( XW^T ),$$
 
-that is, learning a (sentence) label function from the BOLD data.
-
-(actually, this is a WIP so do not take this too seriously --- see below )
-
+that is, learning a (sentence) label function from the BOLD data.  The
+general idea is to use SCCAN as a supervised feature selector and then
+plug the selected voxels into, for instance, a SVM.  Ultimately, this
+leads to a sparse and more interpretable model due to the sparse,
+spatial regularization employed by SCCAN.  We choose sparseness
+parameters to select approximately 1\% of the brain.
 
 ## Sample BOLD time series
 
@@ -462,7 +479,8 @@ if (dobehav) {
 
 ```{r evalrealdata,eval=TRUE,echo=FALSE,warnings=FALSE,results='hide', message=FALSE }
 #### randomly select events for training
-whichevents<-sample( 1:nrow(desmat) )[1:round(nrow(desmat)* 8/10 )]
+trainfrac<-8/10
+whichevents<-sample( 1:nrow(desmat) )[1:round(nrow(desmat)* trainfrac )]
 matTrain<-mat[ whichevents, ]
 desmatTrain<-desmat[ whichevents, ]
 esentsAllEventsTrain<-esentsAllEvents[ whichevents, ]
@@ -487,7 +505,7 @@ if ( usedesignmat ) { # simple test using design matrix
 } else { # eigensentences
   sccan<-sparseDecom2( inmatrix=list(matTrain,esentsAllEventsTrain),
     inmask=c(mask,NA), sparseness=c( -0.001 , -0.9 ),
-    nvecs=10, cthresh=c(25,0), its=1, mycoption=1 )
+    nvecs=10, cthresh=c(10,0), its=20, mycoption=1 )
   eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
   antsImageWrite( eseg, 'eseg_esent.nii.gz' ) # the selected voxels
 }
@@ -511,7 +529,7 @@ ff<-rev(order(abs(zze)))[1:nvoxtouse]
 ```
 The "high effect size" voxels are sent to a naive prediction machine
 to do training (on a fraction of the data) and testing on the left out
-data.
+data.  Note: no knowledge of event identity is used here.
 
 ## Sparse canonical correlation between BOLD and stimuli
 
@@ -525,7 +543,7 @@ controllable number of non-zero entries.
 
 ## SCCAN voxel selection & classification
 
-Set up the CCA by pairing the beta matrix with the design matrix.
+Set up the CCA by pairing the _beta matrix_ with the _eigensentence matrix_.
 
 
 ```{r ccamatrices,eval=FALSE}
@@ -535,23 +553,29 @@ ccamats<-list( data.matrix(btsc$eventbetas)[inds,] ,
 
 ## Initialize SCCAN
 
-Use the SVD of the beta matrix to initialize sparse CCA.
+SCCAN needs a starting point for its projected gradient descent
+optimization.  Currently SCCAN 0-iteration solutions are derived from
+a crude, fast matrix orthogonalization.
+
+~~Use the SVD of the beta matrix to initialize sparse CCA.~~
 
 ```{r initcca,results='hide',eval=FALSE}
 initcca<-t( svd( btsc$eventbetas, nu=0, nv=10 )$v )
 initcca<-initializeEigenanatomy( initcca, mask=mask, nreps=1 )$initlist
 nv<-length(initcca)
 ```
-These `r nv` vectors initialize the sparse optimizer in a good place.
+~~These `r nv` vectors initialize the sparse optimizer in a good place.~~
 
 ## Supervised clustering with SCCAN
 
-The design matrix guides the dimensionality reduction 
-performed on the $\beta$ matrix.
+The eigensentence matrix guides the dimensionality reduction 
+performed on the $\beta$ matrix.  In order to avoid circularity, 
+this should be performed only in training data.  
+Here we use `r trainfrac*100`\% of the data for training.
 
 ```{r runcca,results='hide',eval=FALSE}
 mycca<-sparseDecom2( inmatrix=ccamats, # initializationList=initcca,
-  sparseness=c( -0.001, -0.95 ), nvecs=nv, its=10, cthresh=c(250,0),
+  sparseness=c( -0.001, -0.95 ), nvecs=nv, its=10, cthresh=c(25,0),
   uselong=0, smooth=0.0, mycoption=1, inmask=c(mask,NA) )
 if ( !is.na(mask)) ccaout<-(data.matrix(imageListToMatrix( mycca$eig1, mask )))
 if (  is.na(mask)) ccaout<-t(mycca$eig1)
