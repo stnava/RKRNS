@@ -272,20 +272,11 @@ each as well as anatomical filtering i.e. selecting the sub-regions
 from the BOLD run before concatenating along the time dimension.
 
 ```{r assembleimageblocks,echo=TRUE, message=FALSE, warning=FALSE}
-if ( TRUE ) 
-{
-derka
 hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
 assembly2<-assembleBlocksToBetas( bmask, aalimg, labs, datadir, 
   imagepostfix,  dfn, afn, dmat, usedesignrow, hrf, ncompcor=ncompcor,
   zscore=TRUE, spatialsmooth=1.5 )
-derka
-dmat<-assembly2[[1]]
-imat<-assembly2[[2]]
-usedesignrow<-assembly2$usedesignrow
 subaal<-assembly2$subaal
-} else subaal<-antsImageRead("subaal.nii.gz",3)
-rm( assembly, assembly2 ) # reclaim some memory
 ```
 
 ## Cleaning up the design matrix and extracting relevant structure for prediction
@@ -299,50 +290,69 @@ with the associated sentences, words and timing data.
 # 
 wordinds<-39:280
 sentinds<-281:ncol(dmat)
-dmatw<-dmat[,wordinds]
-dmats<-dmat[,sentinds]
-events1<-apply( dmats     , FUN=sum, MARGIN=1 )
-nschar<-as.numeric( dmat$nchar )
-nevents<-events1
-dmatsblock<-dmats
-for ( i in 1:(responselength) ) {
-    dmatsblock<-dmatsblock+ashift(dmats,c(i,0))
-    nschar<-nschar+shift(nschar,1)
+blocklevels<-unique( dmat$blockNumb )
+if ( !file.exists(bfn) | !file.exists(bfn2) ) {
+betas<-NA
+betadesign<-NA
+for ( i in blocklevels ) { 
+  blockpad<-paste(i,sep='')
+  if ( as.numeric(i) < 1000 ) blockpad<-paste('0',i,sep='') 
+  if ( as.numeric(i) < 100 )  blockpad<-paste('00',i,sep='') 
+  if ( as.numeric(i) < 10 )   blockpad<-paste('000',i,sep='') 
+  locfn<-Sys.glob(paste(datadir,'betas/','*',blockpad,"*mha",sep=''))
+  if ( length(locfn) > 0  ) {
+  locmat<-as.matrix( antsImageRead(locfn[length(locfn)],2) ) 
+  locdesignmat<-sentevents[ sentevents$blockNumb == i ,] 
+  if ( nrow(locmat) == nrow(locdesignmat) ) {
+    if ( is.na(betas) ) {
+      betas<-locmat
+      betadesign<-locdesignmat
+    } else {
+      betas<-rbind( betas, locmat )
+      betadesign<-rbind( betadesign, locdesignmat )
+    }
+  }
+  print(i)
+  }
 }
-for ( i in 1:(16) ) {
-    nevents<-nevents+shift(nevents,1)
+antsImageWrite( as.antsImage(betas), bfn )
+write.csv( betadesign, bfn2 , row.names=F )
+rm( assembly, assembly2 ) # reclaim some memory
+} else {
+  betas<-as.matrix( antsImageRead(bfn, 2 ) )
+  betadesign<-read.csv( bfn2 )
 }
-eventss<-apply( dmatsblock, FUN=sum, MARGIN=1 )
-eventtimes<-which( events1 > 0 )
-eventsw<-apply( dmatw, FUN=sum, MARGIN=1 )
+dmatw<-betadesign[,wordinds]
+dmats<-betadesign[,sentinds]
 words<-colnames(dmatw)
 data(sentences, package = "RKRNS")
 data(wiki_words,package="RKRNS")
 nsentences<-nrow(sentences)
-fspacenames<-rep("", length(eventtimes) )
+fspacenames<-rep("", nrow(betadesign) )
 dmatsnames<-colnames(dmats)
-for ( i in 1:length( eventtimes ) ) {
-  fspacenames[i]<-dmatsnames[ which( dmats[eventtimes[i],  ] == 1  ) ]
+for ( i in 1:nrow(betadesign) ) {
+  fspacenames[i]<-dmatsnames[ which( dmats[i,  ] == 1  ) ]
 }
 if ( ! exists("eventdata") )
   {
-  eventdata<-annotateEvents( sentences$Sentence, wiki_words$WhichWord, eventtimes, fspacenames )
+#  eventdata<-annotateEvents( sentences$Sentence, wiki_words$WhichWord, eventtimes, fspacenames )
   }
+nevents<-nrow(betadesign)
 ```
 
 ## The eigensentence construction
 
 The eigensentence function returns one of several approaches to constructing quantitative sentences from the eigenword basis.
-The "nvn" (noun-verb-noun) approach is currently most useful ( and corresponds to a subject verb object sentence ) but the 
-verb annotation is currently slightly buggy.  This needs to be revisited.
+The "joao" (subject-verb-object) approach is currently most useful ( and corresponds to thematic role ) but the 
+ annotation is currently slightly buggy.  This needs to be revisited.
 
 ```{r eigensentences,echo=TRUE, message=FALSE, warning=FALSE}
-eigsent<-eigenSentences( wiki_words, normalize=F, functiontoapply = 'joao', eventdata=eventdata, eigsentbasislength=50 )
+eigsent<-eigenSentences( wiki_words, normalize=F, functiontoapply = 'joao',  eigsentbasislength=50 )
 # map them to the event space
-sentspace<-matrix(rep(NA, length(eventtimes)*ncol(eigsent) ),nrow=length(eventtimes))
+sentspace<-matrix(rep(NA, nrow(betadesign)*ncol(eigsent) ),nrow=nevents)
 # compute correlations between all sentences
-sentspaceSim<-matrix(rep(NA, length(eventtimes)*nrow(eigsent) ),nrow=length(eventtimes))
-for ( i in 1:length( eventtimes ) )   
+sentspaceSim<-matrix(rep(NA, nevents*nrow(eigsent) ),nrow=nevents)
+for ( i in 1:nevents )   
   {
   sentspace[i,]<-eigsent[  which(rownames(eigsent) == fspacenames[i]  ), ]    
   sentspaceSim[i,]<-cor(eigsent[  which(rownames(eigsent) == fspacenames[i]  ), ] , t(eigsent  ))   
@@ -357,14 +367,14 @@ Inspired by discussion with Kendrick Kay.
 #     baseshift = 0,  tr=0.5, polydegree = 4, hrfShifts = 25,
 #     maxnoisepreds=c(1:4) , selectionthresh=0.1 ,collapsedesign=T )
 # plot(ts(dd$hrf))
-  if ( ! file.exists( bfn ) ) {
+#  if ( ! file.exists( bfn ) ) {
 #    betas<-bold2betas( imat, dmats, dmat$blockNumb, 
 #      maxnoisepreds=10:16, polydegree=4, hrfShifts = 25, verbose=T )
-    hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
-    btsc<-bold2betas( boldmatrix=imat, 
-      designmatrix=dmats, baseshift=0, verbose=T,
-      blockNumb=dmat$blockNumb, maxnoisepreds=4, hrfBasis=hrf,
-      hrfShifts=6, polydegree=4, selectionthresh=0.2 )
+#    hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
+#    btsc<-bold2betas( boldmatrix=imat, 
+#      designmatrix=dmats, baseshift=0, verbose=T,
+#      blockNumb=dmat$blockNumb, maxnoisepreds=4, hrfBasis=hrf,
+#      hrfShifts=6, polydegree=4, selectionthresh=0.2 )
 #
 # msk<-antsImageClone( subaal ); msk[subaal==1]<-colMeans(betas$eventbetas[,]); antsImageWrite(msk, 'temp.nii.gz' )
 # eanat<-sparseDecom(data.matrix(betas$eventbetas),inmask=subaal,
@@ -375,11 +385,11 @@ Inspired by discussion with Kendrick Kay.
 # dev.off()
 # /apply(betas$eventbetas[,],MARGIN=2,FUN=sd);
 # 
-    antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ) , bfn )
-    write.csv( btsc$eventbetas[,1:2],  bfn2, row.names=T )
-  } else {
-    betas<-as.matrix( antsImageRead( bfn, 2 ) )
-  }
+#    antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ) , bfn )
+#    write.csv( btsc$eventbetas[,1:2],  bfn2, row.names=T )
+#  } else {
+#    betas<-as.matrix( antsImageRead( bfn, 2 ) )
+#  }
 mysp<-c( -0.005, -0.9 )
 ######################################################
 #
@@ -391,9 +401,59 @@ mysp<-c( -0.005, -0.9 )
 #     polydegree=1, mycoption=1, its=12, onlyhrf=T )
 #
 ######################################################
-mylabs<-rep("",nrow(btsc$eventbetas))
-for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-strsplit( rownames(btsc$eventbetas)[i],'[.][.]')[[1]][1]
+mylabs<-rep("",nrow(betadesign))
+for ( i in 1:nrow(betadesign) ) mylabs[i]<-as.character(betadesign$stimulus[i])
 mylabs<-as.factor(mylabs)
+#### fix up betas
+betaNAs<-colMeans(betas)
+betas[, is.na(betaNAs)]<-rowMeans(betas,na.rm=T)
+
+#### randomly select events for training
+trainfrac<-8/10
+whichevents<-sample( 1:nrow(betadesign) )[1:round(nrow(betadesign)* trainfrac )]
+matTrain<-betas[ whichevents, ]
+desmatTrain<-betadesign[ whichevents, ]
+esentsAllEvents<-sentspace
+esentsAllEventsTrain<-esentsAllEvents[ whichevents, ]
+esentTest<-data.matrix( esentsAllEvents[ -whichevents, ] )
+betaTest<-data.matrix( betas[ -whichevents, ] )
+#### basic voxel selection using effect size & classification
+zz<-apply(matTrain,FUN=mean,MARGIN=2)
+zzsd<-apply(matTrain,FUN=sd,MARGIN=2)
+zze<-zz/zzsd
+th<-0.5
+ff<-( abs(zze) > th )
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(betas)[,ff], runs=as.factor(betadesign$blockNumb)  )
+effszRank<-rkrnsRanker( mydf, whichevents, whichmodel = "svm"  )
+derka
+#### allow 2 different applications of sccan
+usedesignmat<-FALSE
+if ( usedesignmat ) { # simple test using design matrix
+  sccan<-sparseDecom2( inmatrix=list(matTrain,desmatTrain),
+    inmask=c(mask,NA), sparseness=c(-0.001,0.01),
+    nvecs=5, cthresh=c(5,0), its=3, mycoption=1 )
+  eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
+} else { # eigensentences
+  sccan<-sparseDecom2( inmatrix=list(matTrain,esentsAllEventsTrain),
+    inmask=c(mask,NA), sparseness=c( -0.002 , -0.9 ),
+    nvecs=12, cthresh=c(10,0), its=2, mycoption=1 )
+  eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
+  esegfn<-paste(datadir2,'eseg_esent.nii.gz',sep='')
+  antsImageWrite( eseg, esegfn ) # the selected voxels
+}
+# decoding based on cca voxels
+eig1<-imageListToMatrix( sccan$eig1 , mask )
+ff<-( abs(zze) > th )
+ff2<-eseg[mask==1] > 0 & eseg[mask==1] < Inf 
+ffloc<-( ff2 ) 
+# mydf<-data.frame( lab=mylabs,  vox=data.matrix(mat) %*% t(eig1) )
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(mat)[,ffloc])
+eanatRank<-rkrnsRanker( mydf, whichevents, whichmodel='svm' )
+
+
+
+
+
 ######################################################
 # sample for training
 # basic voxel selection & classification

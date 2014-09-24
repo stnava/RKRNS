@@ -493,7 +493,7 @@ th<-2.0
 ff<-( abs(zze) > th )
 mylabs<-as.factor( esentsLabs  )
 mydf<-data.frame( lab=mylabs,  vox=data.matrix(mat)[,ff])
-effszRank<-rkrnsRanker( mydf, whichevents )
+effszRank<-rkrnsRanker( mydf, whichevents, whichmodel='svm' )
 
 #### allow 2 different applications of sccan
 usedesignmat<-FALSE
@@ -504,8 +504,8 @@ if ( usedesignmat ) { # simple test using design matrix
   eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
 } else { # eigensentences
   sccan<-sparseDecom2( inmatrix=list(matTrain,esentsAllEventsTrain),
-    inmask=c(mask,NA), sparseness=c( -0.001 , -0.9 ),
-    nvecs=12, cthresh=c(10,0), its=4, mycoption=1 )
+    inmask=c(mask,NA), sparseness=c( -0.002 , -0.9 ),
+    nvecs=12, cthresh=c(10,0), its=2, mycoption=1 )
   eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
   esegfn<-paste(datadir2,'eseg_esent.nii.gz',sep='')
   antsImageWrite( eseg, esegfn ) # the selected voxels
@@ -514,7 +514,8 @@ if ( usedesignmat ) { # simple test using design matrix
 eig1<-imageListToMatrix( sccan$eig1 , mask )
 ff<-( abs(zze) > th )
 ff2<-eseg[mask==1] > 0 & eseg[mask==1] < Inf 
-ffloc<-( ff2 | ff )
+ffloc<-( ff2 ) 
+# mydf<-data.frame( lab=mylabs,  vox=data.matrix(mat) %*% t(eig1) )
 mydf<-data.frame( lab=mylabs,  vox=data.matrix(mat)[,ffloc])
 eanatRank<-rkrnsRanker( mydf, whichevents, whichmodel='svm' )
 ```
@@ -645,8 +646,9 @@ plotANTsImage( mask, sccan$eig1, slices='12x56x1' ,
 ## Confusion matrix 
 
 heatmap of co-occurrence of predictions
-```{r confmat,eval=FALSE,echo=FALSE}
-print(eanatRank$confusionMatrix$table)
+```{r confmat,eval=TRUE,echo=FALSE}
+confmatfn<-paste(datadir2,'sccan_confusion.csv',sep='')
+write.csv(eanatRank$confusionMatrix$table,confmatfn)
 ```
 
 
@@ -683,7 +685,7 @@ How much of the known network do we actually find?
 Predict beta images from eigensentence representation
 
 ```{r predictbeta,eval=TRUE,echo=FALSE,warnings=FALSE,results='hide', message=FALSE }
-nvsub<-10; if ( nvsub > ncol(sccan$eig2) ) nvsub<-ncol(sccan$eig2)
+nvsub<-1; if ( nvsub > ncol(sccan$eig2) ) nvsub<-ncol(sccan$eig2)
 v2evec<- ( data.matrix(sccan$eig2[,1:nvsub]) )
 betaPredict <-( esentTest %*% v2evec ) %*% (eig1[1:nvsub,])
 maskvox<-eseg[ mask==1 ]

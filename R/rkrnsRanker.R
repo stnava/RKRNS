@@ -4,7 +4,7 @@ rkrnsRanker <- function( mydfin , trainingRows, targetSuccessRate=0.15, whichmod
   if ( whichmodel == 'randomForest' ) mdl<-randomForest( lab ~., data=mydfin[trainingRows,] )
   if ( whichmodel == 'RRF' ) mdl<-RRF( lab ~., data=mydfin[trainingRows,] )
   if ( whichmodel == 'svm' ) mdl<-svm( lab ~., data=mydfin[trainingRows,],  kernel='linear',type='C-classification', probability = TRUE )
-  err<-sum(mydfin[-trainingRows,]$lab==predict( mdl, newdata=mydfin[-trainingRows,]))/nrow(mydfin[-trainingRows,])
+  err<-sum(mydfin[-trainingRows,]$lab==predict( mdl, newdata=mydfin[-trainingRows,]))/nrow(mydfin[-trainingRows,])*100
   truth<-mydfin[-trainingRows,]$lab
   if ( whichmodel == 'randomForest' | whichmodel == 'RRF' ) {
     pred<-predict( mdl, newdata=mydfin[-trainingRows,], norm.votes=TRUE)
