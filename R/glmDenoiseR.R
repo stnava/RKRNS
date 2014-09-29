@@ -154,7 +154,7 @@ for ( i in maxnoisepreds )
     {
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
     R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, howmuchnoise=i, p=NA  )
-    R2<-apply(R2,FUN=median,MARGIN=2)
+    R2<-apply(R2,FUN=mean,MARGIN=2)
     noisepool<-getnoisepool( R2 )
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
     }
