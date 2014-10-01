@@ -125,8 +125,8 @@ for ( i in 1:ncol(hrfdesignmat) )
   {
   hrfdesignmat[,i]<-conv( hrfdesignmat[,i]  , hrf )[1:nrow(hrfdesignmat)]
   }
+
 R2base<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , p=NA )
-# R2base[ , is.na(R2base) ]<-rowMeans( R2base[, !is.na(R2base)] )
 R2base<-apply(R2base,FUN=min,MARGIN=2)
 noisepool<-getnoisepool( R2base )
 if ( max(maxnoisepreds) == 0 )
@@ -154,16 +154,20 @@ for ( i in maxnoisepreds )
     {
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
     R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, howmuchnoise=i, p=NA  )
-    R2<-apply(R2,FUN=mean,MARGIN=2)
+    R2<-apply(R2,FUN=min,MARGIN=2)
     noisepool<-getnoisepool( R2 )
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
     }
   R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu=NA, howmuchnoise=i, p=NA  )
-  R2<-apply(R2,FUN=min,MARGIN=2)
-  if ( reestimatenoisepool ) noisepool<-getnoisepool( R2 )
-  if ( ct == 1 ) R2perNoiseLevel<-R2 else R2perNoiseLevel<-cbind(R2perNoiseLevel,R2)
+  if ( reestimatenoisepool ) {
+      R2min<-apply(R2,FUN=min,MARGIN=2)
+      noisepool<-getnoisepool( R2min )
+  }
+  R2max<-apply(R2,FUN=max,MARGIN=2)
+  if ( ct == 1 ) R2perNoiseLevel<-R2max else R2perNoiseLevel<-cbind(R2perNoiseLevel,R2max)
   # print(paste("Noise pool has nvoxels=",sum(noisepool)))
-  R2summary[ct]<-mean(R2)
+  R2pos<-R2max[ R2max > 0 ]
+  R2summary[ct]<-median(R2pos)
   print(paste("NoiseU:",i,"MeanRSqrd",  R2summary[ct] ))
   ct<-ct+1
   }
