@@ -1,6 +1,7 @@
-bold2betas <- function( boldmatrix, designmatrixIn, blockNumb, maxnoisepreds=2, polydegree=12,
+bold2betas <- function( boldmatrix, designmatrixIn, blockNumb, maxnoisepreds=2, polydegree=4,
                         hrfShifts=20, hrfBasis=NA, crossvalidationgroups=4, selectionthresh=0.1,
-                        multievents=FALSE, whichcols=NA, baseshift=0, tr=1, verbose=FALSE )
+                        multievents=FALSE, whichcols=NA, baseshift=0, tr=1, collapsedesign=TRUE,
+                        verbose=FALSE )
 {
 designmatrix<-ashift( designmatrixIn, c(baseshift,0) )
 allruns<-unique( blockNumb )
@@ -16,20 +17,20 @@ for ( runs in allruns )
 designnames<-colnames(designmatrix)[whichcols]
 if ( verbose ) print(designnames)
 if ( ! all(is.na(hrfBasis) ) ) bl<-length(hrfBasis) else bl<-hrfShifts
-runhrfs<-data.frame(matrix( rep(0,length(allruns)*bl), ncol=bl))
+# runhrfs<-data.frame(matrix( rep(0,length(allruns)*bl), ncol=bl))
 eventhrfs<-data.frame(matrix( rep(0,neventstot*bl), ncol=bl))
 eventrows<-rep(0,neventstot)
 eventbetas<-data.frame(matrix( rep(0,neventstot*ncol(boldmatrix)), ncol=ncol(boldmatrix)))
 ct<-1
-for ( runs in allruns ) 
+# for ( runs in allruns ) 
   {
-  if ( verbose ) print(paste("run%:",rct/length(allruns)*100,"event%:",(ct-1)/neventstot*100,"..."))
-  kkt<-which( blockNumb == runs )
+#  if ( verbose ) print(paste("run%:",rct/length(allruns)*100,"event%:",(ct-1)/neventstot*100,"..."))
+  kkt<-1:nrow(boldmatrix) # which( blockNumb == runs )
   denoisedes<-designmatrix[kkt,]
   submat<-boldmatrix[kkt,]
   dd<-glmDenoiseR( submat, denoisedes, hrfBasis=hrfBasis, selectionthresh=selectionthresh, tr=tr,
-    crossvalidationgroups=crossvalidationgroups , maxnoisepreds=maxnoisepreds, hrfShifts=hrfShifts,
-    collapsedesign=T, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )
+    crossvalidationgroups=blockNumb, maxnoisepreds=maxnoisepreds, hrfShifts=hrfShifts,
+    collapsedesign=collapsedesign, reestimatenoisepool=F, polydegree = polydegree, baseshift=0 )
   if ( verbose ) plot( ts(dd$hrf) )
   glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
   glmdf<-data.frame( dd$hrfdesignmat, glmdfnuis )
@@ -66,9 +67,9 @@ for ( runs in allruns )
       }  
     }
   } # nevents > 0 
-  runhrfs[rct,] <- dd$hrf
+#  runhrfs[rct,] <- dd$hrf
   rct<-rct+1
   }# runs
-return(list(runhrfs=runhrfs,eventbetas=eventbetas,eventhrfs=eventhrfs,
-            eventrows=eventrows,hrf=colMeans(runhrfs)))
+return(list(eventbetas=eventbetas,eventhrfs=eventhrfs,
+            eventrows=eventrows,hrf=colMeans(eventhrfs)))
 }

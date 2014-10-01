@@ -1,4 +1,4 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA, svdonallruns=FALSE )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
@@ -127,7 +127,9 @@ for ( i in 1:ncol(hrfdesignmat) )
   }
 
 R2base<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , p=NA )
-R2base<-apply(R2base,FUN=min,MARGIN=2)
+noisepoolfun<-min
+noisepoolfun<-max
+R2base<-apply(R2base,FUN=noisepoolfun,MARGIN=2)
 noisepool<-getnoisepool( R2base )
 if ( max(maxnoisepreds) == 0 )
   {
@@ -143,8 +145,23 @@ if ( all( noisepool==FALSE ) )
   print("zero voxels meet your pvalthresh - try decreasing the value")
   return(NA)
   } else print(paste("Noise pool has nvoxels=",sum(noisepool)))
+# Step 5. [Calculate noise regressors using PCA on time-series of voxels
+# in the noise pool] For each run, we extract the time-series of the
+# voxels in the noise pool, project out the polynomial regressors from
+# each time-series, normalize each time-series to unit length, and
+# perform principal components analysis (PCA) (Behzadi et al., 2007;
+# Bianciardi et al., 2009b). The resulting principal components
+# constitute candidate noise regressors.
 svdboldmat<-scale(svdboldmat)
-noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
+if ( svdonallruns ) {
+  noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
+} else {
+  for ( run in unique(groups)  ) {
+    locmat<-svdboldmat[  groups == run ,noisepool]
+    locsvd<-svd( locmat, nv=0, nu=max(maxnoisepreds) )
+    if ( run == unique(groups)[1]  ) noiseu<-locsvd$u else noiseu<-rbind( noiseu, locsvd$u )
+  }
+}
 R2summary<-rep(0,length(maxnoisepreds))
 ct<-1
 for ( i in maxnoisepreds )
@@ -154,13 +171,13 @@ for ( i in maxnoisepreds )
     {
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
     R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, howmuchnoise=i, p=NA  )
-    R2<-apply(R2,FUN=min,MARGIN=2)
+    R2<-apply(R2,FUN=noisepoolfun,MARGIN=2)
     noisepool<-getnoisepool( R2 )
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
     }
   R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu=NA, howmuchnoise=i, p=NA  )
   if ( reestimatenoisepool ) {
-      R2min<-apply(R2,FUN=min,MARGIN=2)
+      R2min<-apply(R2,FUN=noisepoolfun,MARGIN=2)
       noisepool<-getnoisepool( R2min )
   }
   R2max<-apply(R2,FUN=max,MARGIN=2)

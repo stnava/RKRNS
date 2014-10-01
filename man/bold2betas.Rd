@@ -63,10 +63,10 @@ glmda<-glmDenoiseR( data.matrix(mat), bb$desmat[,1:4], hrfBasis=b1,
   hrfShifts = 12, maxnoisepreds=0 , selectionthresh=0.1, 
   collapsedesign=T, polydegree=4 )
 # looks ok so do the same w/in bold2betas
-btsc<-bold2betas( boldmatrix=data.matrix(mat), 
+btsc<-bold2betas( boldmatrix=data.matrix(mat),  verbose=T,
       designmatrix=bb$desmat[,1:4], baseshift=0,
-      blockNumb=runs, maxnoisepreds=1, hrfBasis=glmda$hrf,
-      hrfShifts=0, polydegree=4, selectionthresh=0.2 )
+      blockNumb=runs, maxnoisepreds=2, hrfBasis=glmda$hrf,
+      hrfShifts=0, polydegree=4, selectionthresh=0.1 )
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)
