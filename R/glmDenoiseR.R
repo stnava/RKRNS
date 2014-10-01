@@ -1,4 +1,4 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA, svdonallruns=FALSE )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA, svdonallruns=FALSE, noisepoolfun=max )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
@@ -127,8 +127,6 @@ for ( i in 1:ncol(hrfdesignmat) )
   }
 
 R2base<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , p=NA )
-noisepoolfun<-min
-noisepoolfun<-max
 R2base<-apply(R2base,FUN=noisepoolfun,MARGIN=2)
 noisepool<-getnoisepool( R2base )
 if ( max(maxnoisepreds) == 0 )
