@@ -51,10 +51,14 @@ crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA, ho
 # 3. cross-validate predictions using different numbers of noise regressors
 # 4. select best n for predictors from noise pool
 # 5. return the noise mask and the value for n
-# make regressors
-if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrix)
-# need polys per run
-#  p<-stats::rep(poly(seq(1,numberTRsPerRun),degree=polydegree),numberOfRuns)
+# make polynomial regressors per run / cv group
+if ( all(is.na(timevals)) ) {
+  timevals<-rep(0,nrow(designmatrix))
+  for ( run in unique(groups)  ) {
+    timeinds<-which( groups == run )
+    timevals[ timeinds ]<-1:length(timeinds)
+  }
+}
 p<-stats::poly( timevals ,degree=polydegree )
 if ( all( !is.na(auxiliarynuisancevars) ) ) p<-cbind(  p, data.matrix(auxiliarynuisancevars) ) 
 if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
@@ -90,10 +94,11 @@ if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
     hrf<-hrf+shift(hrfBasis,baseshift+i-1)*betamax[i]
     k<-k+1
     }
-} else { # new way below
+} else { # use FIR / deconvolution
   # Q: What's the important difference with this new way?
   # After looking through it, looks like this is deconvolution rather than
   # convolving event onset with an assumed HRF. Is that right?
+  # A: Yes
   ldes<-matrix(rowMeans(designmatrix),ncol=1)
   fir<-finiteImpulseResponseDesignMatrix( ldes,
             n=hrfShifts, baseshift=baseshift )
@@ -108,13 +113,16 @@ if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
   }
   # Q: Not sure what's being summed here. Is this summing the betas for all the HRF shifts tested?
   # If so, why? Or are you summing betas in an FIR model to get area-under-the-curve?
+  # A: estimate the HRF from the "best fit" set of predictors. "best fit" defined by high beta values.
   betablock<-sumbetablock
   temp<-apply( (betablock) , FUN=sum, MARGIN=2)
   tempord<-sort(temp,decreasing=TRUE)
   bestvoxnum<-50
-  # Q: Finding the voxels with the 49 highest betas?
-  bestvoxels<-which( temp > tempord[bestvoxnum]  )
+  # Q: Finding the voxels with the 50 highest betas?
+  # A: Yes
+  bestvoxels<-which( temp >= tempord[bestvoxnum]  )
   # Q: Deriving an HRF model from the voxels with the highest summed betas in an FIR model?
+  # A: Yes
   hrf<-rowSums( (betablock[,bestvoxels] ) )
   meanhrfval<-mean(hrf)
   mxdf<-abs(max(hrf)-meanhrfval)
@@ -167,6 +175,7 @@ ct<-1
 for ( i in maxnoisepreds )
   {
   svdboldmat<-residuals(lm(rawboldmat~0+p+noiseu[,1:i]))
+  # The noise pool could change as one finds a better model so allow user to optionally re-estimate it
   if ( reestimatenoisepool )
     {
     noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
@@ -182,7 +191,6 @@ for ( i in maxnoisepreds )
   }
   R2max<-apply(R2,FUN=max,MARGIN=2)
   if ( ct == 1 ) R2perNoiseLevel<-R2max else R2perNoiseLevel<-cbind(R2perNoiseLevel,R2max)
-  # print(paste("Noise pool has nvoxels=",sum(noisepool)))
   R2pos<-R2max[ R2max > 0 ]
   R2summary[ct]<-median(R2pos)
   print(paste("NoiseU:",i,"MeanRSqrd",  R2summary[ct] ))
