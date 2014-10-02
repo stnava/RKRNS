@@ -13,6 +13,9 @@ if ( all( is.na(as.numeric(imat)) ) ) { # assembly begin ......
 mysessions<-sort( unique( dmat$session) )
 imat<-matrix()
 for ( session in mysessions ) {
+  betafn<-paste(datadir,"/betas/",session,"_betas.mha",sep='')
+  cat(paste(betafn,"*"))
+  if ( ! file.exists( betafn ) ) {
   localblocks<-sort( unique( dmat$blockNumb[ dmat$session == session ] ) )
   for ( block in localblocks ) {
     # reconstruct imagefn from dmat
@@ -21,12 +24,11 @@ for ( session in mysessions ) {
     if ( as.numeric(block) < 1000 ) blockpad<-paste('0',block,sep='') 
     if ( as.numeric(block) < 100 )  blockpad<-paste('00',block,sep='') 
     if ( as.numeric(block) < 10 )   blockpad<-paste('000',block,sep='') 
-    betafn<-paste(datadir,"/betas/",session,"_",blockpad,"_betas.mha",sep='')
-    cat(paste(betafn,"*"))
+    betafn2<-paste(datadir,"/betas/",session,"_",blockpad,"_betas.mha",sep='')
+#    cat(paste(betafn2,"*"))
     blockindices<-which( dmat$session == session & dmat$blockNumb == block )
     partsofblocktouse<-rep( TRUE, length(blockindices) )
     imagefn<-paste(imagedir,subject,"_",session,"_",blocknum,imagepostfix,sep='')
-    if ( ! file.exists( betafn ) ) {
     if ( file.exists(imagefn) ) img<-antsImageRead( imagefn ,4)
     if ( isTRUE( all.equal( maskdim, dim(img)[1:3] ) ) ) # or identical(...)
     {
@@ -59,19 +61,19 @@ for ( session in mysessions ) {
     }
     if ( length( blockindices ) != nrow(locmat) ) stop(" length( blockindices ) != nrow(locmat) ")
     locmat<-locmat[partsofblocktouse,]
-#### now go bold2betas
-      btsc<-bold2betas( boldmatrix=locmat, 
-        designmatrix=dmat[blockindices, 281:ncol(dmat) ], baseshift=0, verbose=F,
-        blockNumb=rep(1,nrow(locmat)), maxnoisepreds=4, hrfBasis=hrf,
-        hrfShifts=6, polydegree=4, selectionthresh=0.2 )
-      antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ), betafn )
-    } # beta exists
     if ( file.exists(imagefn) )
     {
     usedesignrow[blockindices]<-partsofblocktouse
     }
     } # identical check
     } # localblocks
+    #### now go bold2betas
+    btsc<-bold2betas( boldmatrix=locmat, 
+        designmatrix=dmat[blockindices, 281:ncol(dmat) ], baseshift=0, verbose=F,
+        blockNumb=, maxnoisepreds=6, hrfBasis=hrf,
+        hrfShifts=6, polydegree=4, selectionthresh=0.1 )
+    antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ), betafn )
+    } # beta exists
   cat(paste(session,"done",dim(imat)[1],"by",dim(imat)[2],"assembled so far\n"))
 } # session 
 dmat<-dmat[usedesignrow,]

@@ -711,6 +711,8 @@ dev.off()
 print(paste("% of significantly predicted data:", sum(qvals < 0.05 )/length(qvals)*100 ))
 ```
 
+The \% of significantly predicted beta voxels is `r sum(qvals < 0.05 )/length(qvals)*100`.
+
 ![](Figs/correlationsPvalsBetweenPredictedBetasAndRealBetas.pdf)
 
 # Conclusions

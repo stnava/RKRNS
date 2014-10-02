@@ -1,4 +1,4 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=6 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA, svdonallruns=FALSE, noisepoolfun=max )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=4 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA, svdonallruns=FALSE, noisepoolfun=max )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
@@ -14,14 +14,14 @@ getnoisepool<-function( x, frac = selectionthresh ) {
   xord<-sort(x)
   l<-round(length(x)*frac)
   val<-xord[l]
-  return( x < val )
+  return( x < val & x < 0 )
 }
 
 crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA, howmuchnoise ) {
   nvox<-ncol(residmat)
-  kfo<-max(groups)
-  R2<-matrix(rep(0, nvox * kfo ),nrow=kfo)
-  for ( k in 1:kfo )
+  kfo<-unique( groups )
+  R2<-matrix(rep(0, nvox * length(kfo) ), nrow=length(kfo) )
+  for ( k in kfo )
     {
     selector <- groups!=k
     mydf<-data.frame( designmathrf[selector,] )
@@ -53,6 +53,8 @@ crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA, ho
 # 5. return the noise mask and the value for n
 # make regressors
 if ( all(is.na(timevals)) ) timevals<-1:nrow(designmatrix)
+# need polys per run
+#  p<-stats::rep(poly(seq(1,numberTRsPerRun),degree=polydegree),numberOfRuns)
 p<-stats::poly( timevals ,degree=polydegree )
 if ( all( !is.na(auxiliarynuisancevars) ) ) p<-cbind(  p, data.matrix(auxiliarynuisancevars) ) 
 if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
@@ -63,7 +65,7 @@ svdboldmat<-residuals(lm(rawboldmat~0+p))
 if (debug) print('lm')
 if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
   if ( hrfShifts > 1 ) {
-    fir<-finiteImpuleResponseDesignMatrix( designmatrix,
+    fir<-finiteImpulseResponseDesignMatrix( designmatrix,
             n=hrfShifts, baseshift=baseshift )
   } else fir<-designmatrix
   for ( i in 1:ncol(fir) )
@@ -74,9 +76,10 @@ if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
   if (debug) print('meanmax')
   meanmax<-function( x ) {  return( mean(sort((x),decreasing=T)[1:50]) ) }
   if ( hrfShifts <= 1 ) {
-      betamax<-meanmax( betas )
+    # Old-school VCR format.
+    betamax<-meanmax( betas )
   } else {
-      betamax<-apply( (betas),FUN=meanmax,MARGIN=1)
+    betamax<-apply( (betas),FUN=meanmax,MARGIN=1)
   }
   betamax<-betamax/sum(abs(betamax))
   if ( debug ) print(betamax)
@@ -88,8 +91,11 @@ if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
     k<-k+1
     }
 } else { # new way below
+  # Q: What's the important difference with this new way?
+  # After looking through it, looks like this is deconvolution rather than
+  # convolving event onset with an assumed HRF. Is that right?
   ldes<-matrix(rowMeans(designmatrix),ncol=1)
-  fir<-finiteImpuleResponseDesignMatrix( ldes,
+  fir<-finiteImpulseResponseDesignMatrix( ldes,
             n=hrfShifts, baseshift=baseshift )
   mylm<-lm( rawboldmat  ~  fir + p )
   mylm<-bigLMStats( mylm, 0.01 )
@@ -100,11 +106,15 @@ if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
     sumbetablock<-betablock[j:(j+hrfShifts-1),]
     j<-j+hrfShifts
   }
+  # Q: Not sure what's being summed here. Is this summing the betas for all the HRF shifts tested?
+  # If so, why? Or are you summing betas in an FIR model to get area-under-the-curve?
   betablock<-sumbetablock
   temp<-apply( (betablock) , FUN=sum, MARGIN=2)
   tempord<-sort(temp,decreasing=TRUE)
   bestvoxnum<-50
+  # Q: Finding the voxels with the 49 highest betas?
   bestvoxels<-which( temp > tempord[bestvoxnum]  )
+  # Q: Deriving an HRF model from the voxels with the highest summed betas in an FIR model?
   hrf<-rowSums( (betablock[,bestvoxels] ) )
   meanhrfval<-mean(hrf)
   mxdf<-abs(max(hrf)-meanhrfval)
@@ -133,16 +143,7 @@ if ( max(maxnoisepreds) == 0 )
   {
   return(list( n=0, R2atBestN=NA, hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=NA, hrfdesignmat=hrfdesignmat, noiseu=rep(1,nrow(hrfdesignmat)), polys=p ))
   }
-if ( all( noisepool==TRUE ) )
-  {
-  print("all voxels meet your pvalthresh - try increasing the value")
-  return(NA)
-  } 
-if ( all( noisepool==FALSE ) )
-  {
-  print("zero voxels meet your pvalthresh - try decreasing the value")
-  return(NA)
-  } else print(paste("Noise pool has nvoxels=",sum(noisepool)))
+print(paste("Noise pool has nvoxels=",sum(noisepool)))
 # Step 5. [Calculate noise regressors using PCA on time-series of voxels
 # in the noise pool] For each run, we extract the time-series of the
 # voxels in the noise pool, project out the polynomial regressors from
@@ -155,7 +156,8 @@ if ( svdonallruns ) {
   noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
 } else {
   for ( run in unique(groups)  ) {
-    locmat<-svdboldmat[  groups == run ,noisepool]
+    locmat<-rawboldmat[  groups == run ,noisepool]
+    locmat<-scale( residuals( lm( locmat ~ 0 + p[ groups == run, ] ) ) )
     locsvd<-svd( locmat, nv=0, nu=max(maxnoisepreds) )
     if ( run == unique(groups)[1]  ) noiseu<-locsvd$u else noiseu<-rbind( noiseu, locsvd$u )
   }

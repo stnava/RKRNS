@@ -55,7 +55,7 @@ runs<-bb$desmat$Run;
 # use glm denoise to estimate a FIR HRF
 glmda<-glmDenoiseR( data.matrix(mat), bb$desmat[,1:4], hrfBasis=NA, 
   hrfShifts = 12, maxnoisepreds=0 , selectionthresh=0.1 , 
-  collapsedesign=T, polydegree=12, baseshift=0 )
+  collapsedesign=T, polydegree=4, baseshift=0 )
 # use glm denoise to refine an assumed HRF
 b1<-hemodynamicRF( 12, onsets=1, durations=1, rt=1,
     cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )

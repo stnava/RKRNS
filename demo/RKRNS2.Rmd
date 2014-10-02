@@ -79,7 +79,7 @@ responselength<-6/tr # old - now use 8 e.g. 15 seconds div by 0.5 tr => 30 volum
 eventshift<-4
 responselength<-8/tr # e.g. 15 seconds div by 0.5 tr => 30 volumes
 throwaway<-8
-ncompcor<-10
+ncompcor<-0
 compcorvarval<-0.95
 filterlowfrequency<-4   # 0.05 if you multiply by TR
 filterhighfrequency<-20 # 0.4 # because of expected bold response < 25secs, > 5 seconds
@@ -408,8 +408,10 @@ mylabs<-as.factor(mylabs)
 betaNAs<-colMeans(betas)
 betas[, is.na(betaNAs)]<-rowMeans(betas,na.rm=T)
 
+
+derka 
 #### randomly select events for training
-trainfrac<-8/10
+trainfrac<-95/100
 whichevents<-sample( 1:nrow(betadesign) )[1:round(nrow(betadesign)* trainfrac )]
 matTrain<-betas[ whichevents, ]
 desmatTrain<-betadesign[ whichevents, ]
@@ -423,32 +425,24 @@ zzsd<-apply(matTrain,FUN=sd,MARGIN=2)
 zze<-zz/zzsd
 th<-0.5
 ff<-( abs(zze) > th )
-mydf<-data.frame( lab=mylabs,  vox=data.matrix(betas)[,ff], runs=as.factor(betadesign$blockNumb)  )
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(betas)[,ff]  )
 effszRank<-rkrnsRanker( mydf, whichevents, whichmodel = "svm"  )
-derka
-#### allow 2 different applications of sccan
-usedesignmat<-FALSE
-if ( usedesignmat ) { # simple test using design matrix
-  sccan<-sparseDecom2( inmatrix=list(matTrain,desmatTrain),
-    inmask=c(mask,NA), sparseness=c(-0.001,0.01),
-    nvecs=5, cthresh=c(5,0), its=3, mycoption=1 )
-  eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
-} else { # eigensentences
-  sccan<-sparseDecom2( inmatrix=list(matTrain,esentsAllEventsTrain),
-    inmask=c(mask,NA), sparseness=c( -0.002 , -0.9 ),
-    nvecs=12, cthresh=c(10,0), its=2, mycoption=1 )
-  eseg<-eigSeg( mask, sccan$eig1 , applySegmentationToImages=FALSE )
-  esegfn<-paste(datadir2,'eseg_esent.nii.gz',sep='')
-  antsImageWrite( eseg, esegfn ) # the selected voxels
-}
+
+#### sccan eigensentences
+sccan<-sparseDecom2( inmatrix=list(matTrain,esentsAllEventsTrain),
+    inmask=c(aalimg,NA), sparseness=c( -0.01 , -0.9 ),
+    nvecs=6, cthresh=c(4,0), its=4, mycoption=1 )
+eseg<-eigSeg( aalimg, sccan$eig1 , applySegmentationToImages=FALSE )
+esegfn<-paste(datadir,'eseg_esent.nii.gz',sep='')
+antsImageWrite( eseg, esegfn ) # the selected voxels
 # decoding based on cca voxels
-eig1<-imageListToMatrix( sccan$eig1 , mask )
-ff<-( abs(zze) > th )
-ff2<-eseg[mask==1] > 0 & eseg[mask==1] < Inf 
-ffloc<-( ff2 ) 
-# mydf<-data.frame( lab=mylabs,  vox=data.matrix(mat) %*% t(eig1) )
-mydf<-data.frame( lab=mylabs,  vox=data.matrix(mat)[,ffloc])
+eig1<-imageListToMatrix( sccan$eig1 , aalimg )
+ffloc<-eseg[aalimg==1] > 0 & eseg[aalimg==1] < Inf 
+# mydf<-data.frame( lab=mylabs,  vox=data.matrix(betas) %*% t(eig1) )
+mydf<-data.frame( lab=mylabs,  vox=data.matrix(betas)[,ffloc])
 eanatRank<-rkrnsRanker( mydf, whichevents, whichmodel='svm' )
+eanatRank$successPercent
+eanatRank$errRate
 
 
 
