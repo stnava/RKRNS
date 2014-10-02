@@ -1,8 +1,8 @@
-\name{finiteImpuleResponseDesignMatrix}
-\alias{finiteImpuleResponseDesignMatrix}
+\name{finiteImpulseResponseDesignMatrix}
+\alias{finiteImpulseResponseDesignMatrix}
 
 \title{
-Simple finiteImpuleResponseDesignMatrix function.
+Simple finiteImpulseResponseDesignMatrix function.
 }
 
 \description{
@@ -12,7 +12,7 @@ response functions.
 }
 
 \usage{
-imat<-finiteImpuleResponseDesignMatrix( mat , 5 )
+imat<-finiteImpulseResponseDesignMatrix( mat , 5 )
 }
 
 \arguments{
@@ -37,5 +37,5 @@ Avants BB
 
 \examples{
 mat<-diag(10) 
-wmat<-finiteImpuleResponseDesignMatrix( mat , 5 ) 
+wmat<-finiteImpulseResponseDesignMatrix( mat , 5 ) 
 }

@@ -1,6 +1,6 @@
-finiteImpuleResponseDesignMatrix <- function(x,n=1,baseshift=0) {
+finiteImpulseResponseDesignMatrix <- function(x,n=1,baseshift=0) {
   if (nargs() == 0) {
-    print( args( finiteImpuleResponseDesignMatrix ) )
+    print( args( finiteImpulseResponseDesignMatrix ) )
     return(1)
   }
   nc<-ncol(x)
