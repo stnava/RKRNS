@@ -1,4 +1,4 @@
-assembleBlocksToBetas <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix, 
+assembleSessionBlocks <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix,
     assembledImageOutPrefix, dmat, usedesignrow, hrf, ncompcor=6, zscore=TRUE, spatialsmooth=0 )
 {
 # print("#########assemble image blocks, potentially event-specifically#########")
@@ -11,21 +11,15 @@ for ( lab in labs ) subaal[ aalimg == lab ]<-1
 print(paste("assemble blocks for",afn))
 if ( all( is.na(as.numeric(imat)) ) ) { # assembly begin ......
 mysessions<-sort( unique( dmat$session) )
-imat<-matrix()
 for ( session in mysessions ) {
-  betafn<-paste(datadir,"/betas/",session,"_betas.mha",sep='')
+  imat<-matrix()
+  betafn<-paste(datadir,"/sessions/",session,"session.mha",sep='')
   cat(paste(betafn,"*"))
   if ( ! file.exists( betafn ) ) {
   localblocks<-sort( unique( dmat$blockNumb[ dmat$session == session ] ) )
   for ( block in localblocks ) {
     # reconstruct imagefn from dmat
     blocknum<-sprintf("%03d", block )
-    blockpad<-paste(block,sep='')
-    if ( as.numeric(block) < 1000 ) blockpad<-paste('0',block,sep='') 
-    if ( as.numeric(block) < 100 )  blockpad<-paste('00',block,sep='') 
-    if ( as.numeric(block) < 10 )   blockpad<-paste('000',block,sep='') 
-    betafn2<-paste(datadir,"/betas/",session,"_",blockpad,"_betas.mha",sep='')
-#    cat(paste(betafn2,"*"))
     blockindices<-which( dmat$session == session & dmat$blockNumb == block )
     partsofblocktouse<-rep( TRUE, length(blockindices) )
     imagefn<-paste(imagedir,subject,"_",session,"_",blocknum,imagepostfix,sep='')
@@ -34,7 +28,7 @@ for ( session in mysessions ) {
     {
     if ( spatialsmooth > 0 ) {
         simg<-antsImageClone( img )
-        SmoothImage(4,img,0.5,simg)
+        SmoothImage(4,img,spatialsmooth,simg)
         img<-simg
     }
     locmat<-timeseries2matrix( img , subaal )
@@ -53,30 +47,31 @@ for ( session in mysessions ) {
         mycompcor<-compcor( locmatfull, ncompcor, variance_extreme = compcorvarval )
         locmat<-residuals(lm(locmat~0+mycompcor))
     }
-    if ( zscore ) {
-        locmatmean<-colMeans( locmat )
-        locmatsd<-apply( locmat, FUN=sd, MARGIN=2 )
-        locmatsd[ locmatsd == 0 ]<-1
-        locmat<-( locmat - locmatmean ) / locmatsd
-    }
     if ( length( blockindices ) != nrow(locmat) ) stop(" length( blockindices ) != nrow(locmat) ")
     locmat<-locmat[partsofblocktouse,]
-    if ( file.exists(imagefn) )
-    {
     usedesignrow[blockindices]<-partsofblocktouse
-    }
+    if ( dim(imat)[1] == 1 ) imat<-locmat
+    if ( dim(imat)[1] > 1  ) imat<-rbind(imat,locmat)
     } # identical check
-    } # localblocks
-    #### now go bold2betas
-    btsc<-bold2betas( boldmatrix=locmat, 
-        designmatrix=dmat[blockindices, 281:ncol(dmat) ], baseshift=0, verbose=F,
-        blockNumb=, maxnoisepreds=6, hrfBasis=hrf,
-        hrfShifts=6, polydegree=4, selectionthresh=0.1 )
-    antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ), betafn )
+    cat("*")
+    } # block in localblocks
+    #### now do glmdenoise on imat
+    # cat("glmdenoise")
+    # dd2<-glmDenoiseR( imat, bb$desmat[,1:4], hrfBasis=hrf, hrfShifts = 4 ,
+    #    crossvalidationgroups=runs,  maxnoisepreds=4 , selectionthresh=0.1,
+    #    collapsedesign=T, polydegree=4, verbose=T )
     } # beta exists
+  cat("write")
+  if ( zscore ) {
+    imatmean<-colMeans( imat )
+    imatsd<-apply( imat, FUN=sd, MARGIN=2 )
+    imatsd[ imatsd == 0 ]<-1
+    imat<-( imat - imatmean ) / imatsd
+  }
+  antsImageWrite( as.antsImage(imat), betafn  )
   cat(paste(session,"done",dim(imat)[1],"by",dim(imat)[2],"assembled so far\n"))
-} # session 
+} # session
 dmat<-dmat[usedesignrow,]
 } # existence
-return( list( dmat=dmat, usedesignrow=usedesignrow, subaal=subaal ) )
+return( list( imat=imat, dmat=dmat, usedesignrow=usedesignrow, subaal=subaal ) )
 }

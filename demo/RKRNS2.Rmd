@@ -30,7 +30,7 @@ output:
 
 Comprehension from reading, like hearing (@French1947), is fast and contextual.
 
-## Semantic Patterns in the Brain 
+## Semantic Patterns in the Brain
 
 Does reading different sentences produce specific patterns of brain
 activity over time?  Are these patterns repeatable and does their
@@ -96,41 +96,41 @@ whichmask<-0
 if ( whichmask == 0 ) { # whole brain
   aalfn<-paste(datadir,"aal/",subject,"_mocoref_brainmask.nii.gz",sep='')
   labs<-as.numeric(1) # label numbers to use ... need to know which label set is at hand
-} 
+}
 if ( whichmask == 1 ) { # aal
   aalfn<-paste(datadir,"aal/",subject,"_aal-mocoref.nii.gz",sep='')
   labs<-as.numeric( c(1,13,55:57,79,81,89) ) # lang network + HAA
   labs<-as.numeric(1:90) # label numbers to use ... need to know which label set is at hand
-} 
+}
 if ( whichmask == 2 ) { # brodmann
   aalfn<-paste(datadir,"aal/",subject,"_Brodmann-mocoref.nii.gz",sep='')
   labs<-as.numeric( c(  9,10,45,46,47,11,12,8,7,39,40,37,21,36 ) ) # Brod + HAA
 }
 # HAAs # precent; postcent gyrus ; ang gyr; ATL ...
-# prefrontal: BA 9-10, 45-47 anterior 11-12, anterior 8 
+# prefrontal: BA 9-10, 45-47 anterior 11-12, anterior 8
 # posterior parietal: posterior 7 39-40
-# lateral temporal BA37, BA21 
-# parahipp BA36,37 
+# lateral temporal BA37, BA21
+# parahipp BA36,37
 ```
 
 # The Basic Design
 
 ## BOLD Mechanics
 
-The full experiment employs randomized sentence presentation in an event-related design with 
-TR=`r TR` second BOLD data.  In total, we acquired `r boldhours` hours of scan time over X sessions.  Within a session, 
+The full experiment employs randomized sentence presentation in an event-related design with
+TR=`r TR` second BOLD data.  In total, we acquired `r boldhours` hours of scan time over X sessions.  Within a session,
 the subject is scanned over multiple blocks of fMRI of length `r blocklength` seconds.  We expunge the first `r throwaway` volumes.
 
 ## Task Sentences
 
-The sentence stimuli are presented randomly and with varying delays.  Example sentences, with the total number of presentations, include: 
+The sentence stimuli are presented randomly and with varying delays.  Example sentences, with the total number of presentations, include:
 
 ```{r sentences,echo=FALSE, message=FALSE, warning=FALSE}
 data("eigen_sentences",package="RKRNS")
 fspacenames<-eigen_sentences$Sentence
 if ( ! exists("fspacenames") ) fspacenames<-sample(rep(c(1:20),50))
 tbl<-table(fspacenames)
-print( tbl[ sample(dim(tbl))[1:10]] )	
+print( tbl[ sample(dim(tbl))[1:10]] )
 ```
 
 # Eigenwords and eigensentences
@@ -154,7 +154,7 @@ afilterlowfrequency<-filterlowfrequency*TR
 afilterhighfrequency<-filterhighfrequency*TR
 ```
 
-## BOLD signal characteristics 
+## BOLD signal characteristics
 
 BOLD signal is information rich but noisy.  We employ three
 fundamental aspects of BOLD to guide our preprocessing choices:
@@ -167,7 +167,7 @@ fundamental aspects of BOLD to guide our preprocessing choices:
 
 Our processing therefore uses the following steps:
 
-1. Assemble the BOLD blocks to match the overall event-related design file 
+1. Assemble the BOLD blocks to match the overall event-related design file
     - optionally use anatomical labeling to select subregions for assembly
     - preliminary studies use language network regions: `r aal$label_name[labs]`.
 1. Learn physiological noise parameters from 1 block and apply them to the rest
@@ -187,24 +187,24 @@ and testing split and perform statistical modeling.
 
 Convert the BOLD to a spatiotemporal representation.  This model is of the form:
 
-$$ Z_k = w + w_{00} x_{00} + w_{01} x_{01} + \cdots + 
+$$ Z_k = w + w_{00} x_{00} + w_{01} x_{01} + \cdots +
  w_{0p} x_{0p} + w_{10} x_{10} + \cdots + w_{tp} x_{tp} + \epsilon$$
 
 where $w$ represents a weighting term, $Z_k$ represents a multivariate outcome (an
 _eigensentence_) at time k, $x_{lm}$ represents a BOLD measurement at time $l$
 and space $m$ and $t$ represents the maximum temporal index within a
-short window near event $Z_k$. 
+short window near event $Z_k$.
 
 ## Matrix formulation
 
 So, if $t=0$, then the global time
 index is $k$; if $t=1$, the global time index is $k+1$, etcetera.
 This formulation allows us to simultaneously model and/or select
-variables in space-time.  From here, we denote the right side of the 
-above equation (for all $k$) as $XW^T$ where $X$ 
-has dimensions $n \times p$ and $W$ has dimensions $k \times p$. 
+variables in space-time.  From here, we denote the right side of the
+above equation (for all $k$) as $XW^T$ where $X$
+has dimensions $n \times p$ and $W$ has dimensions $k \times p$.
 Similarly, $Z$ is a matrix of
-_eigensentence_ representations with dimension $n \times q$. 
+_eigensentence_ representations with dimension $n \times q$.
 
 ## Sparse canonical correlation between space-time BOLD and eigenwords
 
@@ -231,7 +231,7 @@ that is, learning a (sentence) label function from the BOLD data.
 # Study Methodology and Preliminary Validation
 
 Here, we set up parameters for the study, including label sets and temporal filtering.
-We can use Brodmann or AAL label sets with the current data though others can easily be added. 
+We can use Brodmann or AAL label sets with the current data though others can easily be added.
 The current parameters select brain regions related to heteromodal association and language.
 
 ```{r setup,echo=TRUE, message=FALSE, warning=FALSE}
@@ -253,12 +253,12 @@ bfn2<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"be
 filtfn<-paste(datadir,"assembly/assembled_aal_",labs[1],"_",labs[length(labs)],"testfilt.mha",sep='') # INPUT out img na
 ```
 
-## Data assembly 
+## Data assembly
 
 Our study collects several independent runs of data which must be collected together in organized fashion.
 
 We assemble the design list from all of the independent runs.
-There are several assumptions about data organization being made which may be 
+There are several assumptions about data organization being made which may be
 gleaned from the code.
 
 ```{r assembledesign,echo=TRUE, message=FALSE, warning=FALSE}
@@ -272,37 +272,39 @@ each as well as anatomical filtering i.e. selecting the sub-regions
 from the BOLD run before concatenating along the time dimension.
 
 ```{r assembleimageblocks,echo=TRUE, message=FALSE, warning=FALSE}
-hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
-assembly2<-assembleBlocksToBetas( bmask, aalimg, labs, datadir, 
-  imagepostfix,  dfn, afn, dmat, usedesignrow, hrf, ncompcor=ncompcor,
+derka
+hrf2<-ts( hemodynamicRF( 32, onsets=1, durations=3, rt=0.5,
+  cc=0.35,a1=4,a2=3,b1=0.9, b2=0.9 ) )
+assembly2<-assembleSessionBlocks( bmask, aalimg, labs, datadir,
+  imagepostfix,  dfn, afn, dmat, usedesignrow, ncompcor=0,
   zscore=TRUE, spatialsmooth=1.5 )
 subaal<-assembly2$subaal
 ```
 
 ## Cleaning up the design matrix and extracting relevant structure for prediction
 
-Select relevant columns from the BOLD run to enable us to associate 
-words / sentences with BOLD activation.  The second important step 
-below is the event annotation which organizes the event instances 
+Select relevant columns from the BOLD run to enable us to associate
+words / sentences with BOLD activation.  The second important step
+below is the event annotation which organizes the event instances
 with the associated sentences, words and timing data.
 
 ```{r organizeStudy,echo=TRUE, message=FALSE, warning=FALSE}
-# 
+#
 wordinds<-39:280
 sentinds<-281:ncol(dmat)
 blocklevels<-unique( dmat$blockNumb )
 if ( !file.exists(bfn) | !file.exists(bfn2) ) {
 betas<-NA
 betadesign<-NA
-for ( i in blocklevels ) { 
+for ( i in blocklevels ) {
   blockpad<-paste(i,sep='')
-  if ( as.numeric(i) < 1000 ) blockpad<-paste('0',i,sep='') 
-  if ( as.numeric(i) < 100 )  blockpad<-paste('00',i,sep='') 
-  if ( as.numeric(i) < 10 )   blockpad<-paste('000',i,sep='') 
+  if ( as.numeric(i) < 1000 ) blockpad<-paste('0',i,sep='')
+  if ( as.numeric(i) < 100 )  blockpad<-paste('00',i,sep='')
+  if ( as.numeric(i) < 10 )   blockpad<-paste('000',i,sep='')
   locfn<-Sys.glob(paste(datadir,'betas/','*',blockpad,"*mha",sep=''))
   if ( length(locfn) > 0  ) {
-  locmat<-as.matrix( antsImageRead(locfn[length(locfn)],2) ) 
-  locdesignmat<-sentevents[ sentevents$blockNumb == i ,] 
+  locmat<-as.matrix( antsImageRead(locfn[length(locfn)],2) )
+  locdesignmat<-sentevents[ sentevents$blockNumb == i ,]
   if ( nrow(locmat) == nrow(locdesignmat) ) {
     if ( is.na(betas) ) {
       betas<-locmat
@@ -343,7 +345,7 @@ nevents<-nrow(betadesign)
 ## The eigensentence construction
 
 The eigensentence function returns one of several approaches to constructing quantitative sentences from the eigenword basis.
-The "joao" (subject-verb-object) approach is currently most useful ( and corresponds to thematic role ) but the 
+The "joao" (subject-verb-object) approach is currently most useful ( and corresponds to thematic role ) but the
  annotation is currently slightly buggy.  This needs to be revisited.
 
 ```{r eigensentences,echo=TRUE, message=FALSE, warning=FALSE}
@@ -352,26 +354,26 @@ eigsent<-eigenSentences( wiki_words, normalize=F, functiontoapply = 'joao',  eig
 sentspace<-matrix(rep(NA, nrow(betadesign)*ncol(eigsent) ),nrow=nevents)
 # compute correlations between all sentences
 sentspaceSim<-matrix(rep(NA, nevents*nrow(eigsent) ),nrow=nevents)
-for ( i in 1:nevents )   
+for ( i in 1:nevents )
   {
-  sentspace[i,]<-eigsent[  which(rownames(eigsent) == fspacenames[i]  ), ]    
-  sentspaceSim[i,]<-cor(eigsent[  which(rownames(eigsent) == fspacenames[i]  ), ] , t(eigsent  ))   
+  sentspace[i,]<-eigsent[  which(rownames(eigsent) == fspacenames[i]  ), ]
+  sentspaceSim[i,]<-cor(eigsent[  which(rownames(eigsent) == fspacenames[i]  ), ] , t(eigsent  ))
   }
 ```
 
-## GLM Denoise R 
+## GLM Denoise R
 
 Inspired by discussion with Kendrick Kay.
 ```{r glmdenoiserun,echo=TRUE, message=FALSE, warning=FALSE}
-# dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], hrfBasis=NA , crossvalidationgroups=4, 
+# dd<-glmDenoiseR( imat[1:1000,], dmats[1:1000,], hrfBasis=NA , crossvalidationgroups=4,
 #     baseshift = 0,  tr=0.5, polydegree = 4, hrfShifts = 25,
 #     maxnoisepreds=c(1:4) , selectionthresh=0.1 ,collapsedesign=T )
 # plot(ts(dd$hrf))
 #  if ( ! file.exists( bfn ) ) {
-#    betas<-bold2betas( imat, dmats, dmat$blockNumb, 
+#    betas<-bold2betas( imat, dmats, dmat$blockNumb,
 #      maxnoisepreds=10:16, polydegree=4, hrfShifts = 25, verbose=T )
 #    hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
-#    btsc<-bold2betas( boldmatrix=imat, 
+#    btsc<-bold2betas( boldmatrix=imat,
 #      designmatrix=dmats, baseshift=0, verbose=T,
 #      blockNumb=dmat$blockNumb, maxnoisepreds=4, hrfBasis=hrf,
 #      hrfShifts=6, polydegree=4, selectionthresh=0.2 )
@@ -384,7 +386,7 @@ Inspired by discussion with Kendrick Kay.
 # pheatmap(cor(t(eanat$projections)))
 # dev.off()
 # /apply(betas$eventbetas[,],MARGIN=2,FUN=sd);
-# 
+#
 #    antsImageWrite( as.antsImage( data.matrix( btsc$eventbetas ) ) , bfn )
 #    write.csv( btsc$eventbetas[,1:2],  bfn2, row.names=T )
 #  } else {
@@ -395,9 +397,9 @@ mysp<-c( -0.005, -0.9 )
 #
 # selcols<-which( colMeans(dmats[10:500,]) >  0 )
 # j<-1:1000
-# btsc<-bold2betasCCA( data.matrix(imat[j,])  , dmats[j,selcols], 
-#     blockNumb=dmat$blockNumb[j], bl=20, baseshift=8, 
-#     sparseness=mysp, bestvoxnum=20, mask=subaal, 
+# btsc<-bold2betasCCA( data.matrix(imat[j,])  , dmats[j,selcols],
+#     blockNumb=dmat$blockNumb[j], bl=20, baseshift=8,
+#     sparseness=mysp, bestvoxnum=20, mask=subaal,
 #     polydegree=1, mycoption=1, its=12, onlyhrf=T )
 #
 ######################################################
@@ -409,7 +411,7 @@ betaNAs<-colMeans(betas)
 betas[, is.na(betaNAs)]<-rowMeans(betas,na.rm=T)
 
 
-derka 
+derka
 #### randomly select events for training
 trainfrac<-95/100
 whichevents<-sample( 1:nrow(betadesign) )[1:round(nrow(betadesign)* trainfrac )]
@@ -437,7 +439,7 @@ esegfn<-paste(datadir,'eseg_esent.nii.gz',sep='')
 antsImageWrite( eseg, esegfn ) # the selected voxels
 # decoding based on cca voxels
 eig1<-imageListToMatrix( sccan$eig1 , aalimg )
-ffloc<-eseg[aalimg==1] > 0 & eseg[aalimg==1] < Inf 
+ffloc<-eseg[aalimg==1] > 0 & eseg[aalimg==1] < Inf
 # mydf<-data.frame( lab=mylabs,  vox=data.matrix(betas) %*% t(eig1) )
 mydf<-data.frame( lab=mylabs,  vox=data.matrix(betas)[,ffloc])
 eanatRank<-rkrnsRanker( mydf, whichevents, whichmodel='svm' )
@@ -525,7 +527,7 @@ pdf("temper2.pdf",width=32,height=32)
 pheatmap(cor(t(rproj)))
 dev.off()
 
-myclass<-templateBasedClassification( data.matrix(betas), 
+myclass<-templateBasedClassification( data.matrix(betas),
   (eventdata$sentences), data.matrix(betas), method="dict" )
 print(cor(t(myclass$featuretemplate)))
 vizimg<-antsImageClone(subaal)
@@ -550,8 +552,8 @@ score<-0
 possscore<-0
 ec<-droplevels(as.factor(eventclass))
 ecp<-droplevels(as.factor(eventclass))
-scmat1<-data.matrix(eventbetas) 
-scmat2<-matrix( rep( (eventclass), length(uev)), ncol=length(uev) ) 
+scmat1<-data.matrix(eventbetas)
+scmat2<-matrix( rep( (eventclass), length(uev)), ncol=length(uev) )
 uev<-(unique(eventclass))
 for ( x in 1:length(uev) ) scmat2[,x]<-as.numeric( scmat2[,x] == uev[x] )
 scmat2<-matrix(as.numeric(scmat2),nrow=nrow(scmat1))
@@ -564,7 +566,7 @@ for ( k in 1:max(groups)) {
   myspars<-c(-0.001,-0.005,-0.005*5)
   for ( spars in 1:length(myspars) ) {
     cca1<-sparseDecom2( list( (scmat1[slct,]) , scmat2[slct,] ), # z=-0.001,
-      robust=0,inmask=c(subaal,NA), sparseness=c( myspars[spars], -0.9 ), nvecs=2, 
+      robust=0,inmask=c(subaal,NA), sparseness=c( myspars[spars], -0.9 ), nvecs=2,
       its=6, cthresh=c(0,0), perms=0, mycoption=1, ell1=1, smooth=0.0 )
     if ( spars == 1 ) ccamat1<-imageListToMatrix( cca1$eig1, subaal ) else {
       ccamat1<-rbind(ccamat1,imageListToMatrix( cca1$eig1, subaal ))
@@ -573,13 +575,13 @@ for ( k in 1:max(groups)) {
   p1<-(scmat1[ slct,] %*% t(ccamat1))
   p2<-(scmat1[!slct,] %*% t(ccamat1))
   rownames(p1)<-rownames(eventbetas)[slct]
-  pdf("test.pdf",width=16,height=16)	
+  pdf("test.pdf",width=16,height=16)
   pheatmap( cor(t(p1) ))
   dev.off()
-  pdf("test2.pdf",width=16,height=16)	
+  pdf("test2.pdf",width=16,height=16)
   pheatmap( cor((p1) ))
   dev.off()
-  rownames(p2)<-rownames(eventbetas)[!slct]	
+  rownames(p2)<-rownames(eventbetas)[!slct]
 #  pheatmap(cor(t(p1))   )
 #   pheatmap(cor(t(p1),t(p2))   )
   df1<-data.frame(y=(ec[slct]), p1) # , xtra=rowMeans(scmat1)[ slct] )
@@ -605,7 +607,7 @@ print(sum(ecp==ec)/length(ec))
 # adfafd
 # now do something similar with CCA
 
-accs<-rep(0,100) 
+accs<-rep(0,100)
 for ( acc in 1:100 ) {
 slct<-sample(rep(c(rep(FALSE,2),rep(TRUE,20)),10))[1:nrow(scmat1)]
 nv<-30
@@ -615,14 +617,14 @@ scmat2<-matrix( rep( eventclass, length(uev)), ncol=length(uev) )
 for ( x in 1:length(uev) ) scmat2[,x]<-as.numeric( scmat2[,x] == uev[x] )
 cth<-50
 cca1<-sparseDecom2( list( (scmat1[slct,]),scmat2[slct,]), robust=0,
-  inmask=c(subaal,NA), sparseness=c( -0.01, -0.9 ), nvecs=nv, 
+  inmask=c(subaal,NA), sparseness=c( -0.01, -0.9 ), nvecs=nv,
   its=5, cthresh=c(cth,0), perms=0, mycoption=1, ell1=1, smooth=0.0 )
 ccamat1<-imageListToMatrix( cca1$eig1, subaal )
-rownames(cca1$projections)<-rownames(eventbetas)[slct]	
+rownames(cca1$projections)<-rownames(eventbetas)[slct]
 pheatmap(cor(t(cca1$projections)))
 if ( TRUE ) {
 eanat1<-sparseDecom( scmat1[slct,],
-  inmask=subaal, sparseness=-0.01, nvecs=10, 
+  inmask=subaal, sparseness=-0.01, nvecs=10,
   its=5, cthresh=cth,  mycoption=0, ell1=1 )
 emat1<-imageListToMatrix( eanat1$eig, subaal )
 ccamat1<-rbind(ccamat1,emat1)
@@ -638,14 +640,14 @@ print(paste(nrow(df2),ttt))
 accs[acc]<-ttt
 }
 #
-#rownames(eanat1$proj)<-rownames(eventbetas)	
+#rownames(eanat1$proj)<-rownames(eventbetas)
 #pheatmap(cor(t(eanat1$proj)))
 for ( i in 1:3 ) {
-  cca1$eig1[[i]][ subaal == 1 ]<-abs( cca1$eig1[[i]][ subaal == 1 ] ) 
+  cca1$eig1[[i]][ subaal == 1 ]<-abs( cca1$eig1[[i]][ subaal == 1 ] )
   antsImageWrite( cca1$eig1[[i]], paste("temp",i,'.nii.gz',sep='') )
 }
 i<-9
-plot( cca1$projections[,i], cca1$projections2[,i] ) 
+plot( cca1$projections[,i], cca1$projections2[,i] )
 for ( i in 1:nv ) {
   p1<-scmat1[kktest,] %*% ( ccamat1[i,] ); p1<-abs(p1)/max(abs(p1))
   p2<-scmat2[kktest,] %*% as.matrix( cca1$eig2[,i] );  p2<-abs(p2)/max(abs(p2))
@@ -658,14 +660,14 @@ for ( i in 1:nv ) {
 }
 ```
 
-## Non-parametric temporal filtering 
+## Non-parametric temporal filtering
 
-Non-parametric temporal filtering proceeds in a voxelwise fashion.  Parameters are chosen to reflect 
-our knowledge of the BOLD response's frequency domain.  We also construct the space-time representation 
+Non-parametric temporal filtering proceeds in a voxelwise fashion.  Parameters are chosen to reflect
+our knowledge of the BOLD response's frequency domain.  We also construct the space-time representation
 which also is informed by the sluggishness of BOLD response and the expected response width in time.
 
 ```{r filtering,echo=TRUE, message=FALSE, warning=FALSE}
-if ( ! file.exists(filtfn) ) 
+if ( ! file.exists(filtfn) )
 {
   imat<-filterfMRI4KRNS( imat, tr=tr,  
     filterlowfrequency=NA,
@@ -704,7 +706,7 @@ $\| M_t - M_{s2} \|$.  This "system" has relatively few parameters and
 is fairly interpretable in that we directly use distances between
 spatiotemporal activation patterns to choose a class.  This also
 tacitly estimates the HRF and includes regularization of the "shape"
-of the $M_j$ matrix entries (i.e. they are in some sense smooth). 
+of the $M_j$ matrix entries (i.e. they are in some sense smooth).
 The code below also supports testing eigenanatomy (unsupervised)  
 decompositions.
 
@@ -722,9 +724,9 @@ wordroi<-'child'
 wordroi2<-'judge'
 selector1<-grep(wordroi,eventdata$sentences)
 selector2<-grep(wordroi2,eventdata$sentences)
-selector<-c( selector1 , selector2 ) 
+selector<-c( selector1 , selector2 )
 ntests<-round(length(selector)/nleaveout)
-groups<-(1:length(selector) %% ntests )+1 
+groups<-(1:length(selector) %% ntests )+1
 # groups<-sample( groups , replace=FALSE )
 groups<-rev( groups )
 matresults<-data.frame( real=rep(toString(wordroi),ntests), pred=rep(toString(wordroi),ntests) , stringsAsFactors=FALSE)
@@ -767,7 +769,7 @@ for ( k in 1:ntests ) {
   myestimatedhrf<-kk$timefunction
   if (mean(kk$timefunction)<0) kk$timefunction<-kk$timefunction*(-1)
 #  plot((kk$timefunction),type='l')
-  if ( usebrod ) vnm<-paste("sccanBasedDecoderSliceVizBrod",(rownames(featste)[1])[1],'.png',sep='') 
+  if ( usebrod ) vnm<-paste("sccanBasedDecoderSliceVizBrod",(rownames(featste)[1])[1],'.png',sep='')
   if (!usebrod ) vnm<-paste("sccanBasedDecoderSliceVizAAL",(rownames(featste)[1])[1],'.png',sep='')
   score<-score+sum(locscore)
   possscore<-possscore+length(locscore)
@@ -779,17 +781,17 @@ ccaresult<-score/length(selector)
 ```
 
 With cross-validation comes some uncertainty in the signal stability.  However, this result suggests that SCCAN @Avants2014
-leads to meaningful supervised pattern extraction. In this context, we can view SCCAN as a supervised dimensionality 
+leads to meaningful supervised pattern extraction. In this context, we can view SCCAN as a supervised dimensionality
 reduction approach where supervision is provided by the eigensentence representation.
 
 ```{r validation,echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
 # in the future these should call the appropriate functions or be embedded here ...
 #########################################
-#  factor out some nuisance signal 
+#  factor out some nuisance signal
 #########################################
 # might pass mask4d below to get other constraints on data
-ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspaceSim[,], 
-   mysparse = c( -0.001, -0.9 ), nvecs=15, cthresh=250, doEanat=F, mask=mask4d, 
+ccaresults<-sccanBasedDecoder( eventdata[,], dmats, ccafeatspace[,] , sentspaceSim[,],
+   mysparse = c( -0.001, -0.9 ), nvecs=15, cthresh=250, doEanat=F, mask=mask4d,
    smooth=0.1 , its=5,  interleave=T ,  locwordlist=c("coffee")  )
 
 #c('blue','red','yellow','green')
@@ -816,7 +818,7 @@ for ( k in 1:length(ccaresults$ccaobject$eig1) ) {
 plotANTsImage( ref, vislist, slices='12x56x1' , thresh='0.1x1', color=rainbow( length(vislist) ) , outname="sccanBasedDecoderSliceViz.png")
 # compare to
 # tcca<-sparseDecom2( inmatrix=list( data.matrix(imat)[1000:10000,] , data.matrix(dmatsblock)[1000:10000,] ), nvecs=20, sparseness=c(-0.1,0.1), its=5, mycoption=2, perms=0, smooth=0.5, cthresh=c(200,0), inmask=c(subaal,NA) )
-# purely spatial ... 
+# purely spatial ...
 ```
 
 
@@ -841,17 +843,17 @@ idea of what sentences are well-classified.
 
 ```{r d3,results='asis',iframe = TRUE,fig.cap='A (mis)-classification network',echo=FALSE, message=FALSE, warning=FALSE}
 print("TODO")
-#  ww <- classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=T) 
+#  ww <- classificationNetwork( nodesIn=nodedf, wclassesf[l2], pred ,outfile=NA, mycharge=-2066,zoom=T)
 ```
 
-## Temporal dynamics 
+## Temporal dynamics
 
 A "HRF" is estimated by CCA.
 ```{r hrf,fig.cap='SCCAN-Estimated HRF', message=FALSE, warning=FALSE}
 mydata <- data.frame(time=c(1:length(myestimatedhrf))*TR+eventshift*TR,BOLD=myestimatedhrf)
 ggplot(mydata,aes(time,BOLD))+geom_line()
 ```
-## 
+##
 
 This function sometimes has an appearance that is similar to what's
 expected from the literature. It is estimated by converting a row of
@@ -874,17 +876,17 @@ superior temporal (Heschl's?) gyrus and inferior frontal gyrus.
 
 # Discussion
 
-## Problems 
+## Problems
 
 There are several problems and shortcomings to this analysis.
 
 - Eigenwords are somewhat arbitrary and may not reflect neural organization of semantic meaning
 - Optimization of parameters was performed on one subject's dataset though we strived to make minimal assumptions
-- Interpretability is not optimal 
+- Interpretability is not optimal
 - Visualization needs improvement, especially of brain activity over time
 - No explicit modeling of the residual BOLD signal due to prior events
 
-## Strengths 
+## Strengths
 
 Some strengths include relatively few assumptions, a flexible
 implementation and open-science approach. Furthermore, for the three
@@ -894,5 +896,3 @@ Several other classification problems show performance well-above
 chance with current ceilings around a factor of M times chance.
 
 # References
-
-

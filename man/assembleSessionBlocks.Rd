@@ -1,5 +1,5 @@
-\name{assembleBlocksToBetas}
-\alias{assembleBlocksToBetas}
+\name{assembleSessionBlocks}
+\alias{assembleSessionBlocks}
 
 \title{
 compute betas from image blocks of bold
@@ -10,8 +10,8 @@ Computes event-wise betas for each image block and writes to an image
 }
 
 \usage{
-assembly2<-assembleBlocksToBetas( bmask, aalimg, labs, datadir, imagepostfix,  
-   assembledBlocksOutPrefix, afn, assembledImageOutPrefix, 
+assembly2<-assembleSessionBlocks( bmask, aalimg, labs, datadir, imagepostfix,
+   assembledBlocksOutPrefix, afn, assembledImageOutPrefix,
    usedesignrow, hrf, zscore=TRUE, spatialsmoothing=0 )
 }
 
@@ -41,7 +41,7 @@ assembly2<-assembleBlocksToBetas( bmask, aalimg, labs, datadir, imagepostfix,
   organizational boolean tracking which parts of the design file have concurrent BOLD images, useful for sanity checks
 }
 \item{imat}{
-  the current estimate of the assembled image matrix 
+  the current estimate of the assembled image matrix
 }
 \item{zscore}{
   should we zscore each voxel?
@@ -62,6 +62,6 @@ Avants BB, Phillips JS
 \examples{
 \dontrun{
 hrf<-ts( hemodynamicRF( 30, onsets=2, durations=1, rt=0.5,cc=0.1,a1=6,a2=12,b1=0.6, b2=0.6 ) )
-assembly2<-assembleBlocksToBetas( bmask, aalimg, labs, datadir, imagepostfix,  dfn, afn, dmat, usedesignrow, imat )
+assembly2<-assembleSessionBlocks( bmask, aalimg, labs, datadir, imagepostfix,  dfn, afn, dmat, usedesignrow, imat )
 }
 }
