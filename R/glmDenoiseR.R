@@ -26,14 +26,14 @@ crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA, ho
     selector <- groups!=k
     mydf<-data.frame( designmathrf[selector,] )
     if ( ! all( is.na(noiseu) ) )
-      mydf<-data.frame( mydf, noiseu[selector,1:howmuchnoise] )  
+      mydf<-data.frame( mydf, noiseu[selector,1:howmuchnoise] )
     if ( ! all( is.na(p) ) )
       mydf<-data.frame( mydf, p[selector,] )
     mylm1<-lm( residmat[selector,]   ~  . , data=mydf )
     selector <- groups==k
     mydf<-data.frame( designmathrf[selector,] )
     if ( ! all( is.na(noiseu) ) )
-      mydf<-data.frame( mydf, noiseu[selector,1:howmuchnoise] )  
+      mydf<-data.frame( mydf, noiseu[selector,1:howmuchnoise] )
     if ( ! all( is.na(p) ) )
       mydf<-data.frame( mydf, p[selector,] )
     predmat<-predict(mylm1,newdata=mydf)
@@ -60,12 +60,17 @@ if ( all(is.na(timevals)) ) {
   }
 }
 p<-stats::poly( timevals ,degree=polydegree )
-if ( all( !is.na(auxiliarynuisancevars) ) ) p<-cbind(  p, data.matrix(auxiliarynuisancevars) ) 
+if ( all( !is.na(auxiliarynuisancevars) ) ) p<-cbind(  p, data.matrix(auxiliarynuisancevars) )
 if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
 rawboldmat<-data.matrix(boldmatrix)
 rawboldmatsd<-apply( rawboldmat , FUN=sd, MARGIN=2 )
 rawboldmat[ , rawboldmatsd==0 ]<-rowMeans( rawboldmat[ , rawboldmatsd>0 ] )
-svdboldmat<-residuals(lm(rawboldmat~0+p))
+svdboldmat<-rawboldmat
+for ( run in unique(groups)  )
+  {
+  timeinds<-( groups == run )
+  svdboldmat[timeinds,]<-residuals( lm( rawboldmat[timeinds,] ~ 1 + p[ timeinds, ]  ) )
+  }
 if (debug) print('lm')
 if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
   if ( hrfShifts > 1 ) {
@@ -143,7 +148,6 @@ for ( i in 1:ncol(hrfdesignmat) )
   {
   hrfdesignmat[,i]<-conv( hrfdesignmat[,i]  , hrf )[1:nrow(hrfdesignmat)]
   }
-
 R2base<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , p=NA )
 R2base<-apply(R2base,FUN=noisepoolfun,MARGIN=2)
 noisepool<-getnoisepool( R2base )
@@ -165,7 +169,7 @@ if ( svdonallruns ) {
 } else {
   for ( run in unique(groups)  ) {
     locmat<-rawboldmat[  groups == run ,noisepool]
-    locmat<-scale( residuals( lm( locmat ~ 0 + p[ groups == run, ] ) ) )
+    locmat<-scale( residuals( lm( locmat ~ 1 + p[ groups == run, ] ) ) )
     locsvd<-svd( locmat, nv=0, nu=max(maxnoisepreds) )
     if ( run == unique(groups)[1]  ) noiseu<-locsvd$u else noiseu<-rbind( noiseu, locsvd$u )
   }
@@ -200,5 +204,13 @@ scl<-0.95
 if (max(R2summary)<0) scl<-1.05
 bestn<-maxnoisepreds[which( R2summary > scl*max(R2summary) )[1]]
 hrf<-hrf/max(hrf)
-return(list( n=bestn, R2atBestN=R2summary[bestn], hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel, hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p ))
+for ( run in unique(groups)  ) {
+  locmat<-rawboldmat[  groups == run ,noisepool]
+  locmat<-scale( residuals( lm( locmat ~ 1 + noiseu[ groups == run, 1:bestn ]
+                              + p[ groups == run, ] ) ) )
+  if ( run == unique(groups)[1]  ) denoisedBold<-locmat else denoisedBold<-rbind( denoisedBold, locmat )
+}
+return(list( denoisedBold=denoisedBold, n=bestn, R2atBestN=R2summary[bestn],
+            hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel,
+            hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p ))
 }
