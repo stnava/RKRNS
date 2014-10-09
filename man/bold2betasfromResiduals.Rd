@@ -60,11 +60,13 @@ hrf<-hemodynamicRF( 12, onsets=1, durations=1, rt=1,
 dd<-glmDenoiseR( mat, bb$desmat[,1:4], hrfBasis=hrf, hrfShifts = 4 ,
   crossvalidationgroups=runs, maxnoisepreds=2 , selectionthresh=0.1 ,
   collapsedesign=T, polydegree=4 )
+# residualize bold matrix against all nuisance variables with a single model
 rmat<-residuals( lm( mat ~ 0 + dd$polys + dd$noiseu[,1:dd$n] ) )
-# rmat<-dd$denoisedBold
+# rmat<-dd$denoisedBold # denoised run by run data - should test both in practice
 btsc<-bold2betasfromResiduals( boldmatrix=rmat,  verbose=T,
       designmatrix=bb$desmat[,1:4],
       blockNumb=runs,  hrfBasis=dd$hrf )
+# now some decoding
 mylabs<-rep("",nrow(btsc$eventbetas))
 for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
 mylabs<-as.factor(mylabs)
