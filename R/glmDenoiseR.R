@@ -83,6 +83,8 @@ for ( run in unique(groups)  )
   }
 # FIXME - consider residualizing nuisance against design matrix
 if (debug) print('lm')
+# FIXME - factor out both HRF estimation approaches as functions
+# FIXME - implement HRF library and just loop over library
 if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
   if ( hrfShifts > 1 ) {
     fir<-finiteImpulseResponseDesignMatrix( designmatrix,
@@ -198,7 +200,7 @@ for ( i in maxnoisepreds )
     R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, howmuchnoise=i, p=NA  )
     R2<-apply(R2,FUN=noisepoolfun,MARGIN=2)
     noisepool<-getnoisepool( R2 )
-    noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
+    noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u # FIXME: Re-estimate by run
     }
   R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu=NA, howmuchnoise=i, p=NA  )
   if ( reestimatenoisepool ) {
