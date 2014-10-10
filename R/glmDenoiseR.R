@@ -124,7 +124,7 @@ if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
   sumbetablock<-betablock[1:hrfShifts,]*0
   j<-1
   for ( i in 1:ncol(ldes) ) {
-    sumbetablock<-betablock[j:(j+hrfShifts-1),]
+    sumbetablock<-sumbetablock+betablock[j:(j+hrfShifts-1),]
     j<-j+hrfShifts
   }
   # Q: Not sure what's being summed here. Is this summing the betas for all the HRF shifts tested?
@@ -139,6 +139,7 @@ if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
   bestvoxels<-which( temp >= tempord[bestvoxnum]  )
   # Q: Deriving an HRF model from the voxels with the highest summed betas in an FIR model?
   # A: Yes
+  # FIXME : define bestvoxels based on crossvalidatedR2 based on residualized data
   hrf<-rowSums( (betablock[,bestvoxels] ) )
   meanhrfval<-mean(hrf)
   mxdf<-abs(max(hrf)-meanhrfval)
