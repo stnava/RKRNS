@@ -1,13 +1,14 @@
 glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=4 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA, svdonallruns=FALSE, noisepoolfun=max )
 {
 nvox<-ncol(boldmatrix)
-designmatrix<-as.matrix( designmatrixIn[,colMeans(designmatrixIn)>0 ] )
+designmatrix<-as.matrix( designmatrixIn[,colMeans(abs(designmatrixIn))>0 ] )
 groups<-crossvalidationgroups
 if ( length(groups) == 1 ) {
   kfolds<-groups
   groups<-c()
   grouplength<-round(nrow(boldmatrix)/kfolds)-1
   for ( k in 1:kfolds ) groups<-c(groups,rep(k,grouplength))
+  groups<-c( rep(1,nrow(boldmatrix)-length(groups)) , groups)
 }
 
 getnoisepool<-function( x, frac = selectionthresh ) {
@@ -93,18 +94,17 @@ if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
   betamax<-betamax/sum(abs(betamax))
   if ( debug ) print(betamax)
   hrf<-hrfBasis*0
-  k<-1
   for ( i in 1:length(betamax) )
     {
     hrf<-hrf+shift(hrfBasis,baseshift+i-1)*betamax[i]
-    k<-k+1
     }
 } else { # use FIR / deconvolution
   # Q: What's the important difference with this new way?
   # After looking through it, looks like this is deconvolution rather than
   # convolving event onset with an assumed HRF. Is that right?
   # A: Yes
-  ldes<-matrix(rowMeans(designmatrix),ncol=1)
+  ldes<-matrix(rowMeans(abs(designmatrix)),ncol=1)
+  ldes<-ldes/ldes; ldes[is.nan(ldes)]<-0
   fir<-finiteImpulseResponseDesignMatrix( ldes,
             n=hrfShifts, baseshift=baseshift )
   mylm<-lm( rawboldmat  ~  fir + p )
