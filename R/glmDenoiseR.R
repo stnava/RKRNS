@@ -1,4 +1,8 @@
-glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE , reestimatenoisepool=FALSE, debug=FALSE, polydegree=4 , crossvalidationgroups=4, timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA, svdonallruns=FALSE, noisepoolfun=max )
+glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, 
+    selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE, 
+    reestimatenoisepool=FALSE, debug=FALSE, polydegree=4 , crossvalidationgroups=4, 
+    timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA, 
+    svdonallruns=FALSE, noisepoolfun=max )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(abs(designmatrixIn))>0 ] )
@@ -39,8 +43,11 @@ crossvalidatedR2<-function( residmat, designmathrf, groups , noiseu=NA, p=NA, ho
       mydf<-data.frame( mydf, p[selector,] )
     predmat<-predict(mylm1,newdata=mydf)
     realmat<-residmat[selector,]
-    for ( v in 1:nvox ) R2[k,v]<-100*( 1 -  sum( ( predmat[,v] - realmat[,v] )^2 ) / sum(  (mean(realmat[,v]) - realmat[,v] )^2 )  )
+    for ( v in 1:nvox ) R2[k,v]<-100*( 1 -  sum( ( predmat[,v] - realmat[,v] )^2 ) / 
+                                      sum(  (mean(realmat[,v]) - realmat[,v] )^2 )  )
     }
+  # TODO write some kendrick like graphics that show the R2 
+  # plotted over the bold image - need a mask as input
   return(R2)
 }
 
@@ -69,9 +76,12 @@ rawboldmat[ , rawboldmatsd==0 ]<-rowMeans( rawboldmat[ , rawboldmatsd>0 ] )
 svdboldmat<-rawboldmat
 for ( run in unique(groups)  )
   {
+  # FIXME - should clarify that this is done in the documentation
+  # TODO - add option of single model
   timeinds<-( groups == run )
   svdboldmat[timeinds,]<-residuals( lm( rawboldmat[timeinds,] ~ 1 + p[ timeinds, ]  ) )
   }
+# FIXME - consider residualizing nuisance against design matrix
 if (debug) print('lm')
 if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
   if ( hrfShifts > 1 ) {
@@ -82,6 +92,7 @@ if ( !all(is.na(hrfBasis)) ) { # use shifted basis functions
       fir[,i]<-conv( fir[,i]  , hrfBasis )[1:nrow(designmatrix)]
   mylm<-lm( svdboldmat  ~  fir )
   mylm<-bigLMStats( mylm, 0.01 )
+  # here call crossvalidatedR2 to allow us to select best voxels by R2
   betas<-mylm$beta.t[1:hrfShifts,]
   if (debug) print('meanmax')
   meanmax<-function( x ) {  return( mean(sort((x),decreasing=T)[1:50]) ) }
