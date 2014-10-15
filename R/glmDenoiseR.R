@@ -1,5 +1,5 @@
 glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4, 
-    selectionthresh=0.25, maxnoisepreds=1:12, collapsedesign=TRUE, 
+    selectionthresh=0.1, maxnoisepreds=1:12, collapsedesign=TRUE, 
     reestimatenoisepool=FALSE, debug=FALSE, polydegree=4 , crossvalidationgroups=4, 
     timevals=NA, runfactor=NA,  tr=1, baseshift=0, auxiliarynuisancevars=NA, 
     svdonallruns=FALSE, noisepoolfun=max, myintercept=0 )
