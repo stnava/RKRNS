@@ -1,5 +1,5 @@
 bold2betasfromResiduals <- function( boldmatrix, designmatrix,
-  blockNumb, hrfBasis, multievents=FALSE, whichcols=NA, tr=1,
+  blockNumb, hrfBasis, multievents=FALSE, whichcols=NA, 
   collapsedesign=TRUE, verbose=FALSE )
 {
 if ( all(is.na( whichcols )) ) whichcols<-1:ncol(designmatrix)

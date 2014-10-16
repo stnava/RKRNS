@@ -1,5 +1,5 @@
-\name{bold2betas}
-\alias{bold2betas}
+\name{bold2betasfromResiduals}
+\alias{bold2betasfromResiduals}
 \title{Convert a bold time series and design matrix to event-wise betas}
 \description{
 Inspired by discussion with Kendrick Kay regarding his glm denoise tool
@@ -7,7 +7,9 @@ http://journal.frontiersin.org/Journal/10.3389/fnins.2013.00247/abstract.
 Here, we apply glm denoise run by run to get event-wise betas.
 }
 \usage{
-  eventbetas<-bold2betas( boldmatrix, designmatrix, blockNumb, maxnoisepreds, polydegree=10, bl=40, crossvalidationgroups=4  )
+  eventbetas<-bold2betasfromResiduals(
+      boldmatrix, designmatrix, blockNumb, hrfBasis, multievents = FALSE,
+      whichcols = NA, collapsedesign = TRUE, verbose = FALSE )
 }
 
 \arguments{
@@ -59,9 +61,9 @@ hrf<-hemodynamicRF( 12, onsets=1, durations=1, rt=1,
     cc=0.1,a1=3,a2=8,b1=0.5, b2=0.75 )
 dd<-glmDenoiseR( mat, bb$desmat[,1:4], hrfBasis=hrf, hrfShifts = 4 ,
   crossvalidationgroups=runs, maxnoisepreds=2 , selectionthresh=0.1 ,
-  collapsedesign=T, polydegree=4 )
+  collapsedesign=T, polydegree=4, myintercept=0 )
 # residualize bold matrix against all nuisance variables with a single model
-rmat<-residuals( lm( mat ~ 0 + dd$polys + dd$noiseu[,1:dd$n] ) )
+rmat<-residuals( lm( mat ~ 0 + dd$polys + dd$noiseu ) )
 # rmat<-dd$denoisedBold # denoised run by run data - should test both in practice
 btsc<-bold2betasfromResiduals( boldmatrix=rmat,  verbose=T,
       designmatrix=bb$desmat[,1:4],
@@ -75,7 +77,7 @@ inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*3./4.))
 # basic voxel selection & classification
 zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
 zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
-th<-0.5
+th<-0.6
 ff<-which( abs(zze) > th )
 mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff]) #, runs=runs[btsc$eventrows] )
 mdl<-svm( lab ~., data=mydf[inds,])
