@@ -60,7 +60,8 @@ a2<-10
 hrf<-hemodynamicRF( hrfbasislength, onsets=2,
   durations=tr, rt=tr,cc=0.1,a1=a1,a2=a2,b1=0.9, b2=0.9 )
 plot(ts(hrf))
-dd2<-glmDenoiseR( mat, bb$desmat[,1:4], hrfBasis=hrf, hrfShifts = 4 , crossvalidationgroups=runs,
+dd2<-glmDenoiseR( mat, bb$desmat[,1:4], hrfBasis=hrf, hrfShifts = 0 ,
+  crossvalidationgroups=runs, debug=T,
   maxnoisepreds=4 , selectionthresh=0.1 , collapsedesign=T, polydegree=4 )
 # or refine FIR
 dd3<-glmDenoiseR( mat, bb$desmat[,1:4], hrfBasis=shift(dd$hrf,-2), hrfShifts = 4 , crossvalidationgroups=runs,
