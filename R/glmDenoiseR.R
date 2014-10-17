@@ -1,9 +1,9 @@
 glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4,
     selectionthresh=0.1, maxnoisepreds=1:12, collapsedesign=TRUE,
-    reestimatenoisepool=FALSE, debug=FALSE, polydegree=4 ,
-    crossvalidationgroups=4,
+    debug=FALSE, polydegree=4 ,
+    crossvalidationgroups=4, denoisebyrun=TRUE,
     timevals=NA, runfactor=NA, baseshift=0, auxiliarynuisancevars=NA,
-    svdonallruns=FALSE, noisepoolfun=max, myintercept=0 )
+    noisepoolfun=max, myintercept=0 )
 {
 nvox<-ncol(boldmatrix)
 designmatrix<-as.matrix( designmatrixIn[,colMeans(abs(designmatrixIn))>0 ] )
@@ -69,13 +69,17 @@ if ( all(is.na(timevals)) ) {
     timevals[ timeinds ]<-1:length(timeinds)
   }
 }
+if ( !denoisebyrun ) timevals<-1:nrow(designmatrix)
 p<-stats::poly( timevals ,degree=polydegree )
-if ( all( !is.na(auxiliarynuisancevars) ) ) p<-cbind(  p, data.matrix(auxiliarynuisancevars) )
+if ( all( !is.na(auxiliarynuisancevars) ) ) p<-cbind(  p,
+    data.matrix(auxiliarynuisancevars) )
 if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
 rawboldmat<-data.matrix(boldmatrix)
 rawboldmatsd<-apply( rawboldmat , FUN=sd, MARGIN=2 )
 rawboldmat[ , rawboldmatsd==0 ]<-rowMeans( rawboldmat[ , rawboldmatsd>0 ] )
 svdboldmat<-rawboldmat
+if ( denoisebyrun )
+{
 for ( run in unique(groups)  )
   {
   # FIXME - should clarify that this is done in the documentation
@@ -86,6 +90,12 @@ for ( run in unique(groups)  )
   if ( myintercept > 0 )
     svdboldmat[timeinds,]<-residuals( lm( rawboldmat[timeinds,] ~ 1 + p[ timeinds, ]  ) )
   }
+} else {
+  if ( myintercept > 0 )
+    svdboldmat<-residuals( lm( rawboldmat ~ 1 + p ) )
+  if ( myintercept == 0 )
+    svdboldmat<-residuals( lm( rawboldmat ~ 0 + p ) )
+}
 # FIXME - consider residualizing nuisance against design matrix
 if (debug) print('lm')
 # FIXME - factor out both HRF estimation approaches as functions
@@ -184,42 +194,32 @@ print(paste("Noise pool has nvoxels=",sum(noisepool)))
 # perform principal components analysis (PCA) (Behzadi et al., 2007;
 # Bianciardi et al., 2009b). The resulting principal components
 # constitute candidate noise regressors.
-svdboldmat<-scale(svdboldmat) # z-score
-if ( svdonallruns ) {
+if ( ! denoisebyrun ) {
+  svdboldmat<-scale(svdboldmat) # z-score
   noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
 } else {
   for ( run in unique(groups)  ) {
     locmat<-rawboldmat[  groups == run ,noisepool]
+    locmat<-scale(locmat) # z-score
     if ( myintercept == 0 )
-      locmat<-scale( residuals( lm( locmat ~ 0 + p[ groups == run, ] ) ) )
+      locmat<-residuals( lm( locmat ~ 0 + p[ groups == run, ] ) )
     if ( myintercept > 0 )
-      locmat<-scale( residuals( lm( locmat ~ 1 + p[ groups == run, ] ) ) )
-    locsvd<-svd( locmat, nv=0, nu=max(maxnoisepreds) ) # TODO: should this be pca?
-    if ( run == unique(groups)[1]  ) noiseu<-locsvd$u else noiseu<-rbind( noiseu, locsvd$u )
+      locmat<-residuals( lm( locmat ~ 1 + p[ groups == run, ] ) )
+    locsvd<-svd( locmat, nv=0, nu=max(maxnoisepreds) )
+    # TODO: should this be pca?
+    if ( run == unique(groups)[1]  )
+    {
+      noiseu<-locsvd$u
+    } else {
+      noiseu<-rbind( noiseu, locsvd$u )
+    }
   }
 }
 R2summary<-rep(0,length(maxnoisepreds))
 ct<-1
 for ( i in maxnoisepreds )
   {
-  if ( myintercept == 0 )
-    svdboldmat<-residuals(lm(rawboldmat~0+p+noiseu[,1:i]))
-  if ( myintercept > 0 )
-    svdboldmat<-residuals(lm(rawboldmat~1+p+noiseu[,1:i]))
-  # The noise pool could change as one finds a better model so allow user to optionally re-estimate it
-  if ( reestimatenoisepool )
-    {
-    noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u
-    R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu, howmuchnoise=i, p=NA  )
-    R2<-apply(R2,FUN=noisepoolfun,MARGIN=2)
-    noisepool<-getnoisepool( R2 )
-    noiseu<-svd( svdboldmat[,noisepool], nv=0, nu=max(maxnoisepreds) )$u # FIXME: Re-estimate by run
-    }
-  R2<-crossvalidatedR2(  svdboldmat, hrfdesignmat, groups , noiseu=NA, howmuchnoise=i, p=NA  )
-  if ( reestimatenoisepool ) {
-      R2min<-apply(R2,FUN=noisepoolfun,MARGIN=2)
-      noisepool<-getnoisepool( R2min )
-  }
+  R2<-crossvalidatedR2(  rawboldmat, hrfdesignmat, groups, noiseu=noiseu, howmuchnoise=i, p=p  )
   R2max<-apply(R2,FUN=max,MARGIN=2)
   if ( ct == 1 ) R2perNoiseLevel<-R2max else R2perNoiseLevel<-cbind(R2perNoiseLevel,R2max)
   R2pos<-R2max[ R2max > 0 ]
@@ -231,13 +231,20 @@ scl<-0.95
 if (max(R2summary)<0) scl<-1.05
 bestn<-maxnoisepreds[which( R2summary > scl*max(R2summary) )[1]]
 hrf<-hrf/max(hrf)
+if ( denoisebyrun ) {
 for ( run in unique(groups)  ) {
   locmat<-rawboldmat[  groups == run ,noisepool]
   if ( myintercept == 0 )
-    locmat<-scale( residuals( lm( locmat ~ 0 + noiseu[ groups == run, 1:bestn ]  + p[ groups == run, ] ) ) )
+    locmat<-( residuals( lm( locmat ~ 0 + noiseu[ groups == run, 1:bestn ]  + p[ groups == run, ] ) ) )
 if ( myintercept > 0 )
-  locmat<-scale( residuals( lm( locmat ~ 1 + noiseu[ groups == run, 1:bestn ]  + p[ groups == run, ] ) ) )
+  locmat<-( residuals( lm( locmat ~ 1 + noiseu[ groups == run, 1:bestn ]  + p[ groups == run, ] ) ) )
   if ( run == unique(groups)[1]  ) denoisedBold<-locmat else denoisedBold<-rbind( denoisedBold, locmat )
+}
+} else {
+  if ( myintercept > 0 )
+    denoisedBold<-residuals(lm(rawboldmat~1+noiseu[, 1:bestn ]  + p))
+if ( myintercept == 0 )
+  denoisedBold<-residuals(lm(rawboldmat~0+noiseu[, 1:bestn ]  + p))
 }
 return(list( denoisedBold=denoisedBold, n=bestn, R2atBestN=R2summary[bestn],
             hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel,
