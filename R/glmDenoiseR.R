@@ -215,13 +215,18 @@ if ( ! denoisebyrun ) {
     }
   }
 }
+# Step 6. Enter noise regressors into model; evaluate using cross-validation We
+# refit the model to the data, systematically varying the number of noise
+# regressors included in the model.
 R2summary<-rep(0,length(maxnoisepreds))
 ct<-1
 for ( i in maxnoisepreds )
   {
-  R2<-crossvalidatedR2(  rawboldmat, hrfdesignmat, groups, noiseu=noiseu, howmuchnoise=i, p=p  )
+  R2<-crossvalidatedR2(  rawboldmat, hrfdesignmat, groups,
+    noiseu=noiseu, howmuchnoise=i, p=p  )
   R2max<-apply(R2,FUN=max,MARGIN=2)
-  if ( ct == 1 ) R2perNoiseLevel<-R2max else R2perNoiseLevel<-cbind(R2perNoiseLevel,R2max)
+  if ( ct == 1 ) R2perNoiseLevel<-R2max
+  if ( ct  > 1 ) R2perNoiseLevel<-cbind(R2perNoiseLevel,R2max)
   R2pos<-R2max[ R2max > 0 ]
   R2summary[ct]<-median(R2pos)
   print(paste("NoiseU:",i,"MeanRSqrd",  R2summary[ct] ))
@@ -235,18 +240,22 @@ if ( denoisebyrun ) {
 for ( run in unique(groups)  ) {
   locmat<-rawboldmat[  groups == run ,noisepool]
   if ( myintercept == 0 )
-    locmat<-( residuals( lm( locmat ~ 0 + noiseu[ groups == run, 1:bestn ]  + p[ groups == run, ] ) ) )
-if ( myintercept > 0 )
-  locmat<-( residuals( lm( locmat ~ 1 + noiseu[ groups == run, 1:bestn ]  + p[ groups == run, ] ) ) )
+    locmat<-( residuals( lm( locmat ~ 0 + noiseu[ groups == run, 1:bestn ]
+       + p[ groups == run, ] ) ) )
+  if ( myintercept > 0 )
+    locmat<-( residuals( lm( locmat ~ 1 + noiseu[ groups == run, 1:bestn ]
+       + p[ groups == run, ] ) ) )
   if ( run == unique(groups)[1]  ) denoisedBold<-locmat else denoisedBold<-rbind( denoisedBold, locmat )
 }
 } else {
   if ( myintercept > 0 )
     denoisedBold<-residuals(lm(rawboldmat~1+noiseu[, 1:bestn ]  + p))
-if ( myintercept == 0 )
-  denoisedBold<-residuals(lm(rawboldmat~0+noiseu[, 1:bestn ]  + p))
+  if ( myintercept == 0 )
+    denoisedBold<-residuals(lm(rawboldmat~0+noiseu[, 1:bestn ]  + p))
 }
-return(list( denoisedBold=denoisedBold, n=bestn, R2atBestN=R2summary[bestn],
-            hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel,
-            hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p ))
+return(
+  list( denoisedBold=denoisedBold, n=bestn, R2atBestN=R2summary[bestn],
+        hrf=hrf, noisepool=noisepool, R2base=R2base, R2final=R2perNoiseLevel,
+        hrfdesignmat=hrfdesignmat, noiseu=noiseu[,1:bestn], polys=p )
+  )
 }
