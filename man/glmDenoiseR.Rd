@@ -12,7 +12,8 @@ http://journal.frontiersin.org/Journal/10.3389/fnins.2013.00247/abstract
  5. return the noise mask and the value for n
 }
 \usage{
-  regressionmodeldataframe<-glmDenoiseR( boldmatrix, designmatrix , hrfBasis=NA, crossvalidationgroups=4, hrfShifts = 4, selectionthresh=0.1, maxnoisepreds=6 )
+  regressionmodeldataframe<-glmDenoiseR( boldmatrix, designmatrix , hrfBasis=NA, 
+    crossvalidationgroups=4, hrfShifts = 4, selectionthresh=0.1, maxnoisepreds=6 )
 }
 
 \arguments{
@@ -52,7 +53,7 @@ runs<-bb$desmat$Run;
 hrfbasislength<-20
 dd<-glmDenoiseR( mat, bb$desmat[,1:4], hrfBasis=NA, hrfShifts = hrfbasislength,
   crossvalidationgroups=runs, maxnoisepreds=c(0,1,4,6,10,14) , selectionthresh=0.1 ,
-  collapsedesign=F, polydegree=4, reestimatenoisepool = F )
+  collapsedesign=F, polydegree=4 )
 # average of assumed HRFs
 tr<-1
 a1<-4
