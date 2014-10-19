@@ -2,11 +2,11 @@ glmDenoiseR <- function( boldmatrix, designmatrixIn , hrfBasis=NA, hrfShifts=4,
     selectionthresh=0.1, maxnoisepreds=1:12, collapsedesign=TRUE,
     debug=FALSE, polydegree=4 ,
     crossvalidationgroups=4, denoisebyrun=TRUE,
-    timevals=NA, runfactor=NA, baseshift=0, auxiliarynuisancevars=NA,
+    timevals=NA, runfactor=NA, baseshift=0,
     noisepoolfun=max, myintercept=0 )
 {
 nvox<-ncol(boldmatrix)
-designmatrix<-as.matrix( designmatrixIn[,colMeans(abs(designmatrixIn))>0 ] )
+designmatrix<-data.matrix(designmatrixIn) # as.matrix( designmatrixIn[,colMeans(abs(designmatrixIn))>0 ] )
 groups<-crossvalidationgroups
 if ( length(groups) == 1 ) {
   kfolds<-groups
@@ -15,7 +15,6 @@ if ( length(groups) == 1 ) {
   for ( k in 1:kfolds ) groups<-c(groups,rep(k,grouplength))
   groups<-c( rep(1,nrow(boldmatrix)-length(groups)) , groups)
 }
-
 getnoisepool<-function( x, frac = selectionthresh ) {
   xord<-sort(x)
   l<-round(length(x)*frac)
@@ -71,8 +70,6 @@ if ( all(is.na(timevals)) ) {
 }
 if ( !denoisebyrun ) timevals<-1:nrow(designmatrix)
 p<-stats::poly( timevals ,degree=polydegree )
-if ( all( !is.na(auxiliarynuisancevars) ) ) p<-cbind(  p,
-    data.matrix(auxiliarynuisancevars) )
 if ( all( !is.na(runfactor) ) ) p<-cbind(p,runfactor)
 rawboldmat<-data.matrix(boldmatrix)
 rawboldmatsd<-apply( rawboldmat , FUN=sd, MARGIN=2 )
@@ -169,7 +166,8 @@ hrf<-hrf/max(hrf)
 if ( debug ) plot( ts( hrf ) )
 ################### now redo some work w/new hrf
 # reset designmatrix
-designmatrix<-as.matrix( designmatrixIn[,colMeans(abs(designmatrixIn))>0 ] )
+# designmatrix<-as.matrix( designmatrixIn[,colMeans(abs(designmatrixIn))>0 ] )
+designmatrix<-data.matrix( designmatrixIn )
 if ( collapsedesign ) designmatrix<-as.matrix( as.numeric( rowSums( designmatrix ) > 0 ) )
 if (debug) print('hrf conv')
 hrfdesignmat<-designmatrix
