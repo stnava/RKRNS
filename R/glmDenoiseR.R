@@ -168,7 +168,8 @@ if ( debug ) plot( ts( hrf ) )
 # reset designmatrix
 # designmatrix<-as.matrix( designmatrixIn[,colMeans(abs(designmatrixIn))>0 ] )
 designmatrix<-data.matrix( designmatrixIn )
-if ( collapsedesign ) designmatrix<-as.matrix( as.numeric( rowSums( designmatrix ) > 0 ) )
+if ( collapsedesign )
+  designmatrix<-as.matrix( as.numeric( rowSums( designmatrix ) ) )
 if (debug) print('hrf conv')
 hrfdesignmat<-designmatrix
 for ( i in 1:ncol(hrfdesignmat) )
