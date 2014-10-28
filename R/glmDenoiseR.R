@@ -236,7 +236,7 @@ bestn<-maxnoisepreds[which( R2summary > scl*max(R2summary) )[1]]
 hrf<-hrf/max(hrf)
 if ( denoisebyrun ) {
 for ( run in unique(groups)  ) {
-  locmat<-rawboldmat[  groups == run ,noisepool]
+  locmat<-rawboldmat[  groups == run , ]
   if ( myintercept == 0 )
     locmat<-( residuals( lm( locmat ~ 0 + noiseu[ groups == run, 1:bestn ]
        + p[ groups == run, ] ) ) )
