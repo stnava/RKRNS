@@ -101,8 +101,8 @@ ct<-1
           }
           twoeventmat<-cbind( denoisematmod1[,col] ,
                               rowSums(denoisematmod2) )
-          twoeventmat[,1]<-conv(twoeventmat[,1],dd$hrf)[1:nrow(twoeventmat)]
-          twoeventmat[,2]<-conv(twoeventmat[,2],dd$hrf)[1:nrow(twoeventmat)]
+          twoeventmat[,1]<-conv(twoeventmat[,1],hrfBasis)[1:nrow(twoeventmat)]
+          twoeventmat[,2]<-conv(twoeventmat[,2],hrfBasis)[1:nrow(twoeventmat)]
           glmdf<-data.frame( twoeventmat )
           mylm<-lm(  data.matrix(submat) ~ . , data=glmdf )
           mylm<-bigLMStats( mylm , 0.001 )
