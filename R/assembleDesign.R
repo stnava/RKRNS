@@ -1,3 +1,22 @@
+#' Simple assembleDesigning function.
+#' 
+#' Assembles the study design from raw block data
+#' 
+#' 
+#' @param blocksCSVlist a list of block-wise csv files detailing the design
+#' @param datadir root data directory containing subject design, bold, etc
+#' @param assembledDesignOutPrefix output file name for assembled design file -
+#' will be read if it already exists (rather than reassembled)
+#' @param assembledImageOutPrefix output file name for assembled bold file -
+#' will be read if it already exists (rather than reassembled)
+#' @return list is output containing organizational variables for design matrix
+#' @author Avants BB, Phillips JS
+#' @examples
+#' 
+#' \dontrun{
+#' assembly<-assembleDesign( blocksCSVlist, datadir, dfn, afn )
+#' }
+#' 
 assembleDesign <- function( blocksCSVlist , datadir, assembledDesignOutPrefix,  assembledImageOutPrefix )
 {
 # blocksCSVlist<-Sys.glob(paste(datadir,"design/*csv",sep=''))   # INPUT csv list

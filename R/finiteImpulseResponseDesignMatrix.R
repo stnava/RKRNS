@@ -1,3 +1,20 @@
+#' Simple finiteImpulseResponseDesignMatrix function.
+#' 
+#' Convert a design matrix (or any matrix) to a time-shifted version of itself
+#' as needed by finite impulse response models used when deconvolving
+#' hemodynamic response functions.
+#' 
+#' 
+#' @param mat input matrix
+#' @param n shift amount
+#' @param baseshift baseline shift amount so total shift is n+baseshift
+#' @return matrix is output
+#' @author Avants BB
+#' @examples
+#' 
+#' mat<-diag(10) 
+#' wmat<-finiteImpulseResponseDesignMatrix( mat , 5 ) 
+#' 
 finiteImpulseResponseDesignMatrix <- function(x,n=1,baseshift=0) {
   if (nargs() == 0) {
     print( args( finiteImpulseResponseDesignMatrix ) )

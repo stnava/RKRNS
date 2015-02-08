@@ -1,3 +1,31 @@
+#' assemble image blocks of bold
+#' 
+#' Assembles the bold study from raw block data
+#' 
+#' 
+#' @param bmask brain mask - compcor is done within this mask
+#' @param aalimg a label image - does not have to be aal
+#' @param labs which labels of the above label image to use e.g. c(1,2,3)
+#' @param datadir the input data directory
+#' @param imagepostfix the image blocks postfix e.g. motioncorr.nii.gz
+#' @param assembledBlocksOutPrefix output file name for assembled design file -
+#' will be read if it already exists (rather than reassembled)
+#' @param assembledImageOutPrefix output file name for assembled bold file -
+#' will be read if it already exists (rather than reassembled)
+#' @param usedesignrow organizational boolean tracking which parts of the
+#' design file have concurrent BOLD images, useful for sanity checks
+#' @param imat the current estimate of the assembled image matrix
+#' @param zscore should we zscore each voxel?
+#' @param spatialsmoothing scalar value greater than or equal to zero that
+#' controls voxel-wise smoothing in 4D
+#' @return list is output containing organizational variables for design matrix
+#' @author Avants BB, Phillips JS
+#' @examples
+#' 
+#' \dontrun{
+#' assembly2<-assembleBlocks( bmask, aalimg, labs, datadir, imagepostfix,  dfn, afn, dmat, usedesignrow, imat )
+#' }
+#' 
 assembleBlocks <- function( bmask, aalimg, labs , datadir, imagepostfix, assembledDesignOutPrefix,
     assembledImageOutPrefix, dmat, usedesignrow, imat=NA, ncompcor=6, zscore=TRUE, spatialsmooth=0 )
 {

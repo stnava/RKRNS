@@ -1,3 +1,26 @@
+#' Simple eigenSentence estimation function.
+#' 
+#' Applies a function to a matrix representation of a sentence to get an
+#' eigensentence map.
+#' 
+#' 
+#' @param eventdata output from annotateEvents
+#' @param designmat sentences part of the assembled design matrix
+#' @param boldFeatureMatrix a feature matrix for bold data, currently
+#' spatiotemporal
+#' @param sentenceSpace the sentence feature space
+#' @param mask a 4D mask
+#' @param doEanat also run a sparse PCA on the data
+#' @param otherparameters see sparseDecom2 documentation
+#' @return a data frame with annotation and ground truth vs prediction
+#' annotated ...
+#' @author Avants BB
+#' @examples
+#' 
+#' \dontrun{
+#'  ccaresults<-sccanBasedDecoder( eventdata, dmats, ccafeatspace , sentspace )
+#' }
+#' 
 sccanBasedDecoder <- function( eventdata, designmat, boldFeatureMatrix, sentenceSpace, mysparse=c(-0.1,-0.1), nvecs=5, its=1, smooth=0, cthresh=0, mask=NA, strategy=NA, doEanat=F, joinEanat=F, outputfileprefix='sccanBasedDecoder', interleave=FALSE , sentenceTransformation="none", trainset=NA , locwordlist="" )
 {
 #########################################

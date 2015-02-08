@@ -1,3 +1,21 @@
+#' Filtering options specific to KRNS
+#' 
+#' Filters the input matrix using butterworth filtering and time-series trends.
+#' 
+#' 
+#' @param mat input bold time series matrix
+#' @param filterlowfrequency get rid of variation that takes many seconds
+#' @param filterhighfrequency get rid of variation that takes few seconds
+#' @param trendfrequency time series trend option
+#' @param winsorval remove spikes in signal given this winsorization value
+#' @param removeSentLengthEffects nuisance vector of size nrow of matrix
+#' @param removeEventOverlap nuisance vector of size nrow of matrix
+#' @return matrix is output
+#' @author Avants BB
+#' @examples
+#' 
+#' fmat<-filterfMRI4KRNS( mat ) 
+#' 
 filterfMRI4KRNS <- function( imat,
     tr=as.numeric(0.5),
     filterlowfrequency=0.1, # 0.05 if you multiply by TR

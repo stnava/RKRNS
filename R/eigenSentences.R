@@ -1,3 +1,22 @@
+#' Simple eigenSentence estimation function.
+#' 
+#' Applies a function to a matrix representation of a sentence to get an
+#' eigensentence map.
+#' 
+#' 
+#' @param wordembed the words and their vector embedding - a data frame with n
+#' basis length columns
+#' @param functiontoapply e.g. mean, max, min, a custom function --- needs to
+#' work with apply
+#' @param normalize normalize the magnitude of the eigsentences to be 1
+#' @param eigsentbasislength less than or equal to the full basis length (100)
+#' @return eigensentence matrix is output
+#' @author Avants BB
+#' @examples
+#' 
+#'   data(reuters_words,package="RKRNS")
+#'   esent<-eigenSentences( reuters_words )
+#' 
 eigenSentences <- function(  wordembed, functiontoapply = sum , normalize=F, eigsentbasislength = NA, sentencesIn=NA, eventdata=NA ) {
 ######## build the average eigenword for each sentence #########
 if ( is.na(sentencesIn) )

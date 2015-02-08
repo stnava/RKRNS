@@ -1,3 +1,58 @@
+#' simulated bold study with controllable design and noise parameters
+#' 
+#' the henson example produces a mask, an image and a design matrix.  the basic
+#' example produces a noisy data matrix and design matrix.  ... see args for
+#' some of the options and reasonable defaults.
+#' 
+#' 
+#' @examples
+#' 
+#' # get example image
+#' fn<-paste(path.package("RKRNS"),"/extdata/111157_mocoref_masked.nii.gz",sep="") 
+#' eximg<-antsImageRead(fn,3)
+#' fn<-paste(path.package("RKRNS"),"/extdata/subaal.nii.gz",sep="") 
+#' mask<-antsImageRead(fn,3)
+#' bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
+#' mat<-timeseries2matrix( bb$simbold, bb$mask )
+#' # now test glmDenoise
+#' dd<-glmDenoiseR( mat, bb$desmat[,1:4], crossvalidationgroups=6 , maxnoisepreds=1:4,
+#'    whichbase=NA,  # runfactor=as.factor( bb$desmat$Run ) ,
+#'    hrfbasislength=50, selectionthresh=0.1 ,collapsedesign=T, polydegree=20 )
+#' plot(ts(dd$hrf))
+#' glmdfnuis<-data.frame( noiseu=dd$noiseu, polys=dd$polys )
+#' glmdf<-data.frame( cbind(N=rowSums(dd$hrfdesignmat[,1:2]),
+#' 		         F=rowSums(dd$hrfdesignmat[,2:4])), glmdfnuis )
+#' glmdf <- Filter(function(x)!all(is.na(x)), glmdf)
+#' glmdf <- Filter(function(x)!all(var(x)==0), glmdf)
+#' mylm<-lm(  data.matrix(mat) ~ . , data=glmdf )
+#' mylm<-bigLMStats( mylm , 1.e-4 )
+#' print(rownames(mylm$beta.t))
+#' for ( i in 1:nrow(mylm$beta.t)  ) 
+#'   print(paste(rownames(mylm$beta.t)[i],":",max(abs(mylm$beta.t[i,]))))
+#' vizimg<-antsImageClone(mask)
+#' vizimg[mask==1]<-abs(mylm$beta.t[1,])
+#' plotANTsImage( eximg,functional=list(vizimg),axis=0,
+#'    slices='1x48x1', threshold="2.5x11", color='red')
+#' # now some event-wise stuff
+#' mysp<-c( -0.01, -0.9 )
+#' runs<-bb$desmat$Run; runs[]<-1
+#' btsc<-bold2betasCCA( data.matrix(mat)  , bb$desmat[,1:4], blockNumb=runs,
+#'      bl=25, baseshift=0, sparseness=mysp, bestvoxnum=50, mask=mask, 
+#'      polydegree=2, mycoption=0, its=12, uselm=2 )
+#' btsc<-bold2betas( boldmatrix=data.matrix(mat) , designmatrix=bb$desmat[,1:4], 
+#'      blockNumb=runs, maxnoisepreds=0,
+#'      bl=25, polydegree=2, selectionthresh=0.2 )
+#' zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
+#' zze<-zz/apply(btsc$eventbetas,FUN=sd,MARGIN=2)
+#' inds<-sample(1:nrow(btsc$eventbetas),size=round(nrow(btsc$eventbetas)*3./4.))
+#' ff<-which( abs(zze) > 0.5 )
+#' mylabs<-rep("",nrow(btsc$eventbetas))
+#' for ( i in 1:nrow(btsc$eventbetas) ) mylabs[i]<-substr( rownames(btsc$eventbetas)[i],1,2)
+#' mylabs<-as.factor(mylabs)
+#' mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff] )
+#' mdl<-svm( lab ~., data=mydf[inds,])
+#' print(sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])*100)
+#' 
 simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.01,
   physnoise=0.01, temporalnoise=0.01, option=c("basic","henson"), eximg=NA, mask=NA, nruns=4 )
 {

@@ -1,3 +1,22 @@
+#' Visualize a (mis)classification network.
+#' 
+#' Input a prediction and an outcome vector that are in correspondence, get out
+#' a graph.
+#' 
+#' 
+#' @param mat input matrix
+#' @param k rank to use
+#' @param reducex reduce the input matrix to k-size subspace
+#' @return matrix is output
+#' @author Avants BB
+#' @examples
+#' 
+#' \dontrun{
+#'   sentencesubset <- sentencedf$sentences %in% unique(fspacenames[redlist[l2]])
+#'   nodedf <- data.frame( nodename=sentencedf[sentencesubset,1], nodeid=sentencedf[sentencesubset,2] )
+#'   ww <- misclassnetwork( nodesIn=nodedf, wclassesf[l2], pred, outfile='temp2.html', mycharge=-2066, zoom=T)
+#' }
+#' 
 classificationNetwork <- function( nodesIn, realClass, predClass ,  whichviz="force", outfile='temp.html', zoom=F , opac=0.8, mycharge=-400 ) {
   if (nargs() == 0) {
     return(NA)
