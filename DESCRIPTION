@@ -8,6 +8,33 @@ Maintainer: Brian B. Avants <stnava@gmail.com>
 Description: Decoding from BOLD based on (sparse) dimensionality reduction
 License: GPL-2
 VignetteBuilder: knitr
-Imports: Rcpp (>= 0.11.2)
-Depends: ggplot2,d3Network,fpc,caret,neuRosim,FitARMA,multitaper,pheatmap,psych,visreg,randomForest,e1071,kernlab,RRF,rmarkdown,ANTsR
+Depends:
+    methods,
+    ANTsR
+Imports:
+    graphics,
+    grDevices,
+    magic,
+    magrittr,
+    stats,
+    utils,
+    Rcpp (>= 0.11.2),
+    ggplot2,
+    d3Network,
+    fpc,
+    caret,
+    neuRosim,
+    FitARMA,
+    multitaper,
+    pheatmap,
+    psych,
+    visreg,
+    randomForest,
+    e1071,
+    kernlab,
+    RRF,
+    rmarkdown
+Suggests:
+    knitr
 LinkingTo: Rcpp
+RoxygenNote: 6.0.1

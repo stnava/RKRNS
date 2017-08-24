@@ -1,10 +1,10 @@
 #' Will match eigensentences to events and given unique labels to words,
 #' sentences etc.
-#' 
+#'
 #' Returns a dataframe for every event with annotated event times, word
 #' categories (V, N,... ), sentence descriptors (labels, other variables) etc.
-#' 
-#' 
+#'
+#'
 #' @param sentencesIn the list of possible sentences
 #' @param words the list of possible words
 #' @param eventtimes the index to the temporal volumes at which events occur
@@ -12,13 +12,14 @@
 #' @return returns a data frame
 #' @author Avants BB
 #' @examples
-#' 
+#'
 #'   data(reuters_words,package="RKRNS")
 #'   data(sentences,package="RKRNS")
 #'   eventtimes<-c(10,25,99)
 #'   eventnames<-list(sentences$Sentence[1],sentences$Sentence[55],sentences$Sentence[19])
 #'   eventdf<-annotateEvents( sentences$Sentence, reuters_words$WhichWord, eventtimes, unlist(eventnames) )
-#' 
+#'
+#' @export annotateEvents
 annotateEvents <- function( sentencesIn, words, eventtimes, eventnames )
 {
   sentenceids<-1:length(unique(sentencesIn))
@@ -48,7 +49,7 @@ annotateEvents <- function( sentencesIn, words, eventtimes, eventnames )
     locwords<-realwords[ ( realwords  %in% words) |
                          ( realwords  %in% wordsmod )|
                          ( realwords  %in% wordsmod2 ) ]
-    
+
     # find position of locwords in realwords
     locwordpos<-rep(0,length(locwords))
     ct<-1
@@ -65,6 +66,5 @@ annotateEvents <- function( sentencesIn, words, eventtimes, eventnames )
 eventdata<-cbind( eventdata, sentlab=sentlab )
 
 return( eventdata )
-  
-}
 
+}

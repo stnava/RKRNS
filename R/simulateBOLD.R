@@ -1,16 +1,31 @@
 #' simulated bold study with controllable design and noise parameters
-#' 
+#'
 #' the henson example produces a mask, an image and a design matrix.  the basic
 #' example produces a noisy data matrix and design matrix.  ... see args for
 #' some of the options and reasonable defaults.
-#' 
-#' 
+#'
+#' @param  ntime number of time points
+#' @param  nstim number of stimulation points
+#' @param  signalscale scale the signal by this amount
+#' @param  TR target TR
+#' @param  lowfnoise  low frequency noise parameter
+#' @param  physnoise  noise parameter for physiological noise
+#' @param  temporalnoise noise parameter for time series
+#' @param  option either "basic" or "henson"
+#' @param  eximg example image
+#' @param  mask mask if available
+#' @param  nruns number of runs
+#'
+#' @importFrom neuRosim simprepTemporal
+#' @importFrom graphics par plot
+#' @importFrom stats cor lm median predict residuals rnorm sd stl ts var
+#' @importFrom utils data object.size read.csv write.csv
 #' @examples
-#' 
+#'
 #' # get example image
-#' fn<-paste(path.package("RKRNS"),"/extdata/111157_mocoref_masked.nii.gz",sep="") 
+#' fn<-paste(path.package("RKRNS"),"/extdata/111157_mocoref_masked.nii.gz",sep="")
 #' eximg<-antsImageRead(fn,3)
-#' fn<-paste(path.package("RKRNS"),"/extdata/subaal.nii.gz",sep="") 
+#' fn<-paste(path.package("RKRNS"),"/extdata/subaal.nii.gz",sep="")
 #' mask<-antsImageRead(fn,3)
 #' bb<-simulateBOLD(option="henson",eximg=eximg,mask=mask)
 #' mat<-timeseries2matrix( bb$simbold, bb$mask )
@@ -27,7 +42,7 @@
 #' mylm<-lm(  data.matrix(mat) ~ . , data=glmdf )
 #' mylm<-bigLMStats( mylm , 1.e-4 )
 #' print(rownames(mylm$beta.t))
-#' for ( i in 1:nrow(mylm$beta.t)  ) 
+#' for ( i in 1:nrow(mylm$beta.t)  )
 #'   print(paste(rownames(mylm$beta.t)[i],":",max(abs(mylm$beta.t[i,]))))
 #' vizimg<-antsImageClone(mask)
 #' vizimg[mask==1]<-abs(mylm$beta.t[1,])
@@ -37,9 +52,9 @@
 #' mysp<-c( -0.01, -0.9 )
 #' runs<-bb$desmat$Run; runs[]<-1
 #' btsc<-bold2betasCCA( data.matrix(mat)  , bb$desmat[,1:4], blockNumb=runs,
-#'      bl=25, baseshift=0, sparseness=mysp, bestvoxnum=50, mask=mask, 
+#'      bl=25, baseshift=0, sparseness=mysp, bestvoxnum=50, mask=mask,
 #'      polydegree=2, mycoption=0, its=12, uselm=2 )
-#' btsc<-bold2betas( boldmatrix=data.matrix(mat) , designmatrix=bb$desmat[,1:4], 
+#' btsc<-bold2betas( boldmatrix=data.matrix(mat) , designmatrix=bb$desmat[,1:4],
 #'      blockNumb=runs, maxnoisepreds=0,
 #'      bl=25, polydegree=2, selectionthresh=0.2 )
 #' zz<-apply(btsc$eventbetas,FUN=mean,MARGIN=2)
@@ -52,9 +67,20 @@
 #' mydf<-data.frame( lab=mylabs,  vox=data.matrix(btsc$eventbetas)[,ff] )
 #' mdl<-svm( lab ~., data=mydf[inds,])
 #' print(sum(mydf[-inds,]$lab==predict( mdl, newdata=mydf[-inds,]))/nrow(mydf[-inds,])*100)
-#' 
-simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.01,
-  physnoise=0.01, temporalnoise=0.01, option=c("basic","henson"), eximg=NA, mask=NA, nruns=4 )
+#'
+#' @export simulateBOLD
+simulateBOLD<-function(
+  ntime=2000,
+  nstim=30,
+  signalscale=0.5,
+  TR=0.5,
+  lowfnoise=0.01,
+  physnoise=0.01,
+  temporalnoise=0.01,
+  option=c("basic","henson"),
+  eximg=NA,
+  mask=NA,
+  nruns=4 )
 {
   if ( option[1] == "henson" ) {
     # from http://www.jstatsoft.org/v44/i10/paper
@@ -89,7 +115,7 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
     designmat$F2[ round(f2on) ]<-1
     runs<-sort(rep(c(1:nruns), (round(nscan/nruns)+1) ))[1:nscan]
     designmat$Run<-runs
-    
+
     region.1A.center <- c(13, 13, 11)
     region.1A.radius <- 4
     region.1B.center <- c(40, 18, 9)
@@ -111,15 +137,15 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
     region.3.d <- list(200.81, 50.04, 240.6, 50.83)
     effect <- list( region.1a.d, region.1b.d, region.1c.d, region.2.d,region.3.d )
 # now use the mask
-    design <- simprepTemporal(regions = 5, onsets = onsets.regions,
+    design <- neuRosim::simprepTemporal(regions = 5, onsets = onsets.regions,
       durations = dur.regions, hrf = "double-gamma", TR = TR,
       totaltime = total.time, effectsize = effect)
-    spatial <- simprepSpatial(regions = 5, coord = list(region.1A.center,
+    spatial <- neuRosim::simprepSpatial(regions = 5, coord = list(region.1A.center,
       region.1B.center, region.1C.center, region.2.center, region.3.center),
       radius = c(region.1A.radius, region.1B.radius, region.1C.radius,
       region.2.radius, region.3.radius), form = "sphere", fading = 0.01)
     if ( is.na(mask) ) mask<-getMask(eximg,cleanup=TRUE)
-    sim.data <- simVOLfmri(design = design, image = spatial, base = as.array(eximg),
+    sim.data <- neuRosim::simVOLfmri(design = design, image = spatial, base = as.array(eximg),
       SNR = 3.87, noise = "mixture", type = "rician", rho.temp = c(0.142,
       0.108, 0.084), rho.spat = 0.4, w = c(0.05, 0.1, 0.01,
       0.09, 0.05, 0.7), dim = dim(eximg), nscan = nscan, vee = 0,
@@ -147,7 +173,7 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
   simbold[,100:200]<-simbold[,100:200]+as.numeric(hrf1)*0.5*signalscale
   simbold[,320:400]<-simbold[,320:400]+as.numeric(hrf2)*0.4*signalscale
   simbold[,380:600]<-simbold[,380:600]+as.numeric(hrf3)*0.8*signalscale
-  desmat<-data.frame( a=s1, b=s2, c=s3 ) 
+  desmat<-data.frame( a=s1, b=s2, c=s3 )
   rs<-rowSums(desmat)
   }
   # nuisance
@@ -168,7 +194,7 @@ simulateBOLD<-function(ntime=2000,nstim=30,signalscale=0.5,TR=0.5, lowfnoise=0.0
    }
 #  print("n.task")
 #  return( tasknoise(act.image = as.array(desmat), sigma = 15) )
-  ts1<-ts(rowMeans(simbold[,380:600]))	
+  ts1<-ts(rowMeans(simbold[,380:600]))
   plot( ts(data.frame(s3=s3,hrf3=hrf3,bold=ts1,boldraw=simbold[,390]) ))
   return(list(simbold=(simbold),desmat=desmat))
 }
